@@ -1,0 +1,197 @@
+import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from "next/server";
+
+interface TreeNode {
+  id: string;
+  type: "tension" | "action";
+  title: string;
+  status?: string | null;
+  assignee?: string | null;
+  due_date?: string | null;
+  tension_id?: string | null;
+  area_id?: string | null;
+  area_name?: string | null;
+  area_color?: string | null;
+  is_completed?: boolean | null;
+  child_chart_id?: string | null;
+  children: TreeNode[];
+}
+
+async function findRootChartIdSimple(
+  supabase: any,
+  chartId: string
+): Promise<string> {
+  let currentId = chartId;
+  let iterations = 0;
+  const maxIterations = 10;
+
+  while (iterations < maxIterations) {
+    const { data: parentAction } = await supabase
+      .from("actions")
+      .select(
+        `
+        id,
+        tension_id,
+        tensions!inner(chart_id)
+      `
+      )
+      .eq("child_chart_id", currentId)
+      .limit(1)
+      .single();
+
+    if (!parentAction || !parentAction.tensions?.chart_id) {
+      break;
+    }
+
+    currentId = parentAction.tensions.chart_id;
+    iterations++;
+  }
+
+  console.log(`[findRootChartId] Found root: ${currentId} (from: ${chartId})`);
+  return currentId;
+}
+
+async function getTensionsWithActions(
+  supabase: any,
+  chartId: string
+): Promise<TreeNode[]> {
+  console.log(`[getTensionsWithActions] Fetching chart: ${chartId}`);
+  const { data: tensions, error: tensionError } = await supabase
+    .from("tensions")
+    .select(
+      "id, title, description, area_id, areas (id, name, color)"
+    )
+    .eq("chart_id", chartId)
+    .order("created_at", { ascending: true });
+
+  if (tensionError) {
+    console.error(`[getTensionsWithActions] Tension error:`, tensionError);
+  }
+
+  if (!tensions || tensions.length === 0) {
+    const { data: actions, error: actionError } = await supabase
+      .from("actions")
+      .select(
+        "id, title, description, due_date, assignee, status, is_completed, child_chart_id, tension_id"
+      )
+      .eq("chart_id", chartId)
+      .order("created_at", { ascending: true });
+
+    if (actionError) {
+      console.error(`[getTensionsWithActions] Actions error:`, actionError);
+    }
+
+    return (actions || []).map((action: any) => ({
+      id: action.id,
+      type: "action" as const,
+      title: action.title || action.description || "(無題)",
+      status: action.status,
+      assignee: action.assignee,
+      due_date: action.due_date,
+      tension_id: action.tension_id || null,
+      is_completed: action.is_completed,
+      child_chart_id: action.child_chart_id,
+      children: [],
+    }));
+  }
+
+  const tensionNodes: TreeNode[] = [];
+
+  for (const tension of tensions) {
+    const { data: actions, error: actionError } = await supabase
+      .from("actions")
+      .select(
+        "id, title, description, due_date, assignee, status, is_completed, child_chart_id, tension_id"
+      )
+      .eq("tension_id", tension.id)
+      .order("created_at", { ascending: true });
+
+    if (actionError) {
+      console.error(`[getTensionsWithActions] Actions error:`, actionError);
+    }
+
+    const actionNodes: TreeNode[] = [];
+
+    for (const action of actions || []) {
+      const actionNode: TreeNode = {
+        id: action.id,
+        type: "action",
+        title: action.title || action.description || "(無題)",
+        status: action.status,
+        assignee: action.assignee,
+        due_date: action.due_date,
+        is_completed: action.is_completed,
+        tension_id: action.tension_id || null,
+        child_chart_id: action.child_chart_id,
+        children: [],
+      };
+
+      if (action.child_chart_id) {
+        console.log(
+          `[getTensionsWithActions] Following telescope to: ${action.child_chart_id}`
+        );
+        actionNode.children = await getTensionsWithActions(
+          supabase,
+          action.child_chart_id
+        );
+      }
+
+      actionNodes.push(actionNode);
+    }
+
+    tensionNodes.push({
+      id: tension.id,
+      type: "tension",
+      title: tension.title || tension.description || "(無題)",
+      area_id: tension.area_id,
+      area_name: tension.areas?.name,
+      area_color: tension.areas?.color,
+      children: actionNodes,
+    });
+  }
+
+  return tensionNodes;
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: chartId } = await params;
+    console.log("[actions-tree] chartId:", chartId);
+    const supabase = await createClient();
+    const rootChartId = await findRootChartIdSimple(supabase, chartId);
+    console.log(`[actions-tree] Original chartId: ${chartId}`);
+    console.log(`[actions-tree] Root chartId: ${rootChartId}`);
+
+    const { data: chart, error: chartError } = await supabase
+      .from("charts")
+      .select("id, title")
+      .eq("id", rootChartId)
+      .single();
+
+    console.log("[actions-tree] chart:", chart);
+    console.log("[actions-tree] chartError:", chartError);
+
+    if (!chart) {
+      return NextResponse.json({ error: "Chart not found" }, { status: 404 });
+    }
+
+    const tree = await getTensionsWithActions(supabase, rootChartId);
+
+    return NextResponse.json({
+      chart: {
+        id: chart.id,
+        name: chart.title || "(無題)",
+      },
+      tree,
+    });
+  } catch (error) {
+    console.error("[actions-tree] Error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

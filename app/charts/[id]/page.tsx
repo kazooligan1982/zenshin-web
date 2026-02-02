@@ -1,0 +1,83 @@
+import { notFound } from "next/navigation";
+import { fetchChart } from "./actions";
+import { ProjectEditor } from "./project-editor";
+import { createClient } from "@/utils/supabase/server";
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ProjectDetailPage({ params }: PageProps) {
+  const { id } = await params;
+  
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const chart = await fetchChart(id);
+
+    if (!chart) {
+      // 環境変数が設定されていない場合のフォールバック
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        return (
+          <div className="flex items-center justify-center h-screen bg-[#F5F7FA]">
+            <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+              <h2 className="text-xl font-bold mb-4">Supabase設定が必要です</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                データベースに接続するには、環境変数を設定してください。
+              </p>
+              <div className="bg-gray-50 p-4 rounded text-xs font-mono">
+                <p className="mb-2">.env.local ファイルに以下を追加：</p>
+                <p>NEXT_PUBLIC_SUPABASE_URL=your_url</p>
+                <p>NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-4">
+                詳細は <code className="bg-gray-100 px-1 rounded">SUPABASE_SETUP.md</code> を参照してください。
+              </p>
+            </div>
+          </div>
+        );
+      }
+      
+      notFound();
+    }
+
+    const editorKey = JSON.stringify(
+      chart.tensions.flatMap((tension) =>
+        (tension.actionPlans || []).map((action) => ({
+          id: action.id,
+          status: action.status,
+          isCompleted: action.isCompleted,
+        }))
+      )
+    );
+
+    return (
+      <ProjectEditor
+        key={editorKey}
+        initialChart={chart}
+        chartId={id}
+        currentUserId={user?.id ?? ""}
+      />
+    );
+  } catch (error) {
+    console.error("Error loading chart:", error);
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#F5F7FA]">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+          <h2 className="text-xl font-bold mb-4 text-destructive">エラーが発生しました</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            データの読み込みに失敗しました。
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {error instanceof Error ? error.message : "不明なエラー"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+}

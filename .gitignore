@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Temporary files
+CHECK_ENV.md
+DIAGNOSTIC.md
+QUICK_START.md
+SETUP_ENV.txt
+SUPABASE_SETUP.md
+TROUBLESHOOTING.md
+ZENSHIN_CHART.md
+test-connection.js
+verify-env.sh
+package-lock 2.json
+next
+zenshin-web@0.1.0
+node_modules
+node_modules*
