@@ -2917,7 +2917,12 @@ export function ProjectEditor({ initialChart, chartId, currentUserId }: ProjectE
       console.log("[handleUpdateVision] 成功");
       // targetDate、assignee、isLockedが変更された場合は即座に反映するため、refreshする
       // contentの場合は画面リセットを避けるため、refreshしない
-      if (field === "targetDate" || field === "assignee" || field === "isLocked") {
+      if (
+        field === "dueDate" ||
+        field === "targetDate" ||
+        field === "assignee" ||
+        field === "isLocked"
+      ) {
         router.refresh();
       }
     } else {

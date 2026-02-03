@@ -394,6 +394,7 @@ export async function updateVision(
   updates: Partial<VisionItem>
 ): Promise<boolean> {
   try {
+    const serverClient = await createClient();
     const updateData: any = {};
     if (updates.content !== undefined) updateData.content = updates.content;
     if (updates.assignee !== undefined) updateData.assignee = updates.assignee;
@@ -402,7 +403,7 @@ export async function updateVision(
     if (updates.isLocked !== undefined) updateData.is_locked = updates.isLocked;
     if (updates.area_id !== undefined) updateData.area_id = updates.area_id;
 
-    const { error } = await supabase
+    const { error } = await serverClient
       .from("visions")
       .update(updateData)
       .eq("id", visionId)
@@ -420,14 +421,14 @@ export async function updateVision(
 
     if (Object.keys(syncUpdates).length > 0) {
       try {
-        const { data: chart } = await supabase
+        const { data: chart } = await serverClient
           .from("charts")
           .select("parent_action_id")
           .eq("id", chartId)
           .single();
 
         if (chart?.parent_action_id) {
-          await supabase
+          await serverClient
             .from("actions")
             .update({
               ...syncUpdates,
