@@ -2915,13 +2915,20 @@ export function ProjectEditor({ initialChart, chartId, currentUserId }: ProjectE
     const success = await updateVisionItem(id, chartId, field, value);
     if (success) {
       console.log("[handleUpdateVision] 成功");
+      if (field === "areaId") {
+        const areaName = value
+          ? chart.areas.find((area: Area) => area.id === value)?.name
+          : "未分類";
+        toast.success(`${areaName ?? "未分類"} に移動しました`);
+      }
       // targetDate、assignee、isLockedが変更された場合は即座に反映するため、refreshする
       // contentの場合は画面リセットを避けるため、refreshしない
       if (
         field === "dueDate" ||
         field === "targetDate" ||
         field === "assignee" ||
-        field === "isLocked"
+        field === "isLocked" ||
+        field === "areaId"
       ) {
         router.refresh();
       }
@@ -3028,6 +3035,12 @@ export function ProjectEditor({ initialChart, chartId, currentUserId }: ProjectE
     // Server updateのみ（Optimistic UIなし）
     const success = await updateRealityItem(id, chartId, field, value);
     if (success) {
+      if (field === "areaId") {
+        const areaName = value
+          ? chart.areas.find((area: Area) => area.id === value)?.name
+          : "未分類";
+        toast.success(`${areaName ?? "未分類"} に移動しました`);
+      }
       // 成功時はページを再取得
       router.refresh();
     } else {
