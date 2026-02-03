@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 interface TreeNode {
   id: string;
   type: "tension" | "action";
