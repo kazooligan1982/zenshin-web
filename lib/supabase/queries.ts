@@ -1,4 +1,3 @@
-import { supabase } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import type {
@@ -227,9 +226,8 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
 async function getBreadcrumbsFromSQL(
   chartId: string
 ): Promise<Array<{ id: string; title: string; type: "chart" | "action" }>> {
-  if (!supabase) return [];
-
   try {
+    const supabase = await createClient();
     // SQL関数を呼び出し
     const { data, error } = await supabase.rpc("get_breadcrumbs", {
       p_chart_id: chartId,
@@ -307,12 +305,13 @@ async function buildBreadcrumbs(
   parentChartId: string | null,
   breadcrumbs: Array<{ id: string; title: string }> = []
 ): Promise<Array<{ id: string; title: string }>> {
-  if (!parentChartId || !supabase) {
+  if (!parentChartId) {
     return [{ id: "root", title: "全社マスター" }, ...breadcrumbs];
   }
 
   // parent_chart_id は存在しないため、parent_action_id 経由で取得する必要があります
   // この関数は実際には使用されていないため、簡易実装に留めます
+  const supabase = await createClient();
   const { data: parentChart } = await supabase
     .from("charts")
     .select("id, title, parent_action_id")
@@ -454,6 +453,7 @@ export async function deleteVision(
   chartId: string
 ): Promise<boolean> {
   try {
+    const supabase = await createClient();
     const { error } = await supabase
       .from("visions")
       .delete()
@@ -562,6 +562,7 @@ export async function deleteReality(
   chartId: string
 ): Promise<boolean> {
   try {
+    const supabase = await createClient();
     const { error } = await supabase
       .from("realities")
       .delete()
@@ -660,6 +661,7 @@ export async function deleteTension(
   chartId: string
 ): Promise<boolean> {
   try {
+    const supabase = await createClient();
     const { error } = await supabase
       .from("tensions")
       .delete()
@@ -686,6 +688,7 @@ export async function toggleTensionVisionLink(
   isLinked: boolean
 ): Promise<boolean> {
   try {
+    const supabase = await createClient();
     if (isLinked) {
       // リンクを削除
       const { error } = await supabase
@@ -701,8 +704,7 @@ export async function toggleTensionVisionLink(
     } else {
       // リンクを追加
       const user = await getAuthenticatedUser();
-      const serverSupabase = await createClient();
-      const { error } = await serverSupabase
+      const { error } = await supabase
         .from("tension_visions")
         .insert({
           tension_id: tensionId,
@@ -731,6 +733,7 @@ export async function toggleTensionRealityLink(
   isLinked: boolean
 ): Promise<boolean> {
   try {
+    const supabase = await createClient();
     if (isLinked) {
       // リンクを削除
       const { error } = await supabase
@@ -746,8 +749,7 @@ export async function toggleTensionRealityLink(
     } else {
       // リンクを追加
       const user = await getAuthenticatedUser();
-      const serverSupabase = await createClient();
-      const { error } = await serverSupabase
+      const { error } = await supabase
         .from("tension_realities")
         .insert({
           tension_id: tensionId,
@@ -932,6 +934,7 @@ export async function deleteAction(
   chartId?: string
 ): Promise<boolean> {
   try {
+    const supabase = await createClient();
     let query = supabase.from("actions").delete().eq("id", actionId);
     if (tensionId) {
       query = query.eq("tension_id", tensionId);
@@ -961,6 +964,7 @@ export async function updateChart(
   updates: { title?: string; description?: string | null; due_date?: Date | string | null }
 ): Promise<boolean> {
   try {
+    const supabase = await createClient();
     const updateData: any = {};
     if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.description !== undefined) updateData.description = updates.description;
@@ -1119,9 +1123,8 @@ export async function telescopeAction(
 export async function getParentChartInfo(
   chartId: string
 ): Promise<{ parentChartId?: string; parentChartTitle?: string; parentActionId?: string; parentActionTitle?: string } | null> {
-  if (!supabase) return null;
-
   try {
+    const supabase = await createClient();
     const { data: chart, error } = await supabase
       .from("charts")
       .select("id, title, parent_action_id")
@@ -1204,9 +1207,8 @@ export async function getParentChartInfo(
 export async function getChildChartProgress(
   childChartId: string
 ): Promise<{ total: number; completed: number; percentage: number } | null> {
-  if (!supabase) return null;
-
   try {
+    const supabase = await createClient();
     // 子チャートのすべてのTensionを取得
     const { data: tensions } = await supabase
       .from("tensions")
@@ -1319,11 +1321,8 @@ export async function updateArea(
   chartId: string,
   updates: Partial<Pick<Area, "name" | "color">>
 ): Promise<boolean> {
-  if (!supabase) {
-    console.error("[updateArea] Supabase client not initialized");
-    return false;
-  }
   try {
+    const supabase = await createClient();
     const updateData: any = {};
     if (updates.name !== undefined) updateData.name = updates.name.trim();
     if (updates.color !== undefined) updateData.color = updates.color;
@@ -1351,11 +1350,8 @@ export async function deleteArea(
   areaId: string,
   chartId: string
 ): Promise<boolean> {
-  if (!supabase) {
-    console.error("[deleteArea] Supabase client not initialized");
-    return false;
-  }
   try {
+    const supabase = await createClient();
     // まず、そのエリアが付いているVisionとRealityを未分類（null）に戻す
     const { error: visionError } = await supabase
       .from("visions")
@@ -1403,11 +1399,8 @@ export async function getItemHistory(
   itemType: "vision" | "reality" | "action",
   itemId: string
 ): Promise<HistoryItem[]> {
-  if (!supabase) {
-    console.error("[getItemHistory] Supabase client not initialized");
-    return [];
-  }
   try {
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from("item_history")
       .select("*")
