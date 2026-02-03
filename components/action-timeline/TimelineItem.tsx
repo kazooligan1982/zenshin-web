@@ -29,6 +29,7 @@ interface TimelineItemProps {
   chartId: string
   type: "action" | "vision" | "reality"
   onDelete?: (commentId: string) => void
+  onDeleted?: (commentId: string) => void
   onRestore?: (comment: TimelineComment) => void
   onUpdated?: (commentId: string, newContent: string) => void
 }
@@ -39,6 +40,7 @@ export function TimelineItem({
   chartId,
   type,
   onDelete,
+  onDeleted,
   onRestore,
   onUpdated,
 }: TimelineItemProps) {
@@ -112,6 +114,7 @@ export function TimelineItem({
       alert("削除に失敗しました")
       return
     }
+    onDeleted?.(comment.id)
     router.refresh()
   }
 

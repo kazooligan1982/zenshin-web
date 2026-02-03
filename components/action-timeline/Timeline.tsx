@@ -12,6 +12,7 @@ interface TimelineProps {
   currentUserId: string
   chartId: string
   onCommentAdded?: () => void
+  onCommentDeleted?: () => void
 }
 
 const INITIAL_VISIBLE_COUNT = 5
@@ -23,6 +24,7 @@ export function Timeline({
   currentUserId,
   chartId,
   onCommentAdded,
+  onCommentDeleted,
 }: TimelineProps) {
   const [comments, setComments] = useState(initialComments)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -97,6 +99,7 @@ export function Timeline({
             chartId={chartId}
             type={type}
             onDelete={handleDelete}
+            onDeleted={onCommentDeleted}
             onRestore={handleRestore}
             onUpdated={handleUpdate}
           />
