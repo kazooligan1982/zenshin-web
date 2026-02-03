@@ -845,6 +845,11 @@ export async function updateAction(
   chartId?: string
 ): Promise<boolean> {
   try {
+    const supabase = await createClient();
+    console.log("[updateAction] using server client", {
+      actionId,
+      table: "actions",
+    });
     const updateData: any = {};
     if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
