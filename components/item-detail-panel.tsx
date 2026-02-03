@@ -26,6 +26,11 @@ interface ItemDetailPanelProps {
   history: HistoryItem[];
   currentUserId?: string | null;
   chartId: string;
+  onCommentCountChange?: (
+    itemType: "vision" | "reality" | "action",
+    itemId: string,
+    delta: number
+  ) => void;
   onAddHistory: (
     itemType: "vision" | "reality" | "action",
     itemId: string,
@@ -44,6 +49,7 @@ export function ItemDetailPanel({
   history,
   currentUserId,
   chartId,
+  onCommentCountChange,
   onAddHistory,
 }: ItemDetailPanelProps) {
   const [commentText, setCommentText] = useState("");
@@ -117,6 +123,36 @@ export function ItemDetailPanel({
       void loadRealityComments();
     }
   }, [isOpen, itemType, loadActionComments, loadVisionComments, loadRealityComments]);
+
+  const handleActionCommentAdded = useCallback(async () => {
+    await loadActionComments();
+    onCommentCountChange?.("action", itemId, 1);
+  }, [loadActionComments, onCommentCountChange, itemId]);
+
+  const handleActionCommentDeleted = useCallback(async () => {
+    await loadActionComments();
+    onCommentCountChange?.("action", itemId, -1);
+  }, [loadActionComments, onCommentCountChange, itemId]);
+
+  const handleVisionCommentAdded = useCallback(async () => {
+    await loadVisionComments();
+    onCommentCountChange?.("vision", itemId, 1);
+  }, [loadVisionComments, onCommentCountChange, itemId]);
+
+  const handleVisionCommentDeleted = useCallback(async () => {
+    await loadVisionComments();
+    onCommentCountChange?.("vision", itemId, -1);
+  }, [loadVisionComments, onCommentCountChange, itemId]);
+
+  const handleRealityCommentAdded = useCallback(async () => {
+    await loadRealityComments();
+    onCommentCountChange?.("reality", itemId, 1);
+  }, [loadRealityComments, onCommentCountChange, itemId]);
+
+  const handleRealityCommentDeleted = useCallback(async () => {
+    await loadRealityComments();
+    onCommentCountChange?.("reality", itemId, -1);
+  }, [loadRealityComments, onCommentCountChange, itemId]);
 
   const handleSubmit = async () => {
     if (!commentText.trim()) return;
@@ -213,7 +249,8 @@ export function ItemDetailPanel({
                       initialComments={actionComments}
                       currentUserId={currentUserId ?? ""}
                       chartId={chartId}
-                      onCommentAdded={loadActionComments}
+                      onCommentAdded={handleActionCommentAdded}
+                      onCommentDeleted={handleActionCommentDeleted}
                     />
                   </>
                 ) : itemType === "vision" ? (
@@ -229,7 +266,8 @@ export function ItemDetailPanel({
                       initialComments={visionComments}
                       currentUserId={currentUserId ?? ""}
                       chartId={chartId}
-                      onCommentAdded={loadVisionComments}
+                      onCommentAdded={handleVisionCommentAdded}
+                      onCommentDeleted={handleVisionCommentDeleted}
                     />
                   </>
                 ) : itemType === "reality" ? (
@@ -245,7 +283,8 @@ export function ItemDetailPanel({
                       initialComments={realityComments}
                       currentUserId={currentUserId ?? ""}
                       chartId={chartId}
-                      onCommentAdded={loadRealityComments}
+                      onCommentAdded={handleRealityCommentAdded}
+                      onCommentDeleted={handleRealityCommentDeleted}
                     />
                   </>
                 ) : history.length === 0 ? (

@@ -3533,6 +3533,68 @@ export function ProjectEditor({ initialChart, chartId, currentUserId }: ProjectE
     }
   };
 
+  const handleCommentCountChange = (
+    itemType: "vision" | "reality" | "action",
+    itemId: string,
+    delta: number
+  ) => {
+    if (itemType === "vision") {
+      setVisions((prev) =>
+        prev.map((vision) =>
+          vision.id === itemId
+            ? {
+                ...vision,
+                comment_count: Math.max(0, (vision.comment_count ?? 0) + delta),
+              }
+            : vision
+        )
+      );
+      return;
+    }
+    if (itemType === "reality") {
+      setRealities((prev) =>
+        prev.map((reality) =>
+          reality.id === itemId
+            ? {
+                ...reality,
+                comment_count: Math.max(0, (reality.comment_count ?? 0) + delta),
+              }
+            : reality
+        )
+      );
+      return;
+    }
+    setTensions((prev) =>
+      prev.map((tension) => ({
+        ...tension,
+        actionPlans: tension.actionPlans.map((actionPlan) =>
+          actionPlan.id === itemId
+            ? {
+                ...actionPlan,
+                comment_count: Math.max(
+                  0,
+                  (actionPlan.comment_count ?? 0) + delta
+                ),
+              }
+            : actionPlan
+        ),
+      }))
+    );
+    setLooseActions((prev) =>
+      prev.map((actionPlan) =>
+        actionPlan.id === itemId
+          ? {
+              ...actionPlan,
+              comment_count: Math.max(
+                0,
+                (actionPlan.comment_count ?? 0) + delta
+              ),
+            }
+          : actionPlan
+      )
+    );
+  };
+
   // ドラッグ＆ドロップハンドラ
   const handleDragEnd = async (event: DragEndEvent, type: "visions" | "realities" | "actions", tensionId?: string) => {
     const { active, over } = event;
@@ -4833,6 +4895,7 @@ export function ProjectEditor({ initialChart, chartId, currentUserId }: ProjectE
           currentUserId={currentUserId || currentUser?.id}
           chartId={chartId}
           onAddHistory={handleAddHistory}
+          onCommentCountChange={handleCommentCountChange}
         />
       )}
     </div>
