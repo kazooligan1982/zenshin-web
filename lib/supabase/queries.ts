@@ -531,13 +531,14 @@ export async function updateReality(
   updates: Partial<Pick<RealityItem, "content" | "isLocked" | "area_id" | "dueDate">>
 ): Promise<boolean> {
   try {
+    const serverClient = await createClient();
     const updateData: any = {};
     if (updates.content !== undefined) updateData.content = updates.content;
     if (updates.isLocked !== undefined) updateData.is_locked = updates.isLocked;
     if (updates.area_id !== undefined) updateData.area_id = updates.area_id;
     if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
 
-    const { error } = await supabase
+    const { error } = await serverClient
       .from("realities")
       .update(updateData)
       .eq("id", realityId)
@@ -628,13 +629,14 @@ export async function updateTension(
   updates: Partial<Pick<Tension, "title" | "description" | "status">>
 ): Promise<boolean> {
   try {
+    const serverClient = await createClient();
     const updateData: any = {};
     if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.description !== undefined)
       updateData.description = updates.description;
     if (updates.status !== undefined) updateData.status = updates.status;
 
-    const { error } = await supabase
+    const { error } = await serverClient
       .from("tensions")
       .update(updateData)
       .eq("id", tensionId)
