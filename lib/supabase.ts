@@ -6,8 +6,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 // デバッグ用: 環境変数の状態を確認
 if (typeof window === "undefined") {
   // サーバーサイドでのみログ出力
-  console.log("[Supabase] URL:", supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : "未設定");
-  console.log("[Supabase] Key:", supabaseAnonKey ? `${supabaseAnonKey.substring(0, 30)}...` : "未設定");
   
   // 環境変数の形式チェック
   if (supabaseUrl && !supabaseUrl.startsWith("http")) {

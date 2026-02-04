@@ -106,11 +106,8 @@ export function TreeView({
     setIsLoading(true);
     try {
       const response = await fetch(`/api/charts/${projectId}/actions-tree`);
-      console.log("[TreeView] response status:", response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log("[TreeView] data:", data);
-        console.log("[TreeView] data.tree:", data.tree);
         setTreeData(data);
         if (data.tree && resetExpanded) {
           const allIds = collectAllIds(data.tree);

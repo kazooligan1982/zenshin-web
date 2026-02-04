@@ -213,11 +213,8 @@ export async function GET(
     const { id: projectId } = await params;
     const supabase = await createClient();
 
-    console.log("[API /actions] テーブルクエリ開始");
     const actions = await getActionsWithHierarchy(supabase, projectId);
 
-    console.log("[API /actions] アクション数:", actions?.length);
-    console.log(
       "[API /actions] ステータス:",
       actions?.map((action: any) => ({
         id: action.id?.substring(0, 8),
@@ -227,7 +224,6 @@ export async function GET(
     const target = actions?.find((action: any) =>
       action.id?.startsWith("911a2a1d")
     );
-    console.log(
       "[API /actions] 911a2a1d のステータス:",
       target?.status
     );

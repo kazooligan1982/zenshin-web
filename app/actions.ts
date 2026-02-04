@@ -71,7 +71,6 @@ export async function createChart(
     throw new Error(insertError.message);
   }
 
-  console.log("[createChart] 成功 - chart ID:", newChart?.id);
 
   // ページを再検証
   revalidatePath("/charts");
@@ -101,7 +100,6 @@ export async function deleteChart(chartId: string): Promise<void> {
     throw new Error(deleteError.message);
   }
 
-  console.log("[deleteChart] 成功 - chart ID:", chartId);
 
   // ページを再検証
   revalidatePath("/charts");

@@ -49,7 +49,6 @@ async function findRootChartIdSimple(
     iterations++;
   }
 
-  console.log(`[findRootChartId] Found root: ${currentId} (from: ${chartId})`);
   return currentId;
 }
 
@@ -57,7 +56,6 @@ async function getTensionsWithActions(
   supabase: any,
   chartId: string
 ): Promise<TreeNode[]> {
-  console.log(`[getTensionsWithActions] Fetching chart: ${chartId}`);
   const { data: tensions, error: tensionError } = await supabase
     .from("tensions")
     .select(
@@ -129,7 +127,6 @@ async function getTensionsWithActions(
       };
 
       if (action.child_chart_id) {
-        console.log(
           `[getTensionsWithActions] Following telescope to: ${action.child_chart_id}`
         );
         actionNode.children = await getTensionsWithActions(
@@ -161,11 +158,8 @@ export async function GET(
 ) {
   try {
     const { id: chartId } = await params;
-    console.log("[actions-tree] chartId:", chartId);
     const supabase = await createClient();
     const rootChartId = await findRootChartIdSimple(supabase, chartId);
-    console.log(`[actions-tree] Original chartId: ${chartId}`);
-    console.log(`[actions-tree] Root chartId: ${rootChartId}`);
 
     const { data: chart, error: chartError } = await supabase
       .from("charts")
@@ -173,8 +167,6 @@ export async function GET(
       .eq("id", rootChartId)
       .single();
 
-    console.log("[actions-tree] chart:", chart);
-    console.log("[actions-tree] chartError:", chartError);
 
     if (!chart) {
       return NextResponse.json({ error: "Chart not found" }, { status: 404 });

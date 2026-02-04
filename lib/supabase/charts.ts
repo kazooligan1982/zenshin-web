@@ -34,7 +34,6 @@ export async function getAllCharts() {
       return [];
     }
 
-    console.log("[getAllCharts] ✅ 成功:", data?.length || 0, "件のチャートを取得");
     return data || [];
   } catch (error) {
     console.error("[getAllCharts] 予期しないエラー:", error);
