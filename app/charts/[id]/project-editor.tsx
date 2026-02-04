@@ -418,6 +418,7 @@ function SortableVisionItem({
   areas,
   onOpenDetail,
   onOpenFocus,
+  currentUser,
 }: {
   vision: VisionItem;
   index: number;
@@ -431,7 +432,14 @@ function SortableVisionItem({
   areas: Area[];
   onOpenDetail: (vision: VisionItem) => void;
   onOpenFocus: (vision: VisionItem, index: number) => void;
+  currentUser?: {
+    id: string;
+    email: string;
+    name?: string;
+    avatar_url?: string | null;
+  } | null;
 }) {
+  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const area = areas.find((a) => a.id === vision.area_id);
   const visionInput = useItemInput({
     initialValue: vision.content || "",
@@ -515,17 +523,104 @@ function SortableVisionItem({
           />
         </div>
         <div className="w-[36px] flex justify-center">
-          <div className="relative group/avatar cursor-pointer flex items-center justify-center rounded-md transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100">
-            <Button
-              size="icon"
-              variant="ghost"
-              className={ICON_BTN_CLASS}
-              title="担当者を選択（未実装）"
-              disabled
+          <Popover
+            open={assigneePopoverOpen}
+            onOpenChange={setAssigneePopoverOpen}
+          >
+            <PopoverTrigger asChild>
+              <div
+                className={cn(
+                  "relative group/avatar cursor-pointer flex items-center justify-center rounded-md transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200",
+                  vision.assignee
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
+                )}
+              >
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={ICON_BTN_CLASS}
+                  title={vision.assignee || "担当者を選択"}
+                >
+                  {vision.assignee ? (
+                    currentUser?.avatar_url &&
+                    vision.assignee === currentUser.email ? (
+                      <img
+                        src={currentUser.avatar_url}
+                        alt={currentUser.name || ""}
+                        className="h-5 w-5 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-5 w-5 rounded-full bg-purple-500 text-white text-[10px] flex items-center justify-center font-medium">
+                        {vision.assignee.charAt(0).toUpperCase()}
+                      </div>
+                    )
+                  ) : (
+                    <UserPlus className="w-3 h-3 text-muted-foreground" />
+                  )}
+                </Button>
+                {vision.assignee && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdate(vision.id, "assignee", "");
+                      setAssigneePopoverOpen(false);
+                    }}
+                    className="absolute -top-1 -right-1 hidden group-hover/avatar:flex h-4 w-4 items-center justify-center rounded-full bg-gray-500 text-white text-[10px] hover:bg-gray-600 transition-colors z-10"
+                    title="担当者を解除"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-40 p-2 z-50"
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
-              <UserPlus className="w-3 h-3 text-muted-foreground" />
-            </Button>
-          </div>
+              <div className="space-y-1">
+                {currentUser && (
+                  <Button
+                    variant={vision.assignee === currentUser.email ? "secondary" : "ghost"}
+                    className="w-full justify-start text-xs h-7 gap-2"
+                    onClick={() => {
+                      onUpdate(vision.id, "assignee", currentUser.email);
+                      setAssigneePopoverOpen(false);
+                    }}
+                  >
+                    {currentUser.avatar_url ? (
+                      <img
+                        src={currentUser.avatar_url}
+                        alt={currentUser.name || ""}
+                        className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full bg-purple-500 text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
+                        {(currentUser.name || currentUser.email || "?")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                    )}
+                    {currentUser.name || currentUser.email}
+                  </Button>
+                )}
+                {vision.assignee && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-xs h-7 text-muted-foreground"
+                    onClick={() => {
+                      onUpdate(vision.id, "assignee", "");
+                      setAssigneePopoverOpen(false);
+                    }}
+                  >
+                    クリア
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="relative flex items-center justify-center h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
@@ -613,6 +708,7 @@ function SortableRealityItem({
   areas,
   onOpenDetail,
   onOpenFocus,
+  currentUser,
   disabled = false,
 }: {
   reality: RealityItem;
@@ -623,6 +719,12 @@ function SortableRealityItem({
   areas: Area[];
   onOpenDetail: (reality: RealityItem) => void;
   onOpenFocus: (reality: RealityItem, index: number) => void;
+  currentUser?: {
+    id: string;
+    email: string;
+    name?: string;
+    avatar_url?: string | null;
+  } | null;
   disabled?: boolean;
 }) {
   const area = areas.find((a) => a.id === reality.area_id);
@@ -728,6 +830,28 @@ function SortableRealityItem({
             {format(new Date(reality.createdAt), "MM/dd HH:mm", { locale: ja })}
           </span>
         </div>
+        {reality.created_by &&
+          currentUser &&
+          reality.created_by === currentUser.id && (
+            <div
+              className="flex items-center justify-center rounded-md p-1"
+              title={`記述者: ${currentUser.name || currentUser.email}`}
+            >
+              {currentUser.avatar_url ? (
+                <img
+                  src={currentUser.avatar_url}
+                  alt={currentUser.name || ""}
+                  className="h-5 w-5 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-5 w-5 rounded-full bg-green-500 text-white text-[10px] flex items-center justify-center font-medium">
+                  {(currentUser.name || currentUser.email || "?")
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+              )}
+            </div>
+          )}
         <div className="relative flex items-center justify-center h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             size="icon"
@@ -887,7 +1011,7 @@ function SortableActionItem({
   handleDeleteActionPlan: (tensionId: string | null, actionId: string) => Promise<void>;
   handleTelescopeClick: (actionPlan: ActionPlan, tensionId: string | null) => Promise<void>;
   telescopingActionId: string | null;
-  currentUser: { id?: string; email: string; name?: string } | null;
+  currentUser: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
   areas: Area[];
   chartId: string;
   onOpenDetailPanel: (itemType: "action", itemId: string, itemContent: string) => void;
@@ -903,6 +1027,7 @@ function SortableActionItem({
     index: actionIndex,
     sectionId: `action-${tensionId || "loose"}`,
   });
+  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -1176,10 +1301,18 @@ function SortableActionItem({
           />
         </div>
         <div className="w-[36px] flex justify-center">
-          <Popover>
+          <Popover
+            open={assigneePopoverOpen}
+            onOpenChange={setAssigneePopoverOpen}
+          >
             <PopoverTrigger asChild>
               <div
-                className="relative group/avatar cursor-pointer flex items-center justify-center rounded-md transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200"
+                className={cn(
+                  "relative group/avatar cursor-pointer flex items-center justify-center rounded-md transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200",
+                  actionPlan.assignee
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
+                )}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
@@ -1190,19 +1323,29 @@ function SortableActionItem({
                   className={ICON_BTN_CLASS}
                   title={actionPlan.assignee || "担当者を選択"}
                 >
-                  {actionPlan.assignee ? (
+                {actionPlan.assignee ? (
+                  currentUser?.avatar_url &&
+                  actionPlan.assignee === currentUser.email ? (
+                    <img
+                      src={currentUser.avatar_url}
+                      alt={currentUser.name || ""}
+                      className="h-5 w-5 rounded-full object-cover"
+                    />
+                  ) : (
                     <div className="h-5 w-5 rounded-full bg-purple-500 text-white text-[10px] flex items-center justify-center font-medium">
                       {actionPlan.assignee.charAt(0).toUpperCase()}
                     </div>
-                  ) : (
-                    <UserPlus className="w-3 h-3 text-muted-foreground" />
-                  )}
+                  )
+                ) : (
+                  <UserPlus className="w-3 h-3 text-muted-foreground" />
+                )}
                 </Button>
                 {actionPlan.assignee && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", "");
+                      setAssigneePopoverOpen(false);
                     }}
                     className="absolute -top-1 -right-1 hidden group-hover/avatar:flex h-4 w-4 items-center justify-center rounded-full bg-gray-500 text-white text-[10px] hover:bg-gray-600 transition-colors z-10"
                     title="担当者を解除"
@@ -1222,9 +1365,30 @@ function SortableActionItem({
                 {currentUser && (
                   <Button
                     variant={actionPlan.assignee === currentUser.email ? "secondary" : "ghost"}
-                    className="w-full justify-start text-xs h-7"
-                    onClick={() => handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", currentUser.email)}
+                    className="w-full justify-start text-xs h-7 gap-2"
+                    onClick={() => {
+                      handleUpdateActionPlan(
+                        tensionId,
+                        actionPlan.id,
+                        "assignee",
+                        currentUser.email
+                      );
+                      setAssigneePopoverOpen(false);
+                    }}
                   >
+                    {currentUser.avatar_url ? (
+                      <img
+                        src={currentUser.avatar_url}
+                        alt={currentUser.name || ""}
+                        className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full bg-purple-500 text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
+                        {(currentUser.name || currentUser.email || "?")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                    )}
                     {currentUser.name || currentUser.email}
                   </Button>
                 )}
@@ -1232,7 +1396,10 @@ function SortableActionItem({
                   <Button
                     variant="ghost"
                     className="w-full justify-start text-xs h-7 text-muted-foreground"
-                    onClick={() => handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", "")}
+                    onClick={() => {
+                      handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", "");
+                      setAssigneePopoverOpen(false);
+                    }}
                   >
                     クリア
                   </Button>
@@ -2594,6 +2761,7 @@ export function ProjectEditor({
           item.content || ""
         )
       }
+      currentUser={currentUser}
     />
   );
 
@@ -2643,6 +2811,7 @@ export function ProjectEditor({
                             item.content || ""
                           )
                         }
+                        currentUser={currentUser}
                       />
                     ))
                   )}
@@ -2693,6 +2862,7 @@ export function ProjectEditor({
                             item.content || ""
                           )
                         }
+                        currentUser={currentUser}
                       />
                     ))
                   )}
@@ -2723,6 +2893,7 @@ export function ProjectEditor({
           item.content || ""
         )
       }
+      currentUser={currentUser}
     />
   );
 
@@ -2872,6 +3043,18 @@ export function ProjectEditor({
     value: string | boolean | null
   ) => {
     console.log("[handleUpdateVision] 開始 - id:", id, "field:", field, "value:", value);
+    if (field === "assignee") {
+      setVisions((prev) =>
+        prev.map((vision) =>
+          vision.id === id ? { ...vision, assignee: value as string } : vision
+        )
+      );
+      const success = await updateVisionItem(id, chartId, field, value);
+      if (!success) {
+        console.error("[handleUpdateVision] 更新失敗");
+      }
+      return;
+    }
     // Server updateのみ（Optimistic UIなし）
     const success = await updateVisionItem(id, chartId, field, value);
     if (success) {
@@ -2882,12 +3065,11 @@ export function ProjectEditor({
           : "未分類";
         toast.success(`${areaName ?? "未分類"} に移動しました`);
       }
-      // targetDate、assignee、isLockedが変更された場合は即座に反映するため、refreshする
+      // targetDate、isLockedが変更された場合は即座に反映するため、refreshする
       // contentの場合は画面リセットを避けるため、refreshしない
       if (
         field === "dueDate" ||
         field === "targetDate" ||
-        field === "assignee" ||
         field === "isLocked" ||
         field === "areaId"
       ) {
@@ -3278,6 +3460,24 @@ export function ProjectEditor({
       );
     };
 
+    if (field === "assignee") {
+      updateActionInState((action) => ({
+        ...action,
+        assignee: value as string,
+      }));
+      const success = await updateActionPlanItem(
+        actionId,
+        tensionId,
+        field,
+        value,
+        chartId
+      );
+      if (!success) {
+        console.error("[handleUpdateActionPlan] 更新失敗");
+      }
+      return;
+    }
+
     if (field === "areaId") {
       console.log("[DEBUG] Action area update called:", { actionId, value, tensionId });
       const removeFromTension = options?.removeFromTension ?? false;
@@ -3352,10 +3552,10 @@ export function ProjectEditor({
     const success = await updateActionPlanItem(actionId, tensionId, field, value, chartId);
     if (success) {
       console.log("[handleUpdateActionPlan] 成功");
-      // dueDateまたはassigneeが変更された場合は即座に反映するため、refreshする
+      // dueDateが変更された場合は即座に反映するため、refreshする
       // titleの場合は画面リセットを避けるため、refreshしない
       // isCompletedが変更された場合も即座に反映するため、refreshする
-      if (field === "dueDate" || field === "assignee") {
+      if (field === "dueDate") {
         console.log("[handleUpdateActionPlan] router.refresh() 呼び出し");
         router.refresh();
         console.log("[handleUpdateActionPlan] router.refresh() 完了");

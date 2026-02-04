@@ -131,6 +131,7 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
           relatedVisionId: r.related_vision_id || undefined,
           area_id: r.area_id || null,
           isLocked: r.is_locked || false,
+          created_by: r.created_by || null,
           comment_count: r.reality_comments?.[0]?.count ?? 0,
         } as RealityItem,
       ])
@@ -347,6 +348,7 @@ export async function createVision(
       chart_id: chartId,
       content: content.trim(),
       user_id: user.id,
+      created_by: user.id,
     };
     if (areaId) {
       insertData.area_id = areaId;
@@ -518,6 +520,8 @@ export async function createReality(
       dueDate: data.due_date || undefined,
       relatedVisionId: data.related_vision_id || undefined,
       area_id: data.area_id || null,
+      created_by: data.created_by || user.id,
+      created_by_profile: null,
     };
   } catch (error) {
     console.error("[createReality] Exception:", error);
