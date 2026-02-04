@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { getOrCreateWorkspace } from "@/lib/workspace";
 
 export type ChartWithMeta = {
   id: string;
@@ -34,11 +35,14 @@ export async function createChart(
     throw new Error("認証が必要です");
   }
 
+  const workspaceId = await getOrCreateWorkspace();
+
   const { data, error } = await supabase
     .from("charts")
     .insert({
       title,
       user_id: user.id,
+      workspace_id: workspaceId,
     })
     .select()
     .single();
@@ -59,11 +63,13 @@ export async function getChartsHierarchy(): Promise<{
   console.log("[getChartsHierarchy] start");
 
   const supabase = await createClient();
+  const workspaceId = await getOrCreateWorkspace();
 
   const { data: charts, error } = await supabase
     .from("charts")
     .select("id, title, description, due_date, created_at, updated_at, parent_action_id")
     .is("archived_at", null)
+    .eq("workspace_id", workspaceId)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -255,10 +261,12 @@ async function getAllDescendantChartIds(
 export async function getArchivedCharts() {
   console.log("[getArchivedCharts] start");
   const supabase = await createClient();
+  const workspaceId = await getOrCreateWorkspace();
   const { data: charts, error } = await supabase
     .from("charts")
     .select("id, title, description, archived_at, created_at, updated_at, parent_action_id")
     .not("archived_at", "is", null)
+    .eq("workspace_id", workspaceId)
     .order("archived_at", { ascending: false });
 
   if (error) {

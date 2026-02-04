@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { getOrCreateWorkspace } from "@/lib/workspace";
 import type {
   Chart,
   VisionItem,
@@ -1001,6 +1002,7 @@ export async function telescopeAction(
   try {
     console.log("[telescopeAction] start", { actionId, tensionId, chartId });
     const user = await getAuthenticatedUser();
+    const workspaceId = await getOrCreateWorkspace();
     const serverSupabase = await createClient();
     // 1. アクション情報を取得
     let actionQuery = serverSupabase
@@ -1039,6 +1041,7 @@ export async function telescopeAction(
         parent_action_id: actionId,
         due_date: action.due_date,
         user_id: user.id,
+        workspace_id: workspaceId,
       })
       .select()
       .single();
