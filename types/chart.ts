@@ -39,6 +39,7 @@ export interface RealityItem {
   relatedVisionId?: string; // 将来的な紐付け用
   area_id?: string | null; // エリアID
   isLocked?: boolean;
+  created_by?: string | null;
   comment_count?: number;
   history?: HistoryItem[]; // 履歴
 }
