@@ -340,7 +340,6 @@ export async function createVision(
   areaId?: string | null
 ): Promise<VisionItem | null> {
   try {
-    console.log("[createVision] 開始 - chartId:", chartId, "content:", content, "areaId:", areaId);
     const user = await getAuthenticatedUser();
     const serverSupabase = await createClient();
     // IDはDBが自動生成するため、idフィールドは含めない
@@ -371,7 +370,6 @@ export async function createVision(
       return null;
     }
 
-    console.log("[createVision] 成功 - data:", data);
     return {
       id: data.id,
       content: data.content,
@@ -482,7 +480,6 @@ export async function createReality(
   areaId?: string | null
 ): Promise<RealityItem | null> {
   try {
-    console.log("[createReality] 開始 - chartId:", chartId, "content:", content, "areaId:", areaId);
     const user = await getAuthenticatedUser();
     const serverSupabase = await createClient();
     // IDはDBが自動生成するため、idフィールドは含めない
@@ -512,7 +509,6 @@ export async function createReality(
       return null;
     }
 
-    console.log("[createReality] 成功 - data:", data);
     return {
       id: data.id,
       content: data.content,
@@ -856,10 +852,6 @@ export async function updateAction(
 ): Promise<boolean> {
   try {
     const supabase = await createClient();
-    console.log("[updateAction] using server client", {
-      actionId,
-      table: "actions",
-    });
     const updateData: any = {};
     if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
@@ -1004,7 +996,6 @@ export async function telescopeAction(
   chartId?: string
 ): Promise<string | null> {
   try {
-    console.log("[telescopeAction] start", { actionId, tensionId, chartId });
     const user = await getAuthenticatedUser();
     const workspaceId = await getOrCreateWorkspace();
     const serverSupabase = await createClient();
@@ -1028,11 +1019,8 @@ export async function telescopeAction(
       console.error("Error fetching action:", actionError);
       return null;
     }
-    console.log("[telescopeAction] fetched action:", action);
-
     // 2. 既に子チャートが存在する場合はそのIDを返す
     if (action.child_chart_id) {
-      console.log("[telescopeAction] child chart exists:", action.child_chart_id);
       return action.child_chart_id;
     }
 
@@ -1054,8 +1042,6 @@ export async function telescopeAction(
       console.error("Error creating chart:", chartError);
       return null;
     }
-    console.log("[telescopeAction] created chart:", newChart);
-
     // 3-2. 親アクションのタグを1つだけ子チャートにコピー
     let childAreaId: string | null = null;
     if (action.area_id) {
@@ -1104,8 +1090,6 @@ export async function telescopeAction(
       console.error("Error creating vision:", visionError);
       // Visionの作成に失敗してもチャートは作成されているので、チャートIDを返す
     }
-    console.log("[telescopeAction] created initial vision");
-
     // 3-4. 親アクションのchild_chart_idを更新
     const { error: updateActionError } = await serverSupabase
       .from("actions")
@@ -1117,8 +1101,6 @@ export async function telescopeAction(
       // チャートは作成されたが、アクションの更新に失敗した場合もチャートIDを返す
       return newChart.id;
     }
-    console.log("[telescopeAction] updated action with child chart:", newChart.id);
-
     return newChart.id;
   } catch (error) {
     console.error("Error in telescopeAction:", error);

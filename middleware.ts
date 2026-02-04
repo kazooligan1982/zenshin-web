@@ -33,8 +33,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log("[middleware] User:", user?.id || "NOT AUTHENTICATED");
-  console.log("[middleware] Path:", request.nextUrl.pathname);
 
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/login") ||

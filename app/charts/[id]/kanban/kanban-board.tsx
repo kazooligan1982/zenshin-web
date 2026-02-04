@@ -86,7 +86,6 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
   }, [projectId, viewMode]);
 
   const fetchActions = async () => {
-    console.log("[Kanban] データ取得開始");
     setIsLoading(true);
     try {
       const response = await fetch(`/api/charts/${projectId}/actions`, {
@@ -95,20 +94,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log(
-          "[Kanban] 取得したアクション数:",
-          data.length || data?.actions?.length
-        );
-        console.log(
-          "[Kanban] ステータス一覧:",
-          (data.actions || data).map((action: any) => ({
-            id: action.id?.substring(0, 8),
-            title: action.title,
-            status: action.status,
-          }))
-        );
         setActions(data);
-        console.log("[Kanban] データ取得完了、State 更新済み");
       } else {
         console.error("Failed to fetch actions");
       }

@@ -47,12 +47,9 @@ export async function fetchChart(chartId: string) {
 
 // Vision操作
 export async function addVision(chartId: string, content: string, areaId?: string | null) {
-  console.log("[addVision] 開始 - chartId:", chartId, "content:", content, "areaId:", areaId);
   const result = await createVision(chartId, content, areaId);
   if (result) {
-    console.log("[addVision] 成功 - result:", result);
     revalidatePath(`/charts/${chartId}`);
-    console.log("[addVision] revalidatePath完了");
   } else {
     console.error("[addVision] 失敗 - result is null");
   }
@@ -65,7 +62,6 @@ export async function updateVisionItem(
   field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId",
   value: string | boolean | null
 ) {
-  console.log("[updateVisionItem] 開始 - visionId:", visionId, "field:", field, "value:", value);
   const updates: Partial<VisionItem> = {};
   if (field === "content") updates.content = value as string;
   if (field === "assignee") updates.assignee = value as string;
@@ -76,7 +72,6 @@ export async function updateVisionItem(
 
   const result = await updateVision(visionId, chartId, updates);
   if (result) {
-    console.log("[updateVisionItem] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[updateVisionItem] 失敗");
@@ -85,10 +80,8 @@ export async function updateVisionItem(
 }
 
 export async function removeVision(visionId: string, chartId: string) {
-  console.log("[removeVision] 開始 - visionId:", visionId);
   const result = await deleteVision(visionId, chartId);
   if (result) {
-    console.log("[removeVision] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[removeVision] 失敗");
@@ -98,12 +91,9 @@ export async function removeVision(visionId: string, chartId: string) {
 
 // Reality操作
 export async function addReality(chartId: string, content: string, areaId?: string | null) {
-  console.log("[addReality] 開始 - chartId:", chartId, "content:", content, "areaId:", areaId);
   const result = await createReality(chartId, content, areaId);
   if (result) {
-    console.log("[addReality] 成功 - result:", result);
     revalidatePath(`/charts/${chartId}`);
-    console.log("[addReality] revalidatePath完了");
   } else {
     console.error("[addReality] 失敗 - result is null");
   }
@@ -116,7 +106,6 @@ export async function updateRealityItem(
   field: "content" | "isLocked" | "areaId" | "dueDate",
   value: string | boolean | null
 ) {
-  console.log("[updateRealityItem] 開始 - realityId:", realityId, "field:", field, "value:", value);
   const updates: any = {};
   if (field === "content") updates.content = value as string;
   if (field === "isLocked") updates.isLocked = value as boolean;
@@ -124,7 +113,6 @@ export async function updateRealityItem(
   if (field === "dueDate") updates.dueDate = value as string | null;
   const result = await updateReality(realityId, chartId, updates);
   if (result) {
-    console.log("[updateRealityItem] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[updateRealityItem] 失敗");
@@ -134,10 +122,8 @@ export async function updateRealityItem(
 
 // エリア作成
 export async function addArea(chartId: string, name: string, color?: string) {
-  console.log("[addArea] 開始 - chartId:", chartId, "name:", name, "color:", color);
   const result = await createArea(chartId, name, color);
   if (result) {
-    console.log("[addArea] 成功 - result:", result);
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[addArea] 失敗 - result is null");
@@ -150,10 +136,8 @@ export async function updateAreaItem(
   chartId: string,
   updates: Partial<Pick<Area, "name" | "color">>
 ) {
-  console.log("[updateAreaItem] 開始 - areaId:", areaId, "updates:", updates);
   const result = await updateArea(areaId, chartId, updates);
   if (result) {
-    console.log("[updateAreaItem] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[updateAreaItem] 失敗");
@@ -162,10 +146,8 @@ export async function updateAreaItem(
 }
 
 export async function removeArea(areaId: string, chartId: string) {
-  console.log("[removeArea] 開始 - areaId:", areaId);
   const result = await deleteArea(areaId, chartId);
   if (result) {
-    console.log("[removeArea] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[removeArea] 失敗");
@@ -174,10 +156,8 @@ export async function removeArea(areaId: string, chartId: string) {
 }
 
 export async function removeReality(realityId: string, chartId: string) {
-  console.log("[removeReality] 開始 - realityId:", realityId);
   const result = await deleteReality(realityId, chartId);
   if (result) {
-    console.log("[removeReality] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[removeReality] 失敗");
@@ -192,10 +172,8 @@ export async function addTension(
   areaId?: string | null
 ) {
   const normalizedAreaId = areaId ?? null;
-  console.log("[addTension] 開始 - chartId:", chartId, "title:", title, "areaId:", normalizedAreaId);
   const result = await createTension(chartId, title, normalizedAreaId);
   if (result) {
-    console.log("[addTension] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[addTension] 失敗");
@@ -209,7 +187,6 @@ export async function updateTensionItem(
   field: "title" | "description" | "status",
   value: string | TensionStatus
 ) {
-  console.log("[updateTensionItem] 開始 - tensionId:", tensionId, "field:", field, "value:", value);
   const updates: Partial<Tension> = {};
   if (field === "title") updates.title = value as string;
   if (field === "description") updates.description = value as string;
@@ -217,7 +194,6 @@ export async function updateTensionItem(
 
   const result = await updateTension(tensionId, chartId, updates);
   if (result) {
-    console.log("[updateTensionItem] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[updateTensionItem] 失敗");
@@ -226,10 +202,8 @@ export async function updateTensionItem(
 }
 
 export async function removeTension(tensionId: string, chartId: string) {
-  console.log("[removeTension] 開始 - tensionId:", tensionId);
   const result = await deleteTension(tensionId, chartId);
   if (result) {
-    console.log("[removeTension] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[removeTension] 失敗");
@@ -245,7 +219,6 @@ export async function toggleVisionRealityLinkAction(
   chartId: string,
   isCurrentlyLinked: boolean
 ) {
-  console.log("[toggleVisionRealityLinkAction] 開始 - tensionId:", tensionId, "type:", type, "itemId:", itemId);
   let result: boolean;
   if (type === "vision") {
     result = await toggleTensionVisionLink(
@@ -263,7 +236,6 @@ export async function toggleVisionRealityLinkAction(
     );
   }
   if (result) {
-    console.log("[toggleVisionRealityLinkAction] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[toggleVisionRealityLinkAction] 失敗");
@@ -278,12 +250,9 @@ export async function addActionPlan(
   areaId?: string | null,
   chartId?: string | null
 ) {
-  console.log("[addActionPlan] 開始 - tensionId:", tensionId, "title:", title, "areaId:", areaId, "chartId:", chartId);
   const result = await createAction(tensionId, title, areaId, chartId);
   if (result.action && result.chartId) {
-    console.log("[addActionPlan] 成功 - action:", result.action, "chartId:", result.chartId);
     revalidatePath(`/charts/${result.chartId}`);
-    console.log("[addActionPlan] revalidatePath完了");
   } else {
     console.error("[addActionPlan] 失敗 - action or chartId is null");
   }
@@ -307,7 +276,6 @@ export async function updateActionPlanItem(
   value: string | boolean | null,
   chartId?: string
 ) {
-  console.log("[updateActionPlanItem] 開始 - actionId:", actionId, "field:", field, "value:", value);
   const updates: Partial<ActionPlan> = {};
   if (field === "title") updates.title = value as string;
   if (field === "dueDate") updates.dueDate = value as string;
@@ -330,7 +298,6 @@ export async function updateActionPlanItem(
 
   const result = await updateAction(actionId, tensionId, updates, chartId);
   if (result) {
-    console.log("[updateActionPlanItem] 成功");
     if (field === "dueDate") {
       try {
         const supabase = await createClient();
@@ -366,7 +333,6 @@ export async function updateActionPlanItem(
     // dueDateが変更された場合は並び順が変わる可能性があるため、revalidatePathを呼ぶ
     if (field === "dueDate" && chartId) {
       revalidatePath(`/charts/${chartId}`);
-      console.log("[updateActionPlanItem] revalidatePath完了");
     }
   } else {
     console.error("[updateActionPlanItem] 失敗");
@@ -385,8 +351,6 @@ export async function updateListOrder(
   chartId?: string,
   tensionId?: string
 ) {
-  console.log("[updateListOrder] 開始 - table:", table, "items:", items.length);
-  
   if (!supabase) {
     console.error("[updateListOrder] Supabase client not initialized");
     return false;
@@ -422,7 +386,6 @@ export async function updateListOrder(
       }
     }
 
-    console.log("[updateListOrder] 成功");
     if (chartId) {
       revalidatePath(`/charts/${chartId}`);
     }
@@ -440,8 +403,6 @@ export async function updateVisionArea(
   projectId: string
 ) {
   // ========== デバッグログ開始 ==========
-  console.log("🔵🔵🔵 updateVisionArea CALLED 🔵🔵🔵");
-  console.log("Params:", { visionId, areaId, projectId });
   // ========== デバッグログ終了 ==========
 
   try {
@@ -463,16 +424,9 @@ export async function updateVisionArea(
 
     const { data: maxOrderItem, error: maxOrderError } = await maxOrderQuery;
 
-    console.log("📊 Max order query result:", {
-      maxItem: maxOrderItem,
-      queryError: maxOrderError,
-    });
-
     if (maxOrderError) throw maxOrderError;
 
     const newSortOrder = (maxOrderItem?.sort_order ?? 0) + 1;
-
-    console.log("🔢 New sort_order:", newSortOrder);
 
     const { error } = await supabase
       .from("visions")
@@ -488,11 +442,8 @@ export async function updateVisionArea(
       return { success: false, error: error.message };
     }
 
-    console.log("✅✅✅ Vision area updated successfully ✅✅✅");
-
     revalidatePath(`/charts/${projectId}`);
     const result = { success: true };
-    console.log("🎁 Returning:", result);
     return result;
   } catch (error) {
     console.error("❌❌❌ Server action exception:", error);
@@ -661,7 +612,6 @@ export async function updateActionArea(
 ) {
   try {
     const supabase = await createClient();
-    console.log("[DEBUG] updateActionArea called:", { actionId, areaId, projectId, removeFromTension });
     const { data: actionMeta, error: actionMetaError } = await supabase
       .from("actions")
       .select("child_chart_id")
@@ -670,7 +620,6 @@ export async function updateActionArea(
     if (actionMetaError) {
       console.warn("[DEBUG] Failed to fetch action child_chart_id:", actionMetaError);
     } else {
-      console.log("[DEBUG] action child_chart_id:", actionMeta?.child_chart_id);
     }
     let maxOrderQuery = supabase
       .from("actions")
@@ -707,7 +656,6 @@ export async function updateActionArea(
       console.error("❌ Supabase update error:", error);
       return { success: false, error: error.message };
     }
-    console.log("[DEBUG] updateActionArea success:", { actionId, areaId });
 
     if (actionMeta?.child_chart_id) {
       try {
@@ -823,7 +771,6 @@ export async function fetchActionComments(actionId: string) {
 }
 
 export async function createComment(actionId: string, content: string, chartId: string) {
-  console.log("[createComment] start", { actionId, chartId, content });
   const supabase = await createClient();
   let user;
   try {
@@ -844,7 +791,6 @@ export async function createComment(actionId: string, content: string, chartId: 
       return { success: false, error: error.message };
     }
 
-    console.log("[createComment] success");
     revalidatePath(`/charts/${chartId}`);
     return { success: true };
   } catch (error) {
@@ -861,7 +807,6 @@ export async function checkIncompleteTelescopeActions(actionId: string): Promise
   incompleteCount: number;
   incompleteActions: { id: string; title: string; status: string }[];
 }> {
-  console.log("[checkIncompleteTelescopeActions] start", { actionId });
   const supabase = await createClient();
 
   const { data: action, error: actionError } = await supabase
@@ -871,18 +816,12 @@ export async function checkIncompleteTelescopeActions(actionId: string): Promise
     .single();
 
   if (actionError || !action?.child_chart_id) {
-    console.log("[checkIncompleteTelescopeActions] no child chart");
     return { hasIncomplete: false, incompleteCount: 0, incompleteActions: [] };
   }
 
   const incompleteActions = await getIncompleteActionsRecursive(
     supabase,
     action.child_chart_id
-  );
-
-  console.log(
-    "[checkIncompleteTelescopeActions] incomplete count",
-    incompleteActions.length
   );
 
   return {
@@ -974,7 +913,6 @@ export async function deleteComment(commentId: string, chartId: string) {
       console.error("❌ Supabase delete error:", deleteError);
       throw deleteError;
     }
-    console.log("✅ Comment deleted successfully");
     revalidatePath(`/charts/${chartId}`);
     return { success: true };
   } catch (error) {
@@ -1014,7 +952,6 @@ export async function createVisionComment(
   content: string,
   chartId: string
 ) {
-  console.log("[createVisionComment] start", { visionId, chartId, content });
   const supabase = await createClient();
   let user;
   try {
@@ -1035,7 +972,6 @@ export async function createVisionComment(
       return { success: false, error: error.message };
     }
 
-    console.log("[createVisionComment] success");
     revalidatePath(`/charts/${chartId}`);
     return { success: true };
   } catch (error) {
@@ -1125,7 +1061,6 @@ export async function createRealityComment(
   content: string,
   chartId: string
 ) {
-  console.log("[createRealityComment] start", { realityId, chartId, content });
   const supabase = await createClient();
   let user;
   try {
@@ -1146,7 +1081,6 @@ export async function createRealityComment(
       return { success: false, error: error.message };
     }
 
-    console.log("[createRealityComment] success");
     revalidatePath(`/charts/${chartId}`);
     return { success: true };
   } catch (error) {
@@ -1218,10 +1152,8 @@ export async function updateChartData(
   chartId: string,
   data: { title?: string; description?: string | null; due_date?: Date | string | null }
 ) {
-  console.log("[updateChartData] 開始 - chartId:", chartId, "data:", data);
   const result = await updateChart(chartId, data);
   if (result) {
-    console.log("[updateChartData] 成功");
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[updateChartData] 更新失敗");
@@ -1235,10 +1167,8 @@ export async function telescopeActionPlan(
   tensionId: string | null,
   chartId?: string
 ): Promise<string | null> {
-  console.log("[Server] telescopeActionPlan called:", { actionId, tensionId, chartId });
   try {
     const result = await telescopeAction(actionId, tensionId, chartId);
-    console.log("[Server] telescopeActionPlan result:", result);
     return result;
   } catch (error) {
     console.error("[Server] telescopeActionPlan error:", error);
@@ -1356,8 +1286,6 @@ export async function createSnapshot(
   description?: string,
   type: "manual" | "auto" = "manual"
 ) {
-  console.log("[createSnapshot] 開始 - chartId:", chartId, "type:", type, "description:", description);
-
   try {
     const supabase = await createClient();
     let user;
@@ -1404,8 +1332,6 @@ export async function createSnapshot(
 
 // スナップショット詳細取得
 export async function getSnapshotDetail(snapshotId: string) {
-  console.log("[getSnapshotDetail] 開始 - snapshotId:", snapshotId);
-
   try {
     const supabase = await createClient();
 
@@ -1420,7 +1346,6 @@ export async function getSnapshotDetail(snapshotId: string) {
       throw new Error(error.message);
     }
 
-    console.log("[getSnapshotDetail] 成功 - snapshot ID:", data?.id);
     return data;
   } catch (error) {
     console.error("[getSnapshotDetail] Exception:", error);
@@ -1433,8 +1358,6 @@ export async function updateActionStatus(
   actionId: string,
   newStatus: "todo" | "in_progress" | "done" | "pending" | "canceled"
 ) {
-  console.log("[updateActionStatus] 開始 - actionId:", actionId, "newStatus:", newStatus);
-
   try {
     const supabase = await createClient();
 
@@ -1454,7 +1377,6 @@ export async function updateActionStatus(
       throw new Error(error.message);
     }
 
-    console.log("[updateActionStatus] 成功");
     return { success: true };
   } catch (error) {
     console.error("[updateActionStatus] Exception:", error);

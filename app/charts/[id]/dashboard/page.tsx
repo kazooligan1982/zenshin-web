@@ -84,10 +84,6 @@ export default function SnapshotsPage() {
         .eq("chart_id", projectId)
         .order("created_at", { ascending: false });
 
-      console.log("[Snapshots] Raw data:", snapshotData?.length, "items");
-      console.log("[Snapshots] Total count:", count);
-      console.log("[Snapshots] Error:", snapshotError);
-      console.log("[Snapshots] First item:", snapshotData?.[0]);
 
       if (snapshotData) {
         const sorted = [...snapshotData].sort((a, b) => {
@@ -95,7 +91,6 @@ export default function SnapshotsPage() {
           if (!a.is_pinned && b.is_pinned) return 1;
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
-        console.log("[Snapshots] Sorted:", sorted.length, "items");
         setSnapshots(sorted as Snapshot[]);
       }
 
@@ -158,9 +153,6 @@ export default function SnapshotsPage() {
   };
 
   const saveComparison = async () => {
-    console.log("[saveComparison] Starting...");
-    console.log("[saveComparison] Snapshot1:", compareSnapshot1?.id);
-    console.log("[saveComparison] Snapshot2:", compareSnapshot2?.id);
 
     if (!compareSnapshot1 || !compareSnapshot2) {
       console.error("[saveComparison] Missing snapshots");
@@ -172,7 +164,6 @@ export default function SnapshotsPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      console.log("[saveComparison] User:", user?.id);
 
       const diffSummary = {
         added: diffs.filter((d) => d.type === "added").length,
@@ -195,7 +186,6 @@ export default function SnapshotsPage() {
         created_by: user?.id || null,
       };
 
-      console.log("[saveComparison] Insert data:", insertData);
 
       const { data, error } = await supabase
         .from("snapshot_comparisons")
@@ -203,7 +193,6 @@ export default function SnapshotsPage() {
         .select()
         .single();
 
-      console.log("[saveComparison] Result:", { data, error });
 
       if (error) {
         console.error("[saveComparison] Error:", error);
@@ -287,9 +276,7 @@ export default function SnapshotsPage() {
     return null;
   };
 
-  console.log("[Snapshots] Display count:", displayCount);
   const displayedSnapshots = snapshots.slice(0, displayCount);
-  console.log("[Snapshots] Displayed:", displayedSnapshots.length);
   const hasMore = snapshots.length > displayCount;
 
   return (

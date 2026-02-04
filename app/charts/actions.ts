@@ -60,7 +60,6 @@ export async function getChartsHierarchy(): Promise<{
   projectGroups: ProjectGroup[];
   recentCharts: ChartWithMeta[];
 }> {
-  console.log("[getChartsHierarchy] start");
 
   const supabase = await createClient();
   const workspaceId = await getOrCreateWorkspace();
@@ -131,13 +130,11 @@ export async function getChartsHierarchy(): Promise<{
 
   const recentCharts = chartsWithDepth.slice(0, 4);
 
-  console.log("[getChartsHierarchy] groups:", projectGroups.length);
 
   return { projectGroups, recentCharts };
 }
 
 export async function deleteChart(chartId: string) {
-  console.log("[deleteChart] start", { chartId });
   const supabase = await createClient();
   const allChartIds = await getAllDescendantChartIds(supabase, chartId);
   allChartIds.push(chartId);
@@ -166,7 +163,6 @@ export async function deleteChart(chartId: string) {
 }
 
 export async function archiveChart(chartId: string) {
-  console.log("[archiveChart] start", { chartId });
   const supabase = await createClient();
   const now = new Date().toISOString();
 
@@ -195,7 +191,6 @@ export async function archiveChart(chartId: string) {
 }
 
 export async function restoreChart(chartId: string) {
-  console.log("[restoreChart] start", { chartId });
   const supabase = await createClient();
 
   const allChartIds = await getAllDescendantChartIds(supabase, chartId);
@@ -259,7 +254,6 @@ async function getAllDescendantChartIds(
 }
 
 export async function getArchivedCharts() {
-  console.log("[getArchivedCharts] start");
   const supabase = await createClient();
   const workspaceId = await getOrCreateWorkspace();
   const { data: charts, error } = await supabase

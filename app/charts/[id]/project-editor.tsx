@@ -254,7 +254,6 @@ const handleKeyboardNavigation = (e: React.KeyboardEvent) => {
   const scope = element.closest("[data-nav-scope]");
 
   if (!scope) {
-    console.log("❌ No scope found");
     return;
   }
 
@@ -263,58 +262,21 @@ const handleKeyboardNavigation = (e: React.KeyboardEvent) => {
   const selectionStart = element.selectionStart ?? 0;
   const valueLength = element.value?.length ?? 0;
 
-  console.log("=== Navigation Debug ===");
-  console.log("Key:", e.key);
-  console.log("Total inputs in scope:", inputs.length);
-  console.log("Current index:", currentIndex);
-  console.log("Selection start:", selectionStart);
-  console.log("Value length:", valueLength);
-  console.log("Is at start:", selectionStart === 0);
-  console.log("Is at end:", selectionStart === valueLength);
-
   if (e.key === "ArrowUp") {
-    console.log("ArrowUp条件: selectionStart === 0 && index > 0");
-    console.log(
-      "Result:",
-      selectionStart === 0,
-      "&&",
-      currentIndex > 0,
-      "=",
-      selectionStart === 0 && currentIndex > 0
-    );
-
     if (selectionStart === 0 && currentIndex > 0) {
-      console.log("✅ Moving to previous input");
       e.preventDefault();
       (inputs[currentIndex - 1] as HTMLElement).focus();
     } else {
-      console.log("❌ Condition not met, not moving");
     }
   }
 
   if (e.key === "ArrowDown") {
-    console.log(
-      "ArrowDown条件: selectionStart === valueLength && index < inputs.length - 1"
-    );
-    console.log(
-      "Result:",
-      selectionStart === valueLength,
-      "&&",
-      currentIndex < inputs.length - 1,
-      "=",
-      selectionStart === valueLength && currentIndex < inputs.length - 1
-    );
-
     if (selectionStart === valueLength && currentIndex < inputs.length - 1) {
-      console.log("✅ Moving to next input");
       e.preventDefault();
       (inputs[currentIndex + 1] as HTMLElement).focus();
     } else {
-      console.log("❌ Condition not met, not moving");
     }
   }
-
-  console.log("========================");
 };
 
 const handleTextKeyboardNavigation = (e: React.KeyboardEvent) => {
@@ -1107,10 +1069,6 @@ function SortableActionItem({
   };
 
   const handleStatusChange = async (nextStatus: string) => {
-    console.log("[handleStatusChange] 開始", {
-      actionId: actionPlan.id,
-      newStatus: nextStatus,
-    });
     if (nextStatus === currentStatus) return;
     if (
       (nextStatus === "done" || nextStatus === "canceled") &&
@@ -1135,17 +1093,11 @@ function SortableActionItem({
     }
 
     await executeStatusChange(nextStatus);
-    console.log("[handleStatusChange] サーバー更新成功、router.refresh() 呼び出し");
   };
 
   const handleStatusSelect = async (nextStatus: string) => {
-    console.log("[STATUS_CHANGE] 関数が呼ばれました", {
-      actionId: actionPlan.id,
-      newStatus: nextStatus,
-    });
     setIsStatusOpen(false);
     await handleStatusChange(nextStatus);
-    console.log("[handleStatusSelect] 更新完了、refresh 呼び出し");
   };
 
   const handleConfirmStatusChange = async () => {
@@ -1196,10 +1148,6 @@ function SortableActionItem({
               <button
               key={statusOption.value}
                 onClick={() => {
-                  console.log("[Select onValueChange] 呼ばれました", {
-                    actionId: actionPlan.id,
-                    value: statusOption.value,
-                  });
                   handleStatusSelect(statusOption.value);
                 }}
                 className={cn(
@@ -2522,15 +2470,6 @@ export function ProjectEditor({
   useEffect(() => {
     // ※ _pendingScrollRestore はユーザー操作時点で保存済み（ここでは上書きしない）
 
-    console.log(
-      "[ProjectEditor] tensions updated from props:",
-      initialChart?.tensions?.length ?? 0
-    );
-    console.log(
-      "[ProjectEditor] actions sample:",
-      initialChart?.tensions?.[0]?.actionPlans?.[0]?.status
-    );
-
     // areasがundefinedの場合に空配列を設定
     const chartWithAreas: Chart = {
       ...initialChart,
@@ -2724,15 +2663,12 @@ export function ProjectEditor({
 
   useEffect(() => {
     console.group("📊 ZENSHIN Structured Data");
-    console.log("Categorized Areas:", structuredData.categorized);
-    console.log("Uncategorized:", structuredData.uncategorized);
 
     const totalOrphans =
       structuredData.categorized.reduce(
         (sum, group) => sum + group.orphanedActions.length,
         0
       ) + structuredData.uncategorized.orphanedActions.length;
-    console.log("🚨 Total Orphaned Actions:", totalOrphans);
 
     if (totalOrphans > 0) {
       console.warn(
@@ -2744,20 +2680,12 @@ export function ProjectEditor({
   }, [structuredData]);
 
   const handleTensionDragEnd = async (event: DragEndEvent) => {
-    console.log("🔥 handleDragEnd FIRED!", {
-      activeId: event.active.id,
-      overId: event.over?.id,
-      activeType: event.active.data.current?.type,
-    });
-
     const { active, over } = event;
     if (!over || active.id === over.id) {
-      console.log("❌ No valid drop or same position");
       return;
     }
 
     await handleActionSectionDragEnd(event);
-    console.log("✅ Drag End Complete");
   };
 
   const renderVisionItem = (vision: VisionItem, index: number) => (
@@ -3032,16 +2960,13 @@ export function ProjectEditor({
     const areaId = selectedAreaId === "all" ? null : selectedAreaId;
 
     try {
-      console.log("[handleAddVision] Server Action呼び出し開始 - content:", contentToAdd, "areaId:", areaId);
       const newVision = await addVision(chartId, contentToAdd, areaId);
-      console.log("[handleAddVision] Server Action完了 - result:", newVision);
-      
+
       if (newVision) {
         // 成功時のみフォームをクリア
         newVisionInput.setValue("");
         // revalidatePathが呼ばれたので、ページを再取得
         router.refresh();
-        console.log("[handleAddVision] router.refresh()完了 - フォームクリア済み");
       } else {
         // エラー時は入力内容を保持（既に入力されているので何もしない）
         console.error("[handleAddVision] 保存失敗 - 入力内容を保持");
@@ -3059,7 +2984,6 @@ export function ProjectEditor({
     field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId",
     value: string | boolean | null
   ) => {
-    console.log("[handleUpdateVision] 開始 - id:", id, "field:", field, "value:", value);
     if (field === "assignee") {
       setVisions((prev) =>
         prev.map((vision) =>
@@ -3075,7 +2999,6 @@ export function ProjectEditor({
     // Server updateのみ（Optimistic UIなし）
     const success = await updateVisionItem(id, chartId, field, value);
     if (success) {
-      console.log("[handleUpdateVision] 成功");
       if (field === "areaId") {
         const areaName = value
           ? chart.areas.find((area: Area) => area.id === value)?.name
@@ -3165,16 +3088,13 @@ export function ProjectEditor({
     const areaId = selectedAreaId === "all" ? null : selectedAreaId;
 
     try {
-      console.log("[handleAddReality] Server Action呼び出し開始 - content:", contentToAdd, "areaId:", areaId);
       const newReality = await addReality(chartId, contentToAdd, areaId);
-      console.log("[handleAddReality] Server Action完了 - result:", newReality);
-      
+
       if (newReality) {
         // 成功時のみフォームをクリア
         newRealityInput.setValue("");
         // revalidatePathが呼ばれたので、ページを再取得
         router.refresh();
-        console.log("[handleAddReality] router.refresh()完了 - フォームクリア済み");
       } else {
         // エラー時は入力内容を保持（既に入力されているので何もしない）
         console.error("[handleAddReality] 保存失敗 - 入力内容を保持");
@@ -3308,11 +3228,9 @@ export function ProjectEditor({
     field: "title" | "description" | "status",
     value: string | TensionStatus
   ) => {
-    console.log("[handleUpdateTension] 開始 - tensionId:", tensionId, "field:", field, "value:", value);
     // Server updateのみ（Optimistic UIなし）
     const success = await updateTensionItem(tensionId, chartId, field, value);
     if (success) {
-      console.log("[handleUpdateTension] 成功");
       // titleとdescriptionの場合は画面リセットを避けるため、refreshしない
       // statusの場合はrefreshして最新状態を反映
       if (field === "status") {
@@ -3472,7 +3390,6 @@ export function ProjectEditor({
     value: string | boolean | null,
     options?: { removeFromTension?: boolean }
   ) => {
-    console.log("[handleUpdateActionPlan] 開始 - tensionId:", tensionId, "actionId:", actionId, "field:", field, "value:", value);
     const updateActionInState = (
       updater: (action: ActionPlan) => ActionPlan
     ) => {
@@ -3508,7 +3425,6 @@ export function ProjectEditor({
     }
 
     if (field === "areaId") {
-      console.log("[DEBUG] Action area update called:", { actionId, value, tensionId });
       const removeFromTension = options?.removeFromTension ?? false;
       if (tensionId && removeFromTension) {
         let movedAction: ActionPlan | null = null;
@@ -3554,7 +3470,6 @@ export function ProjectEditor({
         chartId,
         removeFromTension
       );
-      console.log("[DEBUG] updateActionArea result:", result);
       if (!result.success) {
         toast.error("移動に失敗しました");
       }
@@ -3580,14 +3495,11 @@ export function ProjectEditor({
     // Server updateのみ（Optimistic UIなし）
     const success = await updateActionPlanItem(actionId, tensionId, field, value, chartId);
     if (success) {
-      console.log("[handleUpdateActionPlan] 成功");
       // dueDateが変更された場合は即座に反映するため、refreshする
       // titleの場合は画面リセットを避けるため、refreshしない
       // isCompletedが変更された場合も即座に反映するため、refreshする
       if (field === "dueDate") {
-        console.log("[handleUpdateActionPlan] router.refresh() 呼び出し");
         router.refresh();
-        console.log("[handleUpdateActionPlan] router.refresh() 完了");
       }
     } else {
       console.error("[handleUpdateActionPlan] 更新失敗");
@@ -3799,31 +3711,9 @@ export function ProjectEditor({
 
     if (type === "visions") {
       // ========== デバッグログ開始 ==========
-      console.log("=====================================");
-      console.log("🎯 VISION DRAG END");
-      console.log("Active ID:", active.id);
-      console.log("Active Data:", active.data?.current);
-      console.log("Over ID:", over?.id);
-      console.log("Over Data:", over?.data?.current);
-
-      if (over) {
-        console.log("Over Data Details:", {
-          areaId: over.data?.current?.areaId,
-          type: over.data?.current?.type,
-        });
-      }
-
       const activeVision = visions.find((v) => v.id === active.id);
-      console.log("Active Vision:", {
-        id: activeVision?.id,
-        area_id: activeVision?.area_id,
-        due_date: activeVision?.due_date,
-      });
-
-      console.log("=====================================");
       // ========== デバッグログ終了 ==========
       if (!over) {
-        console.log("❌ No over element");
         return;
       }
 
@@ -3836,29 +3726,13 @@ export function ProjectEditor({
       const targetAreaId = overData?.areaId;
       const targetType = overData?.type;
 
-      console.log("📍 Checking:", {
-        targetType,
-        targetAreaId,
-        currentAreaId: draggedItem.area_id,
-        isVisionArea: targetType === "vision-area",
-        areaChanged: targetAreaId !== draggedItem.area_id,
-      });
-
       if (targetType === "vision-area" && targetAreaId !== draggedItem.area_id) {
-        console.log("✅✅✅ AREA MOVE DETECTED! ✅✅✅");
           const previousState = visions;
           const targetAreaItems = visions.filter(
           (v) => !getVisionDate(v) && v.area_id === targetAreaId
           );
           const newSortOrder =
             Math.max(...targetAreaItems.map((v) => v.sort_order ?? 0), 0) + 1;
-
-        console.log("🔄 Moving vision:", {
-          id: active.id,
-          from: draggedItem.area_id || "uncategorized",
-          to: targetAreaId || "uncategorized",
-          newSortOrder,
-        });
 
           setVisions((prev) =>
             prev.map((v) =>
@@ -3869,18 +3743,13 @@ export function ProjectEditor({
           );
 
         try {
-          console.log("📞 Calling updateVisionArea...");
           const result = await updateVisionArea(draggedItem.id, targetAreaId ?? null, chartId);
-          console.log("📬 Received result:", result);
-          console.log("📬 result.success:", result?.success);
-          console.log("📬 Type of result:", typeof result);
           if (result.success) {
             const areaName =
               targetAreaId !== null
                 ? chart.areas.find((a) => a.id === targetAreaId)?.name
                 : "未分類";
             toast.success(`${areaName ?? "未分類"} に移動しました`);
-            console.log("✅ Server update success");
           } else {
             throw new Error("Update failed");
           }
@@ -3925,12 +3794,6 @@ export function ProjectEditor({
       }
     } else if (type === "realities") {
       if (!over) return;
-      console.log("🎯 Reality Drag End:", {
-        activeId: active.id,
-        overId: over?.id,
-        overData: over?.data?.current,
-        activeData: active.data?.current,
-      });
       const draggedItem = realities.find((r) => r.id === active.id);
       if (!draggedItem) return;
 
@@ -3942,8 +3805,6 @@ export function ProjectEditor({
         targetAreaId !== undefined &&
         targetAreaId !== currentAreaId &&
         (targetType === "reality-area" || targetType === "reality-item");
-
-      console.log("📍 Reality Target:", { targetAreaId, targetType, currentAreaId });
 
       if (isAreaMove) {
         const previousState = realities;
@@ -4041,11 +3902,6 @@ export function ProjectEditor({
 
   const handleActionSectionDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    console.log("🏁 Drag End:", {
-      activeId: active.id,
-      overId: over?.id,
-      activeType: active.data.current?.type,
-    });
     if (!over) return;
 
     const activeId = String(active.id);
@@ -4054,13 +3910,6 @@ export function ProjectEditor({
 
     const activeData = active.data?.current as { type?: string; areaId?: string | null } | undefined;
     const overData = over.data?.current as { type?: string; areaId?: string | null } | undefined;
-    console.log("🎯 Action/Tension Drag End:", {
-      activeId,
-      overId,
-      activeData,
-      overData,
-    });
-
     if (activeData?.type === "tension") {
       const activeTensionId = activeId.replace(/^tension-/, "");
       const overTensionId = overId.replace(/^tension-/, "");
@@ -4070,8 +3919,6 @@ export function ProjectEditor({
       const currentAreaId = resolveTensionAreaId(activeTension);
       const targetAreaId = overData?.areaId;
       const targetType = overData?.type;
-
-      console.log("📍 Tension Target:", { targetAreaId, targetType, currentAreaId });
 
       const isAreaMove =
         targetAreaId !== undefined &&
@@ -4269,14 +4116,11 @@ export function ProjectEditor({
     setTelescopingActionId(actionPlan.id);
 
     try {
-      console.log("1. Starting telescope for action:", actionPlan.id);
       // テレスコーピング: 新しいチャートを作成
       const newChartId = await telescopeActionPlan(actionPlan.id, tensionId, chartId);
 
-      console.log("2. Telescope result:", newChartId);
       if (newChartId) {
         // 成功: 新しいチャートに遷移
-        console.log("3. Success! Navigating to:", newChartId);
         router.push(`/charts/${newChartId}`);
       } else {
         // エラー: ローディング状態を解除
@@ -4405,7 +4249,6 @@ export function ProjectEditor({
 
       setChart((prev) => ({ ...prev, due_date: dueDate }));
       setChartDueDate(dueDate);
-      console.log("[handleUpdateChartDueDate] Updated to:", dueDate);
     } catch (err) {
       console.error("[handleUpdateChartDueDate] Exception:", err);
     }
