@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -145,6 +145,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+// モジュールレベル変数（コンポーネント再マウントでもリセットされない）
+let _pendingScrollRestore: number | null = null;
 import { UndoNotification } from "@/components/undo-notification";
 import { ItemDetailPanel } from "@/components/item-detail-panel";
 import { FocusModeModal } from "@/components/focus-mode-modal";
@@ -2517,6 +2520,8 @@ export function ProjectEditor({
   // Chartデータが更新されたら状態を更新
   // initialChartが変更されたら（router.refresh()後）状態を更新
   useEffect(() => {
+    // ※ _pendingScrollRestore はユーザー操作時点で保存済み（ここでは上書きしない）
+
     console.log(
       "[ProjectEditor] tensions updated from props:",
       initialChart?.tensions?.length ?? 0
@@ -2557,7 +2562,19 @@ export function ProjectEditor({
       (action) => action.dueDate || null
     );
     setLooseActions([...looseSplit.datedItems, ...looseSplit.undatedItems]);
+
   }, [chartSyncKey]);
+
+  // スクロール位置の復元（DOM更新後・ブラウザ描画前に同期実行）
+  useLayoutEffect(() => {
+    if (_pendingScrollRestore !== null && _pendingScrollRestore > 0) {
+      const viewport = document.querySelector('[data-nav-scope="tension-action"]')
+        ?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+      if (viewport) {
+        viewport.scrollTop = _pendingScrollRestore;
+      }
+    }
+  }, [tensions, looseActions]);
 
   const actionMetaById = useMemo(() => {
     const map = new Map<string, { tensionId: string | null; areaId: string | null }>();
@@ -3401,26 +3418,38 @@ export function ProjectEditor({
     const submitKey = tensionId ?? "loose";
     if (!title.trim() || isSubmittingAction[submitKey]) return;
 
+    // スクロール位置をユーザー操作時点で保存
+    const scrollViewport = document.querySelector('[data-nav-scope="tension-action"]')
+      ?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (scrollViewport) {
+      _pendingScrollRestore = scrollViewport.scrollTop;
+      setTimeout(() => { _pendingScrollRestore = null; }, 10000);
+    }
+
     setIsSubmittingAction({ ...isSubmittingAction, [submitKey]: true });
     const titleToAdd = title.trim();
 
     try {
-      console.log("[handleAddActionPlan] Server Action呼び出し開始 - tensionId:", tensionId, "title:", titleToAdd, "areaId:", areaId);
       const newAction = await addActionPlan(tensionId, titleToAdd, areaId, chartId);
-      console.log("[handleAddActionPlan] Server Action完了 - result:", newAction);
-      
+
       if (newAction) {
-        // 成功時のフォームクリアは呼び出し側で行う
-        // revalidatePathが呼ばれたので、ページを再取得
-        router.refresh();
-        console.log("[handleAddActionPlan] router.refresh()完了");
+        // ローカルState直接更新（router.refresh() を避けてスクロール維持 + 即時反映）
+        if (tensionId) {
+          setTensions((prev) =>
+            prev.map((tension) =>
+              tension.id === tensionId
+                ? { ...tension, actionPlans: [...tension.actionPlans, newAction] }
+                : tension
+            )
+          );
+        } else {
+          setLooseActions((prev) => [...prev, newAction]);
+        }
       } else {
-        // エラー時は入力内容を保持（既に入力されているので何もしない）
-        console.error("[handleAddActionPlan] 保存失敗 - 入力内容を保持");
+        console.error("[handleAddActionPlan] 保存失敗");
       }
     } catch (error) {
       console.error("[handleAddActionPlan] エラー:", error);
-      // エラー時は入力内容を保持（既に入力されているので何もしない）
     } finally {
       setIsSubmittingAction({ ...isSubmittingAction, [submitKey]: false });
     }
@@ -3569,6 +3598,13 @@ export function ProjectEditor({
   };
 
   const handleDeleteActionPlan = async (tensionId: string | null, actionId: string) => {
+    // スクロール位置をユーザー操作時点で保存
+    const scrollViewport = document.querySelector('[data-nav-scope="tension-action"]')
+      ?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (scrollViewport) {
+      _pendingScrollRestore = scrollViewport.scrollTop;
+      setTimeout(() => { _pendingScrollRestore = null; }, 10000);
+    }
     const action = tensionId
       ? tensions.find((t) => t.id === tensionId)?.actionPlans.find((a) => a.id === actionId)
       : looseActions.find((a) => a.id === actionId);
