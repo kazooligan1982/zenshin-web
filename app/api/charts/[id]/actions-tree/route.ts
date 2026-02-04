@@ -127,8 +127,6 @@ async function getTensionsWithActions(
       };
 
       if (action.child_chart_id) {
-          `[getTensionsWithActions] Following telescope to: ${action.child_chart_id}`
-        );
         actionNode.children = await getTensionsWithActions(
           supabase,
           action.child_chart_id
@@ -166,7 +164,6 @@ export async function GET(
       .select("id, title")
       .eq("id", rootChartId)
       .single();
-
 
     if (!chart) {
       return NextResponse.json({ error: "Chart not found" }, { status: 404 });

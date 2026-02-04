@@ -94,16 +94,6 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
       });
       if (response.ok) {
         const data = await response.json();
-          "[Kanban] 取得したアクション数:",
-          data.length || data?.actions?.length
-        );
-          "[Kanban] ステータス一覧:",
-          (data.actions || data).map((action: any) => ({
-            id: action.id?.substring(0, 8),
-            title: action.title,
-            status: action.status,
-          }))
-        );
         setActions(data);
       } else {
         console.error("Failed to fetch actions");

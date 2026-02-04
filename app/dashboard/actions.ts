@@ -40,7 +40,6 @@ export async function getDashboardData(chartId?: string): Promise<{
   upcomingDeadlines: UpcomingDeadline[];
   availableCharts: { id: string; title: string }[];
 }> {
-
   const supabase = await createClient();
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -176,12 +175,6 @@ export async function getDashboardData(chartId?: string): Promise<{
     completionRate,
     statusDistribution,
   };
-
-    charts: allCharts.length,
-    actions: totalActions,
-    stale: staleCharts.length,
-    deadlines: upcomingDeadlines.length,
-  });
 
   return {
     stats,

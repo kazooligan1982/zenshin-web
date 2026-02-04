@@ -215,19 +215,6 @@ export async function GET(
 
     const actions = await getActionsWithHierarchy(supabase, projectId);
 
-      "[API /actions] ステータス:",
-      actions?.map((action: any) => ({
-        id: action.id?.substring(0, 8),
-        status: action.status,
-      }))
-    );
-    const target = actions?.find((action: any) =>
-      action.id?.startsWith("911a2a1d")
-    );
-      "[API /actions] 911a2a1d のステータス:",
-      target?.status
-    );
-
     return NextResponse.json(actions);
   } catch (error) {
     console.error("Error in GET /api/charts/[id]/actions:", error);
