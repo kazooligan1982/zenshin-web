@@ -506,20 +506,6 @@ function SortableVisionItem({
       </div>
 
       <div className={cn(ICON_CONTAINER_CLASS, "flex-none ml-auto")}>
-        <div className="relative flex items-center justify-center h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="icon"
-            variant="ghost"
-            className={ICON_BTN_CLASS}
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenFocus(vision, index);
-            }}
-            title="全集中モード"
-          >
-            <Maximize2 size={16} />
-          </Button>
-        </div>
         <div className="w-[110px] relative flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200">
           <DatePicker
             value={vision.dueDate || null}
@@ -737,20 +723,6 @@ function SortableRealityItem({
         />
       </div>
       <div className={cn(ICON_CONTAINER_CLASS, "flex-none ml-auto")}>
-        <div className="relative flex items-center justify-center h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="icon"
-            variant="ghost"
-            className={ICON_BTN_CLASS}
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenFocus(reality, index);
-            }}
-            title="全集中モード"
-          >
-            <Maximize2 size={16} />
-          </Button>
-        </div>
         <div className="flex items-center gap-2 text-xs text-gray-400">
           <span>
             {format(new Date(reality.createdAt), "MM/dd HH:mm", { locale: ja })}
@@ -1596,18 +1568,6 @@ function TensionGroup({
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenFocus(tension);
-            }}
-            title="全集中モード"
-          >
-            <Maximize2 className="w-3 h-3" />
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
