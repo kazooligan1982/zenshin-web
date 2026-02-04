@@ -133,6 +133,19 @@ export async function getChartsHierarchy(): Promise<{
 export async function deleteChart(chartId: string) {
   console.log("[deleteChart] start", { chartId });
   const supabase = await createClient();
+  const allChartIds = await getAllDescendantChartIds(supabase, chartId);
+  allChartIds.push(chartId);
+
+  await supabase
+    .from("actions")
+    .update({ child_chart_id: null, has_sub_chart: false })
+    .in("child_chart_id", allChartIds);
+
+  await supabase
+    .from("actions")
+    .update({ sub_chart_id: null })
+    .in("sub_chart_id", allChartIds);
+
   const { error: deleteError } = await supabase
     .from("charts")
     .delete()
@@ -164,6 +177,11 @@ export async function archiveChart(chartId: string) {
     throw error;
   }
 
+  await supabase
+    .from("actions")
+    .update({ child_chart_id: null, has_sub_chart: false })
+    .in("child_chart_id", allChartIds);
+
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/charts");
 
@@ -185,6 +203,21 @@ export async function restoreChart(chartId: string) {
   if (error) {
     console.error("[restoreChart] error:", error);
     throw error;
+  }
+
+  for (const id of allChartIds) {
+    const { data: chart } = await supabase
+      .from("charts")
+      .select("parent_action_id")
+      .eq("id", id)
+      .single();
+
+    if (chart?.parent_action_id) {
+      await supabase
+        .from("actions")
+        .update({ child_chart_id: id, has_sub_chart: true })
+        .eq("id", chart.parent_action_id);
+    }
   }
 
   const { revalidatePath } = await import("next/cache");
@@ -224,9 +257,8 @@ export async function getArchivedCharts() {
   const supabase = await createClient();
   const { data: charts, error } = await supabase
     .from("charts")
-    .select("id, title, description, archived_at, created_at, updated_at")
+    .select("id, title, description, archived_at, created_at, updated_at, parent_action_id")
     .not("archived_at", "is", null)
-    .is("parent_action_id", null)
     .order("archived_at", { ascending: false });
 
   if (error) {

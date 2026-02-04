@@ -4117,7 +4117,11 @@ export function ProjectEditor({
           },
         },
       });
-      router.push("/charts");
+      if (chart.parentChartId) {
+        router.push(`/charts/${chart.parentChartId}`);
+      } else {
+        router.push("/charts");
+      }
     } catch (error) {
       console.error("Failed to archive:", error);
       toast.error("アーカイブに失敗しました");
@@ -4135,7 +4139,11 @@ export function ProjectEditor({
     try {
       await deleteChart(chart.id);
       toast.success("チャートを削除しました");
-      router.push("/charts");
+      if (chart.parentChartId) {
+        router.push(`/charts/${chart.parentChartId}`);
+      } else {
+        router.push("/charts");
+      }
     } catch (error) {
       console.error("Failed to delete:", error);
       toast.error("削除に失敗しました");
