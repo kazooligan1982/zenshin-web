@@ -10,6 +10,7 @@ interface CommentInputProps {
   itemId: string
   chartId: string
   currentUserId: string
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string } | null
   onOptimisticAdd?: (comment: TimelineComment) => void
   onPersisted?: () => void
   onFailed?: (tempId: string) => void
@@ -20,6 +21,7 @@ export function CommentInput({
   itemId,
   chartId,
   currentUserId,
+  currentUser,
   onOptimisticAdd,
   onPersisted,
   onFailed,
@@ -51,11 +53,25 @@ export function CommentInput({
       content: trimmed,
       created_at: now,
       updated_at: now,
+      profile: {
+        id: currentUserId,
+        email: currentUser?.email || "",
+        name: currentUser?.name || null,
+        avatar_url: currentUser?.avatar_url || null,
+      },
       ...(type === "action" && { action_id: itemId }),
       ...(type === "vision" && { vision_id: itemId }),
       ...(type === "reality" && { reality_id: itemId }),
     }
 
+    console.log(
+      "[CommentInput] currentUser:",
+      currentUser,
+      "currentUserId:",
+      currentUserId,
+      "profile:",
+      optimisticComment.profile
+    )
     onOptimisticAdd?.(optimisticComment)
     setContent("")
     setIsSubmitting(true)
