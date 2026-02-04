@@ -60,7 +60,6 @@ export function ItemDetailPanel({
   const [actionComments, setActionComments] = useState<TimelineComment[]>([]);
   const [visionComments, setVisionComments] = useState<TimelineComment[]>([]);
   const [realityComments, setRealityComments] = useState<TimelineComment[]>([]);
-  const [isLoadingComments, setIsLoadingComments] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -74,43 +73,34 @@ export function ItemDetailPanel({
 
   const loadActionComments = useCallback(async () => {
     if (itemType !== "action") return;
-    setIsLoadingComments(true);
     try {
       const comments = await fetchActionComments(itemId);
       setActionComments(comments);
     } catch (error) {
       console.error("コメントの取得に失敗しました:", error);
       setActionComments([]);
-    } finally {
-      setIsLoadingComments(false);
     }
   }, [itemId, itemType]);
 
   const loadVisionComments = useCallback(async () => {
     if (itemType !== "vision") return;
-    setIsLoadingComments(true);
     try {
       const comments = await fetchVisionComments(itemId);
       setVisionComments(comments);
     } catch (error) {
       console.error("コメントの取得に失敗しました:", error);
       setVisionComments([]);
-    } finally {
-      setIsLoadingComments(false);
     }
   }, [itemId, itemType]);
 
   const loadRealityComments = useCallback(async () => {
     if (itemType !== "reality") return;
-    setIsLoadingComments(true);
     try {
       const comments = await fetchRealityComments(itemId);
       setRealityComments(comments);
     } catch (error) {
       console.error("コメントの取得に失敗しました:", error);
       setRealityComments([]);
-    } finally {
-      setIsLoadingComments(false);
     }
   }, [itemId, itemType]);
 
@@ -240,11 +230,6 @@ export function ItemDetailPanel({
                 </h3>
                 {itemType === "action" ? (
                   <>
-                    {isLoadingComments && (
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        コメントを読み込み中...
-                      </div>
-                    )}
                     <Timeline
                       type="action"
                       itemId={itemId}
@@ -258,11 +243,6 @@ export function ItemDetailPanel({
                   </>
                 ) : itemType === "vision" ? (
                   <>
-                    {isLoadingComments && (
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        コメントを読み込み中...
-                      </div>
-                    )}
                     <Timeline
                       type="vision"
                       itemId={itemId}
@@ -276,11 +256,6 @@ export function ItemDetailPanel({
                   </>
                 ) : itemType === "reality" ? (
                   <>
-                    {isLoadingComments && (
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        コメントを読み込み中...
-                      </div>
-                    )}
                     <Timeline
                       type="reality"
                       itemId={itemId}
