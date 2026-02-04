@@ -25,6 +25,7 @@ interface ItemDetailPanelProps {
   itemContent: string;
   history: HistoryItem[];
   currentUserId?: string | null;
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string } | null;
   chartId: string;
   onCommentCountChange?: (
     itemType: "vision" | "reality" | "action",
@@ -48,6 +49,7 @@ export function ItemDetailPanel({
   itemContent,
   history,
   currentUserId,
+  currentUser,
   chartId,
   onCommentCountChange,
   onAddHistory,
@@ -248,6 +250,7 @@ export function ItemDetailPanel({
                       itemId={itemId}
                       initialComments={actionComments}
                       currentUserId={currentUserId ?? ""}
+                      currentUser={currentUser}
                       chartId={chartId}
                       onCommentAdded={handleActionCommentAdded}
                       onCommentDeleted={handleActionCommentDeleted}
@@ -265,6 +268,7 @@ export function ItemDetailPanel({
                       itemId={itemId}
                       initialComments={visionComments}
                       currentUserId={currentUserId ?? ""}
+                      currentUser={currentUser}
                       chartId={chartId}
                       onCommentAdded={handleVisionCommentAdded}
                       onCommentDeleted={handleVisionCommentDeleted}
@@ -282,6 +286,7 @@ export function ItemDetailPanel({
                       itemId={itemId}
                       initialComments={realityComments}
                       currentUserId={currentUserId ?? ""}
+                      currentUser={currentUser}
                       chartId={chartId}
                       onCommentAdded={handleRealityCommentAdded}
                       onCommentDeleted={handleRealityCommentDeleted}

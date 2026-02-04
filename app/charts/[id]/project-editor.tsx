@@ -396,6 +396,12 @@ interface ProjectEditorProps {
   initialChart: Chart;
   chartId: string;
   currentUserId: string;
+  currentUser?: {
+    id: string;
+    email: string;
+    name?: string;
+    avatar_url?: string | null;
+  } | null;
 }
 
 
@@ -2044,7 +2050,12 @@ function ActionSection({
   );
 }
 
-export function ProjectEditor({ initialChart, chartId, currentUserId }: ProjectEditorProps) {
+export function ProjectEditor({
+  initialChart,
+  chartId,
+  currentUserId,
+  currentUser: initialCurrentUser,
+}: ProjectEditorProps) {
   const router = useRouter();
   // areasがundefinedの場合に空配列を設定
   const chartWithAreas: Chart = {
@@ -2141,25 +2152,15 @@ export function ProjectEditor({ initialChart, chartId, currentUserId }: ProjectE
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
   const [isSavingSnapshot, setIsSavingSnapshot] = useState(false);
   const [isChartMenuLoading, setIsChartMenuLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ id: string; email: string; name?: string } | null>(null);
+  const [currentUser] = useState<{
+    id: string;
+    email: string;
+    name?: string;
+    avatar_url?: string | null;
+  } | null>(initialCurrentUser ?? null);
   const [chartDueDate, setChartDueDate] = useState<string | null>(initialChart.due_date || null);
   const [selectedAreaId, setSelectedAreaId] = useState<string>("all"); // エリア選択状態
 
-  // 現在のユーザーを取得
-  useEffect(() => {
-    const getUser = async () => {
-      if (!supabase) return;
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUser({
-          id: user.id,
-          email: user.email || "",
-          name: user.user_metadata?.name || user.email?.split("@")[0] || "",
-        });
-      }
-    };
-    getUser();
-  }, []);
 
   const openFocusMode = (
     sectionType: "vision" | "reality" | "tension",
@@ -4893,6 +4894,7 @@ export function ProjectEditor({ initialChart, chartId, currentUserId }: ProjectE
           itemContent={detailPanel.itemContent}
           history={itemHistory}
           currentUserId={currentUserId || currentUser?.id}
+          currentUser={currentUser}
           chartId={chartId}
           onAddHistory={handleAddHistory}
           onCommentCountChange={handleCommentCountChange}

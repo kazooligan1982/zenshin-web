@@ -15,6 +15,20 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    let currentUser = null;
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, email, name, avatar_url")
+        .eq("id", user.id)
+        .single();
+      currentUser = profile || {
+        id: user.id,
+        email: user.email || "",
+        name: user.user_metadata?.name || user.email?.split("@")[0] || "",
+        avatar_url: null,
+      };
+    }
     const chart = await fetchChart(id);
 
     if (!chart) {
@@ -62,6 +76,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         initialChart={chart}
         chartId={id}
         currentUserId={user?.id ?? ""}
+        currentUser={currentUser}
       />
     );
   } catch (error) {

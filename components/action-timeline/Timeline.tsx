@@ -10,6 +10,7 @@ interface TimelineProps {
   itemId: string
   initialComments: TimelineComment[]
   currentUserId: string
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string } | null
   chartId: string
   onCommentAdded?: () => void
   onCommentDeleted?: () => void
@@ -22,6 +23,7 @@ export function Timeline({
   itemId,
   initialComments,
   currentUserId,
+  currentUser,
   chartId,
   onCommentAdded,
   onCommentDeleted,
@@ -117,6 +119,7 @@ export function Timeline({
           itemId={itemId}
           chartId={chartId}
           currentUserId={currentUserId}
+          currentUser={currentUser}
           onOptimisticAdd={handleOptimisticAdd}
           onFailed={handleAddFailed}
           onPersisted={onCommentAdded}
