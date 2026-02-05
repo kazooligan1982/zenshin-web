@@ -26,6 +26,11 @@ export function FocusModeModal({
   const [content, setContent] = useState(initialContent);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const handleSaveAndClose = () => {
+    onSave(content);
+    onClose();
+  };
+
   useEffect(() => {
     setContent(initialContent);
   }, [initialContent]);
@@ -47,12 +52,7 @@ export function FocusModeModal({
       document.addEventListener("keydown", handleKeyDown);
       return () => document.removeEventListener("keydown", handleKeyDown);
     }
-  }, [isOpen, content]);
-
-  const handleSaveAndClose = () => {
-    onSave(content);
-    onClose();
-  };
+  }, [isOpen, content, handleSaveAndClose]);
 
   if (!isOpen) return null;
 
