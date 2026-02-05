@@ -20,9 +20,10 @@ import { DashboardChartFilter } from "./dashboard-chart-filter";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams?: { chartId?: string };
+  searchParams?: Promise<{ chartId?: string }>;
 }) {
-  const selectedChartId = searchParams?.chartId ?? "all";
+  const resolvedParams = await searchParams;
+  const selectedChartId = resolvedParams?.chartId ?? "all";
   const { stats, staleCharts, upcomingDeadlines, availableCharts } =
     await getDashboardData(selectedChartId);
 

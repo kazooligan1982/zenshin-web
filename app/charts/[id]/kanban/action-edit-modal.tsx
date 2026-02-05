@@ -63,7 +63,7 @@ interface Action {
   assignee: string | null;
   status: "todo" | "in_progress" | "done" | "pending" | "canceled" | null;
   is_completed: boolean | null;
-  tension_id: string;
+  tension_id: string | null;
   child_chart_id?: string | null;
   vision_tags?: string[];
   description?: string | null;

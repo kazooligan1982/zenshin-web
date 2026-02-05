@@ -63,7 +63,7 @@ async function getVisionTagMap(
         visionId: tv.vision_id,
         index: visionIndexMap.get(tv.vision_id) || Number.MAX_SAFE_INTEGER,
       }))
-      .sort((a, b) => a.index - b.index);
+      .sort((a: any, b: any) => a.index - b.index);
     const first = related[0];
     if (first) {
       const title = visionContentMap.get(first.visionId);
@@ -151,7 +151,7 @@ async function getActionsWithHierarchy(
       title: tension.title || tension.description || null,
       areaName: tension.areas?.name || null,
       areaColor: tension.areas?.color || null,
-      visionTitle: tensionVisionTitleMap.get(tension.id) || null,
+      visionTitle: tensionVisionTitleMap?.get(tension.id) || null,
     };
 
     const { data: actions } = await supabase

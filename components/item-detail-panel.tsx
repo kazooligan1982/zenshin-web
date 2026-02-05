@@ -25,7 +25,7 @@ interface ItemDetailPanelProps {
   itemContent: string;
   history: HistoryItem[];
   currentUserId?: string | null;
-  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string } | null;
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
   chartId: string;
   onCommentCountChange?: (
     itemType: "vision" | "reality" | "action",

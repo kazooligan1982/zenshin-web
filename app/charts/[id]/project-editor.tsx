@@ -777,7 +777,7 @@ function SortableRealityItem({
           minRows={1}
           maxRows={5}
           className={cn(TEXTAREA_CLASSES, "keyboard-focusable")}
-          style={TEXT_FIXED_STYLE}
+          style={TEXT_FIXED_STYLE as any}
           disabled={reality.isLocked}
           onKeyDown={(e) => {
             if (e.nativeEvent.isComposing) return;
@@ -3442,7 +3442,7 @@ export function ProjectEditor({
           })
         );
         if (movedAction) {
-          setLooseActions((prev) => [movedAction, ...prev]);
+          setLooseActions((prev) => (movedAction ? [movedAction, ...prev] : prev));
         }
       } else if (tensionId) {
         setTensions((prev) =>

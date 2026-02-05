@@ -215,7 +215,10 @@ export function TreeView({
 
   const executeStatusChange = async (actionId: string, newStatus: string) => {
     try {
-      await updateActionStatus(actionId, newStatus);
+      await updateActionStatus(
+        actionId,
+        newStatus as "todo" | "in_progress" | "done" | "pending" | "canceled"
+      );
       await fetchTreeData(false);
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -308,8 +311,8 @@ export function TreeView({
 
     if (statusFilter !== "all") {
       const currentStatus = getEffectiveStatus(
-        action.status,
-        action.is_completed
+        action.status ?? null,
+        action.is_completed ?? null
       );
       if (currentStatus !== statusFilter) return false;
     }
@@ -324,7 +327,7 @@ export function TreeView({
       }
     }
 
-    if (!isDueDateMatch(action.due_date)) return false;
+    if (!isDueDateMatch(action.due_date ?? null)) return false;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -361,8 +364,8 @@ export function TreeView({
         let bVal = b[sortConfig.key!] || "";
 
         if (sortConfig.key === "due_date") {
-          aVal = aVal ? new Date(aVal).getTime() : Infinity;
-          bVal = bVal ? new Date(bVal).getTime() : Infinity;
+          (aVal as any) = aVal ? new Date(aVal as string).getTime() : Infinity;
+          (bVal as any) = bVal ? new Date(bVal as string).getTime() : Infinity;
         }
 
         if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
@@ -631,7 +634,13 @@ export function TreeView({
             title: selectedAction.title,
             due_date: selectedAction.due_date || null,
             assignee: selectedAction.assignee || null,
-            status: selectedAction.status || null,
+            status: (selectedAction.status || null) as
+              | "todo"
+              | "in_progress"
+              | "done"
+              | "pending"
+              | "canceled"
+              | null,
             is_completed: selectedAction.is_completed || false,
             tension_id: selectedAction.tension_id || "",
             description: null,

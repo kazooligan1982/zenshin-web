@@ -27,6 +27,7 @@ export interface VisionItem {
   targetDate?: string; // 時間軸に基づいた動的な順序用
   isLocked?: boolean;
   area_id?: string | null; // エリアID
+  sort_order?: number;
   comment_count?: number;
   history?: HistoryItem[]; // 履歴
 }
@@ -40,6 +41,8 @@ export interface RealityItem {
   area_id?: string | null; // エリアID
   isLocked?: boolean;
   created_by?: string | null;
+  sort_order?: number;
+  created_by_profile?: { name?: string; avatar_url?: string } | null;
   comment_count?: number;
   history?: HistoryItem[]; // 履歴
 }
@@ -58,6 +61,8 @@ export interface ActionPlan {
   comment_count?: number;
   history?: HistoryItem[]; // 履歴
   area_id?: string | null; // エリアID（カテゴリータグ）
+  sort_order?: number;
+  tension_id?: string | null;
 }
 
 export type TensionStatus = "active" | "review_needed" | "resolved";
@@ -68,6 +73,7 @@ export interface Tension {
   description?: string;
   status: TensionStatus;
   area_id?: string | null;
+  sort_order?: number;
   visionIds: string[]; // 関連するVisionのIDリスト
   realityIds: string[]; // 関連するRealityのIDリスト
   actionPlans: ActionPlan[];
