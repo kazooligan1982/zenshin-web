@@ -407,7 +407,7 @@ export async function updateVisionArea(
 
   try {
     const supabase = await createClient();
-    let maxOrderQuery = supabase
+    let maxOrderQuery: any = supabase
       .from("visions")
       .select("sort_order")
       .eq("chart_id", projectId)
@@ -462,7 +462,7 @@ export async function updateRealityArea(
 ) {
   try {
     const supabase = await createClient();
-    let maxOrderQuery = supabase
+    let maxOrderQuery: any = supabase
       .from("realities")
       .select("sort_order")
       .eq("chart_id", projectId)
@@ -515,7 +515,7 @@ export async function updateTensionArea(
 ) {
   try {
     const supabase = await createClient();
-    let maxOrderQuery = supabase
+    let maxOrderQuery: any = supabase
       .from("tensions")
       .select("sort_order")
       .eq("chart_id", projectId)
@@ -621,7 +621,7 @@ export async function updateActionArea(
       console.warn("[DEBUG] Failed to fetch action child_chart_id:", actionMetaError);
     } else {
     }
-    let maxOrderQuery = supabase
+    let maxOrderQuery: any = supabase
       .from("actions")
       .select("sort_order")
       .eq("chart_id", projectId)
@@ -1186,7 +1186,7 @@ async function getChartDataRecursive(
   chartId: string,
   supabase: Awaited<ReturnType<typeof createClient>>,
   visited: Set<string>
-) {
+): Promise<any> {
   if (visited.has(chartId)) {
     return null;
   }
@@ -1248,7 +1248,7 @@ async function getChartDataRecursive(
 
   const children = [];
   for (const childId of childChartIds) {
-    const childData = await getChartDataRecursive(childId, supabase, visited);
+    const childData: any = await getChartDataRecursive(childId, supabase, visited);
     if (childData) children.push(childData);
   }
 

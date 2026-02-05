@@ -15,7 +15,7 @@ export const useItemInput = ({
   const [value, setValue] = useState(initialValue);
   const [isEditing, setIsEditing] = useState(false);
   const isEditingRef = useRef(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<NodeJS.Timeout>(undefined as unknown as NodeJS.Timeout);
   const prevInitialValueRef = useRef(initialValue);
 
   useEffect(() => {

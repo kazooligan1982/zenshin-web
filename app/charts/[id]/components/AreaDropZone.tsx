@@ -40,11 +40,6 @@ export function AreaDropZone<T extends { id: string }>({
   const isDragging = !!active;
   const sortableIds = items.map((item) => item.id);
 
-    dropId: `${listType}-area-${areaId ?? "uncategorized"}`,
-    data: { areaId, type: `${listType}-area` },
-    itemCount: items.length,
-  });
-
   return (
     <div
       ref={setNodeRef}

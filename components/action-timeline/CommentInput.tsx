@@ -10,7 +10,7 @@ interface CommentInputProps {
   itemId: string
   chartId: string
   currentUserId: string
-  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string } | null
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null
   onOptimisticAdd?: (comment: TimelineComment) => void
   onPersisted?: () => void
   onFailed?: (tempId: string) => void

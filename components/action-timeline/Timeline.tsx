@@ -10,7 +10,7 @@ interface TimelineProps {
   itemId: string
   initialComments: TimelineComment[]
   currentUserId: string
-  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string } | null
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null
   chartId: string
   onCommentAdded?: () => void
   onCommentDeleted?: () => void
