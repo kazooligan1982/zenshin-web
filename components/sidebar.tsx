@@ -42,22 +42,21 @@ export function Sidebar() {
 
   const [isHovered, setIsHovered] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [recentCharts, setRecentCharts] = useState<RecentChart[]>([]);
+  const [recentCharts, setRecentCharts] = useState<RecentChart[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem(RECENT_CHARTS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isInChart = !!chartId;
   const isExpanded = isHovered || isDropdownOpen;
 
   useEffect(() => {
-    const stored = localStorage.getItem(RECENT_CHARTS_KEY);
-    if (stored) {
-      try {
-        setRecentCharts(JSON.parse(stored));
-      } catch {
-        setRecentCharts([]);
-      }
-    }
-
     const handleUpdate = () => {
       const updated = localStorage.getItem(RECENT_CHARTS_KEY);
       if (updated) {
