@@ -39,12 +39,18 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/signup") ||
     request.nextUrl.pathname.startsWith("/auth");
 
-  if (!user && !isAuthPage) {
+  const isInvitePage = request.nextUrl.pathname.startsWith("/invite");
+
+  // 未ログインで保護されたページにアクセスした場合
+  if (!user && !isAuthPage && !isInvitePage) {
     const url = request.nextUrl.clone();
+    const redirectPath = request.nextUrl.pathname + request.nextUrl.search;
     url.pathname = "/login";
+    url.searchParams.set("redirect", redirectPath);
     return NextResponse.redirect(url);
   }
 
+  // ログイン済みで認証ページにアクセスした場合（招待ページは除く）
   if (
     user &&
     isAuthPage &&
