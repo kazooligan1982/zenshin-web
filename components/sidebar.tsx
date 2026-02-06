@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserMenu } from "@/components/user-menu";
+import { getCurrentWorkspace, getUserWorkspaces } from "@/lib/workspace";
 
 const RECENT_CHARTS_KEY = "zenshin_recent_charts";
 type RecentChart = {
@@ -51,6 +52,18 @@ export function Sidebar() {
       return [];
     }
   });
+  const [currentWorkspace, setCurrentWorkspace] = useState<{
+    id: string;
+    name: string;
+    role: string;
+  } | null>(null);
+  const [allWorkspaces, setAllWorkspaces] = useState<
+    {
+      id: string;
+      name: string;
+      role: string;
+    }[]
+  >([]);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isInChart = !!chartId;
@@ -68,6 +81,16 @@ export function Sidebar() {
 
     window.addEventListener("recentChartsUpdated", handleUpdate);
     return () => window.removeEventListener("recentChartsUpdated", handleUpdate);
+  }, []);
+
+  useEffect(() => {
+    async function loadWorkspaces() {
+      const current = await getCurrentWorkspace();
+      const all = await getUserWorkspaces();
+      setCurrentWorkspace(current);
+      setAllWorkspaces(all);
+    }
+    loadWorkspaces();
   }, []);
 
   const handleMouseEnter = () => {
@@ -117,8 +140,12 @@ export function Sidebar() {
               {isHovered && (
                 <>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium text-white truncate">Personal</p>
-                    <p className="text-xs text-gray-500 truncate">Workspace</p>
+                    <p className="text-sm font-medium text-white truncate">
+                      {currentWorkspace?.name || "Workspace"}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {currentWorkspace?.role === "owner" ? "Owner" : "Member"}
+                    </p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
                 </>
@@ -134,33 +161,49 @@ export function Sidebar() {
                 <User className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="font-medium">Personal</p>
-                <p className="text-xs text-muted-foreground">個人ワークスペース</p>
+                <p className="font-medium">
+                  {currentWorkspace?.name || "マイワークスペース"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {currentWorkspace?.role === "owner" ? "オーナー" : "メンバー"}
+                </p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 text-xs text-muted-foreground">
-              Other Workspaces
-            </div>
-            <DropdownMenuItem className="gap-3 opacity-50" disabled>
-              <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="font-medium">Acme Corp</p>
-                <p className="text-xs text-muted-foreground">coming soon</p>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-3 opacity-50" disabled>
-              <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="font-medium">Client Project X</p>
-                <p className="text-xs text-muted-foreground">coming soon</p>
-              </div>
-            </DropdownMenuItem>
+            {allWorkspaces.length > 1 && (
+              <>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  Other Workspaces
+                </div>
+                {allWorkspaces
+                  .filter((ws) => ws.id !== currentWorkspace?.id)
+                  .map((ws) => (
+                    <DropdownMenuItem
+                      key={ws.id}
+                      className="gap-3 opacity-50"
+                      disabled
+                    >
+                      <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{ws.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ws.role === "owner" ? "オーナー" : "メンバー"}
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+              </>
+            )}
             <DropdownMenuSeparator />
+            <Link href="/settings/members">
+              <DropdownMenuItem className="gap-2">
+                <Users className="w-4 h-4" />
+                メンバーを管理
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuItem className="gap-2 text-muted-foreground" disabled>
               <Plus className="w-4 h-4" />
               新しいWorkspaceを作成
@@ -218,10 +261,9 @@ export function Sidebar() {
         <SidebarItem
           icon={Users}
           label="Members"
-          href="#"
-          disabled
+          href="/settings/members"
+          active={pathname === "/settings/members"}
           expanded={isExpanded}
-          badge="soon"
         />
         <SidebarItem
           icon={Settings}

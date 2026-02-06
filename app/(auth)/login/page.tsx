@@ -2,7 +2,14 @@ import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ redirect?: string }>;
+}) {
+  const params = await searchParams;
+  const redirectTo = params?.redirect || "/charts";
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -12,9 +19,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
         <p className="text-muted-foreground mt-2">ログイン</p>
       </div>
-
-      <OAuthButtons />
-
+      <OAuthButtons redirectTo={redirectTo} />
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t" />
@@ -23,12 +28,13 @@ export default function LoginPage() {
           <span className="bg-gray-50 px-2 text-muted-foreground">または</span>
         </div>
       </div>
-
-      <LoginForm />
-
+      <LoginForm redirectTo={redirectTo} />
       <p className="text-center text-sm text-muted-foreground">
         アカウントをお持ちでない方は{" "}
-        <Link href="/signup" className="text-primary hover:underline font-medium">
+        <Link
+          href={`/signup${params?.redirect ? `?redirect=${params.redirect}` : ""}`}
+          className="text-primary hover:underline font-medium"
+        >
           サインアップ
         </Link>
       </p>
