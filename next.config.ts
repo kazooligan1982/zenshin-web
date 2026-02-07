@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-};
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+});
 
-export default nextConfig;
-// Trigger new deployment (この行を追加)
+const nextConfig: NextConfig = {};
+
+export default withBundleAnalyzer(nextConfig);

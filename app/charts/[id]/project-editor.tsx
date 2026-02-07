@@ -3,6 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   DndContext,
   pointerWithin,
@@ -58,8 +59,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import TextareaAutosize from "react-textarea-autosize";
 import {
@@ -128,7 +127,6 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AreaTagEditor } from "@/components/area-tag-editor";
-import { TagManager } from "@/components/tag/TagManager";
 import { AreaDropZone } from "./components/AreaDropZone";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -145,16 +143,37 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-// モジュールレベル変数（コンポーネント再マウントでもリセットされない）
-let _pendingScrollRestore: number | null = null;
 import { UndoNotification } from "@/components/undo-notification";
-import { ItemDetailPanel } from "@/components/item-detail-panel";
-import { FocusModeModal } from "@/components/focus-mode-modal";
 import { fetchItemHistory, addItemHistoryEntry } from "./actions";
 import { archiveChart, restoreChart, deleteChart } from "@/app/charts/actions";
 import type { HistoryItem } from "@/types/chart";
 import { useItemInput } from "@/hooks/use-item-input";
+
+const DatePicker = dynamic(
+  () => import("@/components/ui/date-picker").then((mod) => mod.DatePicker),
+  { ssr: false }
+);
+const CalendarComponent = dynamic(
+  () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
+  { ssr: false }
+);
+const TagManager = dynamic(
+  () => import("@/components/tag/TagManager").then((mod) => mod.TagManager),
+  { ssr: false }
+);
+const ItemDetailPanel = dynamic(
+  () =>
+    import("@/components/item-detail-panel").then((mod) => mod.ItemDetailPanel),
+  { ssr: false }
+);
+const FocusModeModal = dynamic(
+  () =>
+    import("@/components/focus-mode-modal").then((mod) => mod.FocusModeModal),
+  { ssr: false }
+);
+
+// モジュールレベル変数（コンポーネント再マウントでもリセットされない）
+let _pendingScrollRestore: number | null = null;
 
 type StructuredTension = Tension & {
   actions: ActionPlan[];

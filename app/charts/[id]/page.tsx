@@ -1,7 +1,18 @@
 import { notFound } from "next/navigation";
+import dynamic from "next/dynamic";
 import { fetchChart } from "./actions";
-import { ProjectEditor } from "./project-editor";
 import { createClient } from "@/utils/supabase/server";
+
+const ProjectEditor = dynamic(
+  () => import("./project-editor").then((mod) => mod.ProjectEditor),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-screen">
+        読み込み中...
+      </div>
+    ),
+  }
+);
 
 interface PageProps {
   params: Promise<{ id: string }>;
