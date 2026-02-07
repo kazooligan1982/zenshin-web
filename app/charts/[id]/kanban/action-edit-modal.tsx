@@ -247,14 +247,14 @@ export function ActionEditModal({
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-blue-500" />
+              <Target className="w-5 h-5 text-zenshin-teal" />
               アクションを編集
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
           <div className="space-y-2">
-              <Label className="text-sm font-medium">Title</Label>
+              <Label className="text-sm font-medium">タイトル</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -265,7 +265,7 @@ export function ActionEditModal({
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Status</Label>
+                <Label className="text-sm text-zenshin-navy/50">ステータス</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
                   <SelectTrigger className="w-full h-10 bg-background">
                   <SelectValue />
@@ -273,7 +273,7 @@ export function ActionEditModal({
                 <SelectContent>
                   <SelectItem value="todo">
                     <div className="flex items-center gap-2">
-                      <Circle className="w-3 h-3 text-gray-400" />
+                      <Circle className="w-3 h-3 text-zenshin-navy/30" />
                       未着手
                     </div>
                   </SelectItem>
@@ -291,13 +291,13 @@ export function ActionEditModal({
                   </SelectItem>
                   <SelectItem value="pending">
                     <div className="flex items-center gap-2">
-                      <Pause className="w-3 h-3 text-yellow-500" />
+                      <Pause className="w-3 h-3 text-amber-500" />
                       保留
                     </div>
                   </SelectItem>
                   <SelectItem value="canceled">
                     <div className="flex items-center gap-2">
-                      <XCircle className="w-3 h-3 text-gray-400" />
+                      <XCircle className="w-3 h-3 text-zenshin-navy/30" />
                       中止
                     </div>
                   </SelectItem>
@@ -306,14 +306,14 @@ export function ActionEditModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Due Date</Label>
+                <Label className="text-sm text-zenshin-navy/50">期限</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
                         "w-full h-10 justify-start text-left font-normal bg-background",
-                        !dueDate && "text-muted-foreground"
+                        !dueDate && "text-zenshin-navy/40"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -336,7 +336,7 @@ export function ActionEditModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Assignee</Label>
+                <Label className="text-sm text-zenshin-navy/50">担当者</Label>
                 <Input
                   value={assignee}
                   onChange={(e) => setAssignee(e.target.value)}
@@ -349,7 +349,7 @@ export function ActionEditModal({
           {action.vision_tags && action.vision_tags.length > 0 && (
             <div className="flex gap-2 flex-wrap">
               {action.vision_tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="bg-blue-100 text-blue-700">
+                <Badge key={tag} variant="outline" className="bg-zenshin-teal/10 text-zenshin-teal">
                   {tag}
                 </Badge>
               ))}
@@ -357,7 +357,7 @@ export function ActionEditModal({
           )}
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Description</Label>
+              <Label className="text-sm font-medium">詳細</Label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -369,11 +369,11 @@ export function ActionEditModal({
           {/* タイムライン */}
             <div className="space-y-2 border-t pt-6">
               <Label className="text-sm font-medium flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-gray-500" />
-              Activity
+              <MessageSquare className="w-4 h-4 text-zenshin-navy/50" />
+              アクティビティ
             </Label>
             {isLoadingComments && (
-              <div className="text-sm text-gray-400">コメントを読み込み中...</div>
+              <div className="text-sm text-zenshin-navy/40">コメントを読み込み中...</div>
             )}
             <Timeline
               type="action"
@@ -390,7 +390,7 @@ export function ActionEditModal({
             <Button variant="outline" onClick={onClose}>
               キャンセル
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button onClick={handleSave} disabled={isSaving} className="bg-zenshin-orange hover:bg-zenshin-orange/90 text-white">
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -422,17 +422,17 @@ export function ActionEditModal({
               </AlertDialogDescription>
             </AlertDialogHeader>
             {confirmDialog.incompleteActions.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-2">未完了のアクション:</p>
+              <div className="bg-zenshin-cream/50 rounded-lg p-3">
+                <p className="text-xs text-zenshin-navy/50 mb-2">未完了のアクション:</p>
                 <ul className="space-y-1">
                   {confirmDialog.incompleteActions.map((item) => (
-                    <li key={item.id} className="text-sm text-gray-700 flex items-center gap-2">
-                      <Circle className="w-3 h-3 text-gray-400" />
+                    <li key={item.id} className="text-sm text-zenshin-navy flex items-center gap-2">
+                      <Circle className="w-3 h-3 text-zenshin-navy/40" />
                       {item.title}
                     </li>
                   ))}
                   {confirmDialog.incompleteCount > 5 && (
-                    <li className="text-xs text-gray-500">
+                    <li className="text-xs text-zenshin-navy/50">
                       他 {confirmDialog.incompleteCount - 5}件...
                     </li>
                   )}

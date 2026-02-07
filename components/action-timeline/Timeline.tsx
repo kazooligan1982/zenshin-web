@@ -84,11 +84,11 @@ export function Timeline({
 
   return (
     <div className="flex flex-col h-[500px] border rounded-lg bg-white shadow-sm">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-zenshin-cream/30">
         {hasMoreComments && !isExpanded && (
           <button
             onClick={() => setIsExpanded(true)}
-            className="w-full py-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="w-full py-2 text-xs text-zenshin-navy/50 hover:text-zenshin-navy hover:bg-zenshin-cream/50 rounded-lg transition-colors"
           >
             以前のコメントを表示 ({hiddenCount}件)
           </button>
@@ -108,8 +108,8 @@ export function Timeline({
         ))}
         {comments.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <p className="text-gray-400 text-sm mb-2">まだコメントがありません</p>
-            <p className="text-gray-300 text-xs">最初のコメントを投稿してみましょう</p>
+            <p className="text-zenshin-navy/40 text-sm mb-2">まだコメントがありません</p>
+            <p className="text-zenshin-navy/30 text-xs">最初のコメントを投稿してみましょう</p>
           </div>
         )}
       </div>
