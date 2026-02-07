@@ -27,7 +27,11 @@ export function NewChartButton() {
   };
 
   return (
-    <Button onClick={handleCreateChart} disabled={isCreating} className="gap-2">
+    <Button
+      onClick={handleCreateChart}
+      disabled={isCreating}
+      className="gap-2 bg-zenshin-orange hover:bg-zenshin-orange/90 text-white rounded-xl shadow-sm"
+    >
       {isCreating ? (
         <>
           <Loader2 className="w-4 h-4 animate-spin" />

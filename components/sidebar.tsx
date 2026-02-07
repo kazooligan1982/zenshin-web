@@ -124,30 +124,31 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex flex-col h-screen bg-[#1c1c1c] text-gray-400 border-r border-gray-800 transition-all duration-300 z-50 fixed left-0 top-0",
+        "flex flex-col h-screen bg-zenshin-charcoal text-white/70 border-r border-white/5 transition-all duration-300 z-50 fixed left-0 top-0",
         isExpanded ? "w-64" : "w-16"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="h-14 flex items-center shrink-0 border-b border-gray-800 px-3">
+      {/* Workspace Header */}
+      <div className="h-14 flex items-center shrink-0 border-b border-white/5 px-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 hover:bg-white/5 rounded-lg p-1.5 transition-colors w-full">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shrink-0">
-                <span className="text-white font-bold text-sm">Z</span>
+              <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                <img src="/zenshin-icon.svg" alt="Z" className="w-8 h-8" />
               </div>
               {isHovered && (
                 <>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
+                    <p className="text-sm font-semibold text-white truncate">
                       {currentWorkspace?.name || "Workspace"}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-[11px] text-white/40 truncate">
                       {currentWorkspace?.role === "owner" ? "Owner" : "Member"}
                     </p>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+                  <ChevronDown className="w-4 h-4 text-white/30 shrink-0" />
                 </>
               )}
             </button>
@@ -157,7 +158,7 @@ export function Sidebar() {
               Current Workspace
             </div>
             <DropdownMenuItem className="gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-zenshin-navy rounded-lg flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
               <div>
@@ -184,7 +185,7 @@ export function Sidebar() {
                       className="gap-3 opacity-50"
                       disabled
                     >
-                      <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-zenshin-charcoal rounded-lg flex items-center justify-center">
                         <Building2 className="w-4 h-4 text-white" />
                       </div>
                       <div>
@@ -212,7 +213,8 @@ export function Sidebar() {
         </DropdownMenu>
       </div>
 
-      <nav className="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
         <SidebarItem
           icon={Home}
           label="Home"
@@ -223,7 +225,9 @@ export function Sidebar() {
 
         {isInChart && (
           <>
-            <div className="my-2 border-t border-gray-800 mx-2" />
+            <div className="my-2 mx-3">
+              <div className="h-px bg-white/5" />
+            </div>
 
             <SidebarItem
               icon={Edit3}
@@ -249,7 +253,9 @@ export function Sidebar() {
           </>
         )}
 
-        <div className="my-2 border-t border-gray-800 mx-2" />
+        <div className="my-2 mx-3">
+          <div className="h-px bg-white/5" />
+        </div>
 
         <SidebarItem
           icon={LayoutDashboard}
@@ -274,15 +280,17 @@ export function Sidebar() {
 
         {recentCharts.length > 0 && (
           <>
-            <div className="my-2 border-t border-gray-800 mx-2" />
+            <div className="my-2 mx-3">
+              <div className="h-px bg-white/5" />
+            </div>
 
             {!isHovered ? (
               <div className="flex items-center justify-center px-3 py-2">
-                <Clock className="w-5 h-5 text-gray-500" />
+                <Clock className="w-5 h-5 text-white/20" />
               </div>
             ) : (
               <>
-                <div className="px-3 py-1 text-xs font-medium text-gray-500 flex items-center gap-2">
+                <div className="px-3 py-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider flex items-center gap-2">
                   <Clock className="w-3 h-3" />
                   Quick Access
                 </div>
@@ -294,8 +302,8 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors text-sm",
                       chartId === chart.id
-                        ? "bg-white/10 text-white"
-                        : "hover:bg-white/5 hover:text-white"
+                        ? "bg-zenshin-orange/15 text-zenshin-orange"
+                        : "text-white/50 hover:bg-white/5 hover:text-white/80"
                     )}
                   >
                     <FolderOpen className="w-4 h-4 shrink-0" />
@@ -308,12 +316,14 @@ export function Sidebar() {
         )}
       </nav>
 
-      <div className="border-t border-gray-800 mt-auto">
+      {/* User Menu */}
+      <div className="border-t border-white/5 mt-auto">
         <UserMenu expanded={isExpanded} onOpenChange={handleDropdownOpenChange} />
       </div>
 
+      {/* Tagline */}
       {isHovered && (
-        <div className="p-3 border-t border-gray-800 text-xs text-gray-600 text-center">
+        <div className="px-3 py-2.5 border-t border-white/5 text-[10px] text-white/20 text-center tracking-wide">
           緊張構造で前進を生み出す
         </div>
       )}
@@ -346,19 +356,19 @@ function SidebarItem({
         "flex items-center gap-3 rounded-lg transition-colors",
         compact ? "px-3 py-1.5" : "px-3 py-2",
         active
-          ? "bg-white/10 text-white"
-          : "hover:bg-white/5 hover:text-white",
+          ? "bg-zenshin-orange/15 text-zenshin-orange"
+          : "text-white/50 hover:bg-white/5 hover:text-white/80",
         disabled && "opacity-50 cursor-not-allowed"
       )}
     >
       <Icon className={cn("shrink-0", compact ? "w-4 h-4" : "w-5 h-5")} />
       {expanded && (
         <>
-          <span className={cn("flex-1 truncate", compact && "text-sm")}>
+          <span className={cn("flex-1 truncate", compact ? "text-sm" : "text-sm font-medium")}>
             {label}
           </span>
           {badge && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-gray-700 rounded text-gray-400">
+            <span className="text-[10px] px-1.5 py-0.5 bg-white/10 rounded text-white/40">
               {badge}
             </span>
           )}

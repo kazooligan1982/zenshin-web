@@ -4,6 +4,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-zenshin-cream: var(--zenshin-cream);
+  --color-zenshin-orange: var(--zenshin-orange);
+  --color-zenshin-teal: var(--zenshin-teal);
+  --color-zenshin-charcoal: var(--zenshin-charcoal);
+  --color-zenshin-navy: var(--zenshin-navy);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -48,6 +53,11 @@
 
 :root {
   --radius: 0.625rem;
+  --zenshin-cream: #F3F0E3;
+  --zenshin-orange: #F5853F;
+  --zenshin-teal: #23967F;
+  --zenshin-charcoal: #282A2E;
+  --zenshin-navy: #154665;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
