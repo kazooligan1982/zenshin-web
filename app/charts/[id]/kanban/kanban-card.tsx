@@ -2,11 +2,10 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Calendar, User } from "lucide-react";
+import { Calendar, User, ChevronRight } from "lucide-react";
 
 interface Action {
   id: string;
@@ -39,60 +38,65 @@ export function KanbanCard({ action, isDragging, onClick }: KanbanCardProps) {
   const style = {
     transform: CSS.Translate.toString(transform),
     opacity: isDraggingState ? 0.5 : 1,
-    paddingLeft: `${action.depth * 16}px`,
-  };
-
-  const getBackgroundColor = () => {
-    if (action.depth > 0) return "bg-gray-50";
-    return "bg-white";
   };
 
   const isOverdue =
-    !!action.due_date && new Date(action.due_date) < new Date();
+    !!action.due_date && !action.is_completed && new Date(action.due_date) < new Date();
+
+  const hasFooter = action.assignee || action.due_date || action.has_children;
 
   return (
-    <Card
+    <div
       ref={setNodeRef}
       style={style}
       {...listeners}
       {...attributes}
       onClick={onClick}
       className={cn(
-        "rounded-lg border border-gray-100 p-3 shadow-sm cursor-grab active:cursor-grabbing transition-all",
-        getBackgroundColor(),
-        isDragging && "shadow-lg",
-        "hover:shadow-md hover:border-gray-200",
-        onClick && "cursor-pointer"
+        "group rounded-md border border-zenshin-navy/8 bg-white px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all",
+        isDragging && "shadow-lg ring-2 ring-zenshin-teal/30",
+        "hover:shadow-sm hover:border-zenshin-navy/15",
+        onClick && "cursor-pointer",
+        action.depth > 0 && "ml-3 border-l-2 border-l-zenshin-navy/15",
+        action.is_completed && "opacity-60"
       )}
     >
+      {/* Title */}
       <p
         className={cn(
-          "text-sm text-gray-800 leading-snug",
-          action.is_completed && "line-through text-gray-400"
+          "text-[13px] text-zenshin-navy leading-snug",
+          action.is_completed && "line-through text-zenshin-navy/40"
         )}
       >
         {action.title}
       </p>
 
-      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-        {action.assignee && (
-          <div className="flex items-center gap-1">
-            <User className="w-3 h-3" />
-            <span className="truncate max-w-[60px]">{action.assignee}</span>
+      {/* Footer: due date + assignee */}
+      {hasFooter && (
+        <div className="flex items-center justify-between mt-1.5">
+          <div className="flex items-center gap-2">
+            {action.due_date && (
+              <span className={cn(
+                "text-[11px]",
+                isOverdue ? "text-red-500 font-medium" : "text-zenshin-navy/40"
+              )}>
+                {format(new Date(action.due_date), "MM/dd", { locale: ja })}
+              </span>
+            )}
+            {action.has_children && (
+              <ChevronRight className="w-3 h-3 text-zenshin-navy/30" />
+            )}
           </div>
-        )}
-        {action.due_date && (
-          <div className={cn("flex items-center gap-1", isOverdue && "text-red-500")}>
-            <Calendar className="w-3 h-3" />
-            <span>{format(new Date(action.due_date), "MM/dd", { locale: ja })}</span>
-          </div>
-        )}
-        {action.depth > 0 && (
-          <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-            L{action.depth}
-          </span>
-        )}
-      </div>
-    </Card>
+          {action.assignee && (
+            <div
+              className="w-5 h-5 rounded-full bg-zenshin-teal/15 text-zenshin-teal text-[10px] font-medium flex items-center justify-center shrink-0"
+              title={action.assignee}
+            >
+              {action.assignee.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

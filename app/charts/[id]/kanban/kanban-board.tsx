@@ -242,11 +242,11 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
   };
 
   const columns = [
-    { id: "todo", title: "To Do", color: "bg-gray-50" },
-    { id: "in_progress", title: "In Progress", color: "bg-blue-50" },
-    { id: "done", title: "Done", color: "bg-green-50" },
-    { id: "pending", title: "Pending", color: "bg-yellow-50" },
-    { id: "canceled", title: "Canceled", color: "bg-gray-100" },
+    { id: "todo", title: "未着手", color: "bg-zenshin-navy/5", headerColor: "text-zenshin-navy", dotColor: "bg-zenshin-navy/40" },
+    { id: "in_progress", title: "進行中", color: "bg-blue-50/80", headerColor: "text-blue-600", dotColor: "bg-blue-500" },
+    { id: "done", title: "完了", color: "bg-emerald-50/80", headerColor: "text-emerald-600", dotColor: "bg-emerald-500" },
+    { id: "pending", title: "保留", color: "bg-amber-50/80", headerColor: "text-amber-600", dotColor: "bg-amber-500" },
+    { id: "canceled", title: "中止", color: "bg-zenshin-navy/5", headerColor: "text-zenshin-navy/50", dotColor: "bg-zenshin-navy/30" },
   ];
 
   const TensionSection = ({
@@ -258,38 +258,36 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
   }) => {
     return (
       <div
-        className="relative pl-4 border-l-2 transition-colors"
+        className="relative pl-3 border-l-2 transition-colors"
         style={{ borderColor: tensionGroup.area_color || "#E5E7EB" }}
       >
-        <div className="mb-3">
-          {tensionGroup.vision_title && (
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2 py-0.5 text-[10px] bg-purple-50 text-purple-600 rounded-full font-medium truncate max-w-[200px]">
+        <div className="mb-2">
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            {tensionGroup.area_name && (
+              <span
+                className="px-1.5 py-0.5 text-[10px] rounded-full text-white leading-none"
+                style={{
+                  backgroundColor: tensionGroup.area_color || "#9CA3AF",
+                }}
+              >
+                {tensionGroup.area_name}
+              </span>
+            )}
+            {tensionGroup.vision_title && (
+              <span className="text-[10px] text-zenshin-navy/40">
                 {tensionGroup.vision_title}
               </span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2">
-            <Zap className="w-3 h-3 text-yellow-500" />
-            <h3 className="text-sm font-bold text-gray-800 leading-tight">
+            )}
+          </div>
+          <div className="flex items-start gap-1.5">
+            <Zap className="w-3 h-3 text-zenshin-navy/60 shrink-0 mt-0.5" />
+            <h3 className="text-[13px] font-bold text-zenshin-navy leading-snug">
               {tensionGroup.title}
             </h3>
           </div>
-
-          {tensionGroup.area_name && (
-            <span
-              className="inline-block mt-1 px-2 py-0.5 text-[10px] rounded-full text-white"
-              style={{
-                backgroundColor: tensionGroup.area_color || "#9CA3AF",
-              }}
-            >
-              {tensionGroup.area_name}
-            </span>
-          )}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           {tensionGroup.actions.map((action) => (
             <KanbanCard
               key={action.id}
@@ -305,18 +303,18 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-zenshin-navy/40" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-zenshin-cream">
       {/* ヘッダー */}
-      <div className="px-8 py-6 border-b bg-white">
-        <h1 className="text-2xl font-bold mb-2">Views</h1>
-        <p className="text-sm text-gray-500">
-          プロジェクトのアクションを様々な視点で確認
+      <div className="px-8 py-6 border-b bg-zenshin-cream">
+        <h1 className="text-2xl font-bold text-zenshin-navy mb-2">Views</h1>
+        <p className="text-sm text-zenshin-navy/50">
+          アクションを様々な視点で確認
         </p>
       </div>
 
@@ -325,7 +323,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
         onValueChange={(v) => setViewMode(v as "kanban" | "tree")}
         className="flex-1 flex flex-col"
       >
-        <div className="px-8 py-4 border-b bg-gray-50">
+        <div className="px-8 py-4 border-b bg-zenshin-cream">
           <div className="flex items-center justify-between mb-4">
             <TabsList>
               <TabsTrigger value="kanban" className="flex items-center gap-2">
@@ -348,7 +346,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
 
             <div className="flex flex-wrap items-center gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-8 w-[130px] text-xs border-gray-200">
+                <SelectTrigger className="h-8 w-[130px] text-xs border-zenshin-navy/15">
                   <SelectValue placeholder="ステータス" />
                 </SelectTrigger>
                 <SelectContent>
@@ -362,7 +360,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
               </Select>
 
               <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                <SelectTrigger className="h-8 w-[120px] text-xs border-gray-200">
+                <SelectTrigger className="h-8 w-[120px] text-xs border-zenshin-navy/15">
                   <SelectValue placeholder="担当者" />
                 </SelectTrigger>
                 <SelectContent>
@@ -377,7 +375,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
               </Select>
 
               <Select value={dueDateFilter} onValueChange={setDueDateFilter}>
-                <SelectTrigger className="h-8 w-[120px] text-xs border-gray-200">
+                <SelectTrigger className="h-8 w-[120px] text-xs border-zenshin-navy/15">
                   <SelectValue placeholder="期限" />
                 </SelectTrigger>
                 <SelectContent>
@@ -391,12 +389,12 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
               </Select>
 
               <div className="relative min-w-[220px]">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zenshin-navy/40" />
                 <Input
                   placeholder="アクション名で検索..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 pl-8 text-xs border-gray-200"
+                  className="h-8 pl-8 text-xs border-zenshin-navy/15"
                 />
               </div>
             </div>
@@ -435,13 +433,19 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
                       className="flex-1 min-w-[320px] flex flex-col"
                     >
                       <div
-                        className={`${column.color} rounded-t-lg p-3 border-b border-gray-200`}
+                        className={`${column.color} rounded-t-lg px-3 py-2.5 border-b border-zenshin-navy/10`}
                       >
-                        <h2 className="font-semibold text-gray-800">
-                          {column.title} ({totalActions})
-                        </h2>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${column.dotColor}`} />
+                          <h2 className={`font-semibold text-sm ${column.headerColor}`}>
+                            {column.title}
+                          </h2>
+                          <span className="text-xs text-zenshin-navy/40 font-normal">
+                            {totalActions}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex-1 bg-gray-50 rounded-b-lg p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-280px)]">
+                      <div className="flex-1 bg-white/60 rounded-b-lg p-3 space-y-5 overflow-y-auto max-h-[calc(100vh-280px)]">
                         {columnTensionGroups.length > 0 ? (
                           columnTensionGroups.map((tensionGroup) => (
                             <TensionSection
@@ -451,7 +455,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
                             />
                           ))
                         ) : (
-                          <div className="text-center text-gray-400 text-sm py-8">
+                          <div className="text-center text-zenshin-navy/40 text-sm py-8">
                             No actions
                           </div>
                         )}

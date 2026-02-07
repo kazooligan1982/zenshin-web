@@ -270,11 +270,11 @@ export function TreeView({
       case "in_progress":
         return <Clock className="w-4 h-4 text-blue-500" />;
       case "pending":
-        return <Pause className="w-4 h-4 text-yellow-500" />;
+        return <Pause className="w-4 h-4 text-zenshin-navy" />;
       case "canceled":
-        return <XCircle className="w-4 h-4 text-gray-400" />;
+        return <XCircle className="w-4 h-4 text-zenshin-navy/40" />;
       default:
-        return <Circle className="w-4 h-4 text-gray-300" />;
+        return <Circle className="w-4 h-4 text-zenshin-navy/30" />;
     }
   };
 
@@ -439,8 +439,8 @@ export function TreeView({
         <div
           className={cn(
             "relative grid grid-cols-[1fr_120px_120px_120px] gap-2 items-center py-2 px-4 border-b text-sm transition-colors",
-            isTension && "bg-gray-50/80 font-semibold",
-            isAction && "cursor-pointer hover:bg-blue-50"
+            isTension && "bg-zenshin-cream/60 font-semibold",
+            isAction && "cursor-pointer hover:bg-zenshin-cream/50"
           )}
           onClick={(event) => handleActionClick(node, event)}
         >
@@ -457,12 +457,12 @@ export function TreeView({
             {hasChildren ? (
               <button
                 onClick={(event) => toggleExpand(node.id, event)}
-                className="p-0.5 hover:bg-gray-200 rounded shrink-0 expand-button"
+                className="p-0.5 hover:bg-zenshin-navy/10 rounded shrink-0 expand-button"
               >
                 {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                  <ChevronDown className="w-4 h-4 text-zenshin-navy/50" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-500" />
+                  <ChevronRight className="w-4 h-4 text-zenshin-navy/50" />
                 )}
               </button>
             ) : (
@@ -470,7 +470,7 @@ export function TreeView({
             )}
 
             {isTension ? (
-              <Zap className="w-4 h-4 text-yellow-500 shrink-0" />
+              <Zap className="w-4 h-4 text-zenshin-navy shrink-0" />
             ) : (
               getStatusIcon(node.status || null, node.is_completed || null)
             )}
@@ -489,7 +489,7 @@ export function TreeView({
             <span
               className={cn(
                 "truncate",
-                node.is_completed && "line-through text-gray-400"
+                node.is_completed && "line-through text-zenshin-navy/40"
               )}
             >
               {node.title}
@@ -527,12 +527,12 @@ export function TreeView({
           <div className="flex items-center justify-center">
             {isAction &&
               (node.assignee ? (
-                <div className="flex items-center gap-1 text-xs text-gray-600">
+              <div className="flex items-center gap-1 text-xs text-zenshin-navy/60">
                   <User className="w-4 h-4" />
                   <span className="truncate max-w-[60px]">{node.assignee}</span>
                 </div>
               ) : (
-                <UserPlus className="w-4 h-4 text-gray-300" />
+                <UserPlus className="w-4 h-4 text-zenshin-navy/30" />
               ))}
           </div>
 
@@ -564,14 +564,14 @@ export function TreeView({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-2 border-gray-300 border-t-gray-600 rounded-full" />
+        <div className="animate-spin h-8 w-8 border-2 border-zenshin-navy/30 border-t-zenshin-navy/60 rounded-full" />
       </div>
     );
   }
 
   if (!treeData) {
     return (
-      <div className="text-center text-gray-500 py-8">
+      <div className="text-center text-zenshin-navy/50 py-8">
         データを取得できませんでした
       </div>
     );
@@ -600,7 +600,7 @@ export function TreeView({
           >
             全て展開
           </button>
-          <span className="text-gray-300">|</span>
+          <span className="text-zenshin-navy/30">|</span>
           <button
             onClick={collapseAll}
             className="text-xs text-blue-600 hover:underline"
@@ -621,7 +621,7 @@ export function TreeView({
         {sortedTree.length > 0 ? (
           sortedTree.map((node) => renderRow(node))
         ) : (
-          <div className="text-center text-gray-500 py-8">
+          <div className="text-center text-zenshin-navy/50 py-8">
             データがありません
           </div>
         )}
@@ -674,19 +674,19 @@ export function TreeView({
             </AlertDialogHeader>
             {confirmDialog.incompleteActions.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-2">未完了のアクション:</p>
+                <p className="text-xs text-zenshin-navy/50 mb-2">未完了のアクション:</p>
                 <ul className="space-y-1">
                   {confirmDialog.incompleteActions.map((action) => (
                     <li
                       key={action.id}
                       className="text-sm text-gray-700 flex items-center gap-2"
                     >
-                      <Circle className="w-3 h-3 text-gray-400" />
+                      <Circle className="w-3 h-3 text-zenshin-navy/40" />
                       {action.title}
                     </li>
                   ))}
                   {confirmDialog.incompleteCount > 5 && (
-                    <li className="text-xs text-gray-500">
+                    <li className="text-xs text-zenshin-navy/50">
                       他 {confirmDialog.incompleteCount - 5}件...
                     </li>
                   )}
