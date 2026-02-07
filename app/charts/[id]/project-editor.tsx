@@ -2141,6 +2141,9 @@ export function ProjectEditor({
   const [realities, setRealities] = useState<RealityItem[]>(chart.realities);
   const [tensions, setTensions] = useState<Tension[]>(chart.tensions);
   const [breadcrumbs] = useState<BreadcrumbItem[]>(chart.breadcrumbs || []);
+  const [hoveredSection, setHoveredSection] = useState<
+    "vision" | "reality" | "tension" | null
+  >(null);
   const [focusedArea, setFocusedArea] = useState<
     "vision" | "reality" | "tension" | null
   >(null);
@@ -4421,7 +4424,13 @@ export function ProjectEditor({
           <div className="h-full p-6">
             {focusedArea === "vision" && (
               <div className="h-full">
-                <div className="flex flex-col bg-white border-2 border-zenshin-teal/50 rounded-lg shadow-sm h-full">
+                <div
+                  className={`flex flex-col bg-white border-2 rounded-lg shadow-sm h-full transition-all duration-200 ${
+                    hoveredSection === "vision"
+                      ? "border-zenshin-teal shadow-md shadow-zenshin-teal/20"
+                      : "border-zenshin-teal/50"
+                  }`}
+                >
                   <div className="px-3 py-2 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg">
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-zenshin-teal" />
@@ -4430,7 +4439,7 @@ export function ProjectEditor({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6"
+                      className="h-6 w-6 hover:bg-zenshin-navy/15 rounded transition-colors"
                       onClick={() => setFocusedArea(null)}
                     >
                       <Minimize2 className="w-3 h-3" />
@@ -4484,7 +4493,13 @@ export function ProjectEditor({
             )}
             {focusedArea === "reality" && (
               <div className="h-full">
-                <div className="flex flex-col bg-white border-2 border-zenshin-orange/50 rounded-lg shadow-sm h-full overflow-hidden">
+                <div
+                  className={`flex flex-col bg-white border-2 rounded-lg shadow-sm h-full overflow-hidden transition-all duration-200 ${
+                    hoveredSection === "reality"
+                      ? "border-zenshin-orange shadow-md shadow-zenshin-orange/20"
+                      : "border-zenshin-orange/50"
+                  }`}
+                >
                   <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-zenshin-orange" />
@@ -4495,7 +4510,7 @@ export function ProjectEditor({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6"
+                      className="h-6 w-6 hover:bg-zenshin-navy/15 rounded transition-colors"
                       onClick={() => setFocusedArea(null)}
                     >
                       <Minimize2 className="w-3 h-3" />
@@ -4555,7 +4570,13 @@ export function ProjectEditor({
             )}
             {focusedArea === "tension" && (
               <div className="h-full">
-                <div className="flex flex-col bg-white border-2 border-zenshin-navy/30 rounded-lg shadow-sm h-full overflow-hidden">
+                <div
+                  className={`flex flex-col bg-white border-2 rounded-lg shadow-sm h-full overflow-hidden transition-all duration-200 ${
+                    hoveredSection === "tension"
+                      ? "border-zenshin-navy shadow-md shadow-zenshin-navy/20"
+                      : "border-zenshin-navy/30"
+                  }`}
+                >
                   <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-zenshin-navy" />
@@ -4566,7 +4587,7 @@ export function ProjectEditor({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6"
+                      className="h-6 w-6 hover:bg-zenshin-navy/15 rounded transition-colors"
                       onClick={() => setFocusedArea(null)}
                     >
                       <Minimize2 className="w-3 h-3" />
@@ -4663,7 +4684,13 @@ export function ProjectEditor({
             <div className="w-1/2 h-full p-6 flex flex-col gap-4 overflow-hidden">
               {/* Vision Area - 50% */}
               <div className="flex-1 min-h-0">
-                <div className="h-full flex flex-col bg-white border-2 border-zenshin-teal/50 rounded-lg shadow-sm overflow-hidden">
+                <div
+                  className={`h-full flex flex-col bg-white border-2 rounded-lg shadow-sm overflow-hidden transition-all duration-200 ${
+                    hoveredSection === "vision"
+                      ? "border-zenshin-teal shadow-md shadow-zenshin-teal/20"
+                      : "border-zenshin-teal/50"
+                  }`}
+                >
                   <div className="px-3 py-2 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg">
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-zenshin-teal" />
@@ -4672,8 +4699,12 @@ export function ProjectEditor({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6"
-                      onClick={() => setFocusedArea(focusedArea === "vision" ? null : "vision")}
+                      className="h-6 w-6 hover:bg-zenshin-teal/15 hover:text-zenshin-teal rounded transition-colors"
+                      onClick={() =>
+                        setFocusedArea(focusedArea === "vision" ? null : "vision")
+                      }
+                      onMouseEnter={() => setHoveredSection("vision")}
+                      onMouseLeave={() => setHoveredSection(null)}
                     >
                       {focusedArea === "vision" ? (
                         <Minimize2 className="w-3 h-3" />
@@ -4730,7 +4761,13 @@ export function ProjectEditor({
               
               {/* Reality Area - 50% */}
               <div className="flex-1 min-h-0">
-                <div className="h-full flex flex-col bg-white border-2 border-zenshin-orange/50 rounded-lg shadow-sm overflow-hidden">
+                <div
+                  className={`h-full flex flex-col bg-white border-2 rounded-lg shadow-sm overflow-hidden transition-all duration-200 ${
+                    hoveredSection === "reality"
+                      ? "border-zenshin-orange shadow-md shadow-zenshin-orange/20"
+                      : "border-zenshin-orange/50"
+                  }`}
+                >
                   <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-zenshin-orange" />
@@ -4739,8 +4776,12 @@ export function ProjectEditor({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6"
-                      onClick={() => setFocusedArea(focusedArea === "reality" ? null : "reality")}
+                      className="h-6 w-6 hover:bg-zenshin-orange/15 hover:text-zenshin-orange rounded transition-colors"
+                      onClick={() =>
+                        setFocusedArea(focusedArea === "reality" ? null : "reality")
+                      }
+                      onMouseEnter={() => setHoveredSection("reality")}
+                      onMouseLeave={() => setHoveredSection(null)}
                     >
                       {focusedArea === "reality" ? (
                         <Minimize2 className="w-3 h-3" />
@@ -4798,7 +4839,13 @@ export function ProjectEditor({
 
             {/* Right Panel: Tension & Action - 50% */}
             <div className="w-1/2 h-full p-6 overflow-hidden">
-              <div className="flex flex-col bg-white border-2 border-zenshin-navy/30 rounded-lg shadow-sm h-full overflow-hidden">
+              <div
+                className={`flex flex-col bg-white border-2 rounded-lg shadow-sm h-full overflow-hidden transition-all duration-200 ${
+                  hoveredSection === "tension"
+                    ? "border-zenshin-navy shadow-md shadow-zenshin-navy/20"
+                    : "border-zenshin-navy/30"
+                }`}
+              >
                 <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-zenshin-navy" />
@@ -4807,8 +4854,12 @@ export function ProjectEditor({
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-6 w-6"
-                    onClick={() => setFocusedArea(focusedArea === "tension" ? null : "tension")}
+                    className="h-6 w-6 hover:bg-zenshin-navy/15 hover:text-zenshin-navy rounded transition-colors"
+                    onClick={() =>
+                      setFocusedArea(focusedArea === "tension" ? null : "tension")
+                    }
+                    onMouseEnter={() => setHoveredSection("tension")}
+                    onMouseLeave={() => setHoveredSection(null)}
                   >
                     {focusedArea === "tension" ? (
                       <Minimize2 className="w-3 h-3" />
