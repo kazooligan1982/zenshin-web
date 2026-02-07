@@ -126,7 +126,6 @@ import {
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { AreaTagEditor } from "@/components/area-tag-editor";
 import { AreaDropZone } from "./components/AreaDropZone";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -151,25 +150,29 @@ import { useItemInput } from "@/hooks/use-item-input";
 
 const DatePicker = dynamic(
   () => import("@/components/ui/date-picker").then((mod) => mod.DatePicker),
-  { ssr: false }
+  { loading: () => null, ssr: false }
 );
 const CalendarComponent = dynamic(
   () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
-  { ssr: false }
+  { loading: () => null, ssr: false }
+);
+const AreaTagEditor = dynamic(
+  () => import("@/components/area-tag-editor").then((mod) => mod.AreaTagEditor),
+  { loading: () => null, ssr: false }
 );
 const TagManager = dynamic(
   () => import("@/components/tag/TagManager").then((mod) => mod.TagManager),
-  { ssr: false }
+  { loading: () => null, ssr: false }
 );
 const ItemDetailPanel = dynamic(
   () =>
     import("@/components/item-detail-panel").then((mod) => mod.ItemDetailPanel),
-  { ssr: false }
+  { loading: () => null, ssr: false }
 );
 const FocusModeModal = dynamic(
   () =>
     import("@/components/focus-mode-modal").then((mod) => mod.FocusModeModal),
-  { ssr: false }
+  { loading: () => null, ssr: false }
 );
 
 // モジュールレベル変数（コンポーネント再マウントでもリセットされない）
