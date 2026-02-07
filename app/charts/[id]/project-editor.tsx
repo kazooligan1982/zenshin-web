@@ -201,7 +201,7 @@ type StructuredData = {
 const TEXT_CLASSES = cn(
   "w-full",
   "text-sm",
-  "text-gray-700",
+  "text-zenshin-navy",
   "font-normal",
   "antialiased",
   "bg-transparent",
@@ -229,9 +229,9 @@ const VIEW_CLASSES = cn(
 );
 
 const iconButtonClass =
-  "p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors";
+  "p-1 rounded-md text-zenshin-navy/40 hover:text-zenshin-navy hover:bg-zenshin-navy/8 transition-colors";
 const ICON_BTN_CLASS =
-  "h-8 w-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors p-0";
+  "h-8 w-8 flex items-center justify-center rounded-full text-zenshin-navy/40 hover:text-zenshin-navy hover:bg-zenshin-navy/8 transition-colors p-0";
 const ICON_CONTAINER_CLASS = "flex items-center gap-1 shrink-0 h-8 ml-2";
 
 const navigateFocus = (
@@ -452,14 +452,14 @@ function SortableVisionItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex items-center gap-2 py-3 px-2 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors"
+      className="group flex items-center gap-2 py-3 px-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors"
     >
       <div
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded shrink-0"
+        className="cursor-grab active:cursor-grabbing p-1 hover:bg-zenshin-navy/8 rounded shrink-0"
       >
-        <GripVertical className="h-4 w-4 text-gray-400" />
+        <GripVertical className="h-4 w-4 text-zenshin-navy/40" />
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
@@ -501,7 +501,7 @@ function SortableVisionItem({
       </div>
 
       <div className={cn(ICON_CONTAINER_CLASS, "flex-none ml-auto")}>
-        <div className="w-[110px] relative flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200">
+        <div className="w-[110px] relative flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200">
           <DatePicker
             value={vision.dueDate || null}
             onChange={(date) => onUpdate(vision.id, "dueDate", date || null)}
@@ -517,7 +517,7 @@ function SortableVisionItem({
             <PopoverTrigger asChild>
               <div
                 className={cn(
-                  "relative group/avatar cursor-pointer flex items-center justify-center rounded-md transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200",
+                  "relative group/avatar cursor-pointer flex items-center justify-center rounded-md transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200",
                   vision.assignee
                     ? "opacity-100"
                     : "opacity-0 group-hover:opacity-100"
@@ -666,11 +666,11 @@ function SortableVisionItem({
             </div>
           </PopoverContent>
         </Popover>
-        <div className="flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100">
+        <div className="flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100">
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity"
+            className="h-8 w-8 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(vision.id);
@@ -752,7 +752,7 @@ function SortableRealityItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex w-full max-w-full items-center gap-2 py-3 px-2 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+      className={`group flex w-full max-w-full items-center gap-2 py-3 px-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors ${
         highlightedItemId === reality.id ? "bg-white" : ""
       }`}
     >
@@ -763,7 +763,7 @@ function SortableRealityItem({
           <div
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing h-6 flex items-center text-gray-400 opacity-0 group-hover:opacity-100"
+            className="cursor-grab active:cursor-grabbing h-6 flex items-center text-zenshin-navy/40 opacity-0 group-hover:opacity-100"
           >
             <GripVertical className="w-4 h-4" />
           </div>
@@ -812,7 +812,7 @@ function SortableRealityItem({
         />
       </div>
       <div className={cn(ICON_CONTAINER_CLASS, "flex-none ml-auto")}>
-        <div className="flex items-center gap-2 text-xs text-gray-400">
+        <div className="flex items-center gap-2 text-xs text-zenshin-navy/40">
           <span>
             {format(new Date(reality.createdAt), "MM/dd HH:mm", { locale: ja })}
           </span>
@@ -896,11 +896,11 @@ function SortableRealityItem({
             </div>
           </PopoverContent>
         </Popover>
-        <div className="flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100">
+        <div className="flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100">
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity"
+            className="h-8 w-8 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity"
             onClick={(e) => {
               e.stopPropagation();
               handleDeleteReality(reality.id);
@@ -929,9 +929,9 @@ const getActionStatusIcon = (
     case "pending":
       return <Pause className="w-4 h-4 text-yellow-500" />;
     case "canceled":
-      return <XCircle className="w-4 h-4 text-gray-400" />;
+      return <XCircle className="w-4 h-4 text-zenshin-navy/40" />;
     default:
-      return <Circle className="w-4 h-4 text-gray-400" />;
+      return <Circle className="w-4 h-4 text-zenshin-navy/40" />;
   }
 };
 
@@ -1133,15 +1133,15 @@ function SortableActionItem({
       <div
         ref={setNodeRef}
         style={style}
-        className={`group flex items-center gap-2 p-2 bg-white border-b border-gray-100/50 hover:bg-muted/50 transition-colors ${
-          actionIndex === 0 ? "border-t border-gray-100/50" : ""
+        className={`group flex items-center gap-2 p-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors ${
+          actionIndex === 0 ? "border-t border-zenshin-navy/5" : ""
         } ${isCompleted ? "opacity-60" : ""}`}
       >
       {disabled ? (
         <div className="mr-1 w-4 h-4" />
       ) : (
         <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing mr-1">
-          <GripVertical className="w-4 h-4 text-gray-300 hover:text-gray-500" />
+          <GripVertical className="w-4 h-4 text-zenshin-navy/30 hover:text-zenshin-navy/50" />
         </div>
       )}
       <div
@@ -1153,7 +1153,7 @@ function SortableActionItem({
         <Popover open={isStatusOpen} onOpenChange={setIsStatusOpen}>
           <PopoverTrigger asChild>
             <button
-              className="shrink-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              className="shrink-0 p-1 rounded-full hover:bg-zenshin-navy/8 transition-colors"
               title="ステータスを変更"
             >
               {getActionStatusIcon(actionPlan.status || null, isCompleted)}
@@ -1161,11 +1161,11 @@ function SortableActionItem({
           </PopoverTrigger>
           <PopoverContent className="w-40 p-1 z-50" align="start">
             {[
-              { value: "todo", label: "未着手", icon: <Circle className="w-4 h-4 text-gray-400" /> },
+              { value: "todo", label: "未着手", icon: <Circle className="w-4 h-4 text-zenshin-navy/40" /> },
               { value: "in_progress", label: "進行中", icon: <Clock className="w-4 h-4 text-blue-500" /> },
               { value: "done", label: "完了", icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
               { value: "pending", label: "保留", icon: <Pause className="w-4 h-4 text-yellow-500" /> },
-              { value: "canceled", label: "中止", icon: <XCircle className="w-4 h-4 text-gray-400" /> },
+              { value: "canceled", label: "中止", icon: <XCircle className="w-4 h-4 text-zenshin-navy/40" /> },
             ].map((statusOption) => (
               <button
               key={statusOption.value}
@@ -1173,8 +1173,8 @@ function SortableActionItem({
                   handleStatusSelect(statusOption.value);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-gray-100",
-                  currentStatus === statusOption.value && "bg-gray-100"
+                  "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-zenshin-navy/8",
+                  currentStatus === statusOption.value && "bg-zenshin-navy/8"
                 )}
               >
                 {statusOption.icon}
@@ -1214,7 +1214,7 @@ function SortableActionItem({
         {...actionInput.bind}
         placeholder="Actionを記述..."
         className={`text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable ${
-          isCompleted ? "line-through text-gray-400" : ""
+          isCompleted ? "line-through text-zenshin-navy/40" : ""
         }`}
         onKeyDown={(e) => {
           actionInput.handleKeyDown(e);
@@ -1241,7 +1241,7 @@ function SortableActionItem({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel className="text-xs text-gray-500">
+              <DropdownMenuLabel className="text-xs text-zenshin-navy/50">
                 Tensionに追加:
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -1260,7 +1260,7 @@ function SortableActionItem({
           </DropdownMenu>
         )}
         <div
-          className="w-[110px] relative flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200"
+          className="w-[110px] relative flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200"
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
@@ -1281,7 +1281,7 @@ function SortableActionItem({
             <PopoverTrigger asChild>
               <div
                 className={cn(
-                  "relative group/avatar cursor-pointer flex items-center justify-center rounded-md transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200",
+                  "relative group/avatar cursor-pointer flex items-center justify-center rounded-md transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200",
                   actionPlan.assignee
                     ? "opacity-100"
                     : "opacity-0 group-hover:opacity-100"
@@ -1442,7 +1442,7 @@ function SortableActionItem({
               "flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1",
               actionPlan.childChartId || actionPlan.hasSubChart
                 ? "bg-purple-100 ring-1 ring-purple-300"
-                : "hover:bg-gray-100 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100"
+                : "hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100"
             )}
           >
             <Button
@@ -1453,7 +1453,7 @@ function SortableActionItem({
                 "h-8 w-8 shrink-0 transition-opacity hover:bg-transparent rounded-full p-0",
                 actionPlan.childChartId || actionPlan.hasSubChart
                   ? "text-purple-600 opacity-100"
-                  : "text-gray-400 hover:text-gray-600"
+                  : "text-zenshin-navy/40 hover:text-gray-600"
               )}
               disabled={telescopingActionId === actionPlan.id}
               title={
@@ -1469,13 +1469,13 @@ function SortableActionItem({
               )}
             </Button>
           </div>
-          <div className="flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-gray-100 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100">
+          <div className="flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity"
+                  className="h-8 w-8 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
@@ -1533,7 +1533,7 @@ function SortableActionItem({
                 {incompleteDialog?.incompleteActions &&
                   incompleteDialog.incompleteActions.length > 0 && (
                     <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500 mb-2">
+                      <p className="text-xs text-zenshin-navy/50 mb-2">
                         未完了のアクション:
                       </p>
                       <ul className="space-y-1">
@@ -1542,12 +1542,12 @@ function SortableActionItem({
                             key={action.id}
                             className="text-sm text-gray-700 flex items-center gap-2"
                           >
-                            <Circle className="w-3 h-3 text-gray-400 shrink-0" />
+                            <Circle className="w-3 h-3 text-zenshin-navy/40 shrink-0" />
                             <span className="truncate">{action.title}</span>
                           </li>
                         ))}
                         {incompleteDialog.incompleteCount > 5 && (
-                          <li className="text-xs text-gray-500 pl-5">
+                          <li className="text-xs text-zenshin-navy/50 pl-5">
                             他 {incompleteDialog.incompleteCount - 5}件...
                           </li>
                         )}
@@ -1716,7 +1716,7 @@ function TensionGroup({
                 disabled={isMovingArea}
                 title="カテゴリーを変更"
               >
-                <Tag className="h-4 w-4 text-gray-500" />
+                <Tag className="h-4 w-4 text-zenshin-navy/50" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -1747,7 +1747,7 @@ function TensionGroup({
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-7 w-7 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-7 w-7 text-zenshin-navy/40 hover:text-gray-600 hover:bg-zenshin-navy/8 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
@@ -1809,7 +1809,7 @@ function TensionGroup({
           </SortableContext>
         )}
         {datedItems.length > 0 && undatedItems.length > 0 && (
-          <div className="h-px bg-gray-100 my-3" />
+          <div className="h-px bg-zenshin-navy/8 my-3" />
         )}
         <div ref={setActionListRef} className="min-h-[40px]">
           <SortableContext
@@ -1823,7 +1823,7 @@ function TensionGroup({
                     className={`border-2 border-dashed rounded p-6 text-center transition-colors ${
                       isActionListOver
                         ? "border-blue-400 bg-blue-50 text-blue-600"
-                        : "border-gray-300 text-gray-400"
+                        : "border-gray-300 text-zenshin-navy/40"
                     }`}
                   >
                     <div className="text-sm font-medium">ここにドロップ</div>
@@ -1853,7 +1853,7 @@ function TensionGroup({
             </div>
           </SortableContext>
         </div>
-        <div className="p-2 border-t border-gray-100/50 bg-white">
+        <div className="p-2 border-t border-zenshin-navy/5 bg-white">
           <div className="flex gap-2">
             <Input
               {...newActionInput.bind}
@@ -2100,7 +2100,7 @@ function ActionSection({
               </SortableContext>
             )}
             {datedItems.length > 0 && undatedItems.length > 0 && (
-              <div className="h-px bg-gray-100 my-3" />
+              <div className="h-px bg-zenshin-navy/8 my-3" />
             )}
             <div className="min-h-[40px]">
               {undatedItems.length === 0 ? (
@@ -2109,7 +2109,7 @@ function ActionSection({
                     className={`border-2 border-dashed rounded p-6 text-center transition-colors ${
                       isOver
                         ? "border-blue-400 bg-blue-50 text-blue-600"
-                        : "border-gray-300 text-gray-400"
+                        : "border-gray-300 text-zenshin-navy/40"
                     }`}
                   >
                     <div className="text-sm font-medium">ここにドロップ</div>
@@ -2748,13 +2748,13 @@ export function ProjectEditor({
                   className="w-3 h-3 rounded-full mr-2"
                   style={{ backgroundColor: area.color }}
                 />
-                <span className="text-sm font-bold text-gray-700">{area.name}</span>
-                <span className="ml-2 text-xs text-gray-400">({areaVisions.length}件)</span>
+                <span className="text-sm font-bold text-zenshin-navy">{area.name}</span>
+                <span className="ml-2 text-xs text-zenshin-navy/40">({areaVisions.length}件)</span>
               </div>
               <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
                 <SortableContext items={areaVisions} strategy={verticalListSortingStrategy}>
                   {areaVisions.length === 0 ? (
-                    <div className="text-gray-400 text-sm py-2 px-1 select-none opacity-60">
+                    <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
                       アイテムなし
                     </div>
                   ) : (
@@ -2794,8 +2794,8 @@ export function ProjectEditor({
             <div className="mb-4 last:mb-0">
               <div className="flex items-center px-3 mb-1">
                 <span className="w-3 h-3 rounded-full mr-2 bg-gray-400" />
-                <span className="text-sm font-bold text-gray-700">未分類</span>
-                <span className="ml-2 text-xs text-gray-400">
+                <span className="text-sm font-bold text-zenshin-navy">未分類</span>
+                <span className="ml-2 text-xs text-zenshin-navy/40">
                   ({uncategorizedVisions.length}件)
                 </span>
               </div>
@@ -2805,7 +2805,7 @@ export function ProjectEditor({
                   strategy={verticalListSortingStrategy}
                 >
                   {uncategorizedVisions.length === 0 ? (
-                    <div className="text-gray-400 text-sm py-2 px-1 select-none opacity-60">
+                    <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
                       アイテムなし
                     </div>
                   ) : (
@@ -2880,13 +2880,13 @@ export function ProjectEditor({
                   className="w-3 h-3 rounded-full mr-2"
                   style={{ backgroundColor: area.color }}
                 />
-                <span className="text-sm font-bold text-gray-700">{area.name}</span>
-                <span className="ml-2 text-xs text-gray-400">({areaRealities.length}件)</span>
+                <span className="text-sm font-bold text-zenshin-navy">{area.name}</span>
+                <span className="ml-2 text-xs text-zenshin-navy/40">({areaRealities.length}件)</span>
               </div>
               <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
                 <SortableContext items={areaRealities} strategy={verticalListSortingStrategy}>
                   {areaRealities.length === 0 ? (
-                    <div className="text-gray-400 text-sm py-2 px-1 select-none opacity-60">
+                    <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
                       アイテムなし
                     </div>
                   ) : (
@@ -2925,8 +2925,8 @@ export function ProjectEditor({
             <div className="mb-4 last:mb-0">
               <div className="flex items-center px-3 mb-1">
                 <span className="w-3 h-3 rounded-full mr-2 bg-gray-400" />
-                <span className="text-sm font-bold text-gray-700">未分類</span>
-                <span className="ml-2 text-xs text-gray-400">
+                <span className="text-sm font-bold text-zenshin-navy">未分類</span>
+                <span className="ml-2 text-xs text-zenshin-navy/40">
                   ({uncategorizedRealities.length}件)
                 </span>
               </div>
@@ -2936,7 +2936,7 @@ export function ProjectEditor({
                   strategy={verticalListSortingStrategy}
                 >
                   {uncategorizedRealities.length === 0 ? (
-                    <div className="text-gray-400 text-sm py-2 px-1 select-none opacity-60">
+                    <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
                       アイテムなし
                     </div>
                   ) : (
@@ -4277,7 +4277,7 @@ export function ProjectEditor({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F5F7FA]">
+    <div className="flex flex-col h-screen bg-zenshin-cream">
       {/* Undo通知（画面中央） */}
       {undoNotification && (
         <UndoNotification
@@ -4288,19 +4288,19 @@ export function ProjectEditor({
         />
       )}
       {/* ヘッダー */}
-      <header className="border-b bg-white sticky top-0 z-10">
+      <header className="border-b border-zenshin-navy/10 bg-zenshin-cream sticky top-0 z-10">
         {/* 上段: パンくず & アクション */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100">
-          <nav className="flex items-center gap-2 text-sm text-gray-500">
-            <Link href="/charts" className="hover:text-gray-700 transition-colors">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-zenshin-navy/5">
+          <nav className="flex items-center gap-2 text-sm text-zenshin-navy/50">
+            <Link href="/charts" className="hover:text-zenshin-navy transition-colors">
               <Home className="w-4 h-4" />
             </Link>
-            <ChevronRight className="w-4 h-4 text-gray-300" />
+            <ChevronRight className="w-4 h-4 text-zenshin-navy/30" />
             {(() => {
               const breadcrumbItems = breadcrumbs.filter((crumb) => crumb.id !== "root");
               if (breadcrumbItems.length === 0) {
                 return (
-                  <span className="text-gray-900 font-medium truncate max-w-[200px]">
+                  <span className="text-zenshin-navy font-medium truncate max-w-[200px]">
                     {chart.title}
                   </span>
                 );
@@ -4317,20 +4317,20 @@ export function ProjectEditor({
                     {isClickable ? (
                       <Link
                         href={`/charts/${crumb.id}`}
-                        className="hover:text-gray-700 transition-colors truncate max-w-[150px]"
+                        className="hover:text-zenshin-navy transition-colors truncate max-w-[150px]"
                       >
                         {crumb.title}
                       </Link>
                     ) : (
                       <span
                         className={`truncate max-w-[200px] ${
-                          isLast || isCurrentChart ? "text-gray-900 font-medium" : "text-gray-500"
+                          isLast || isCurrentChart ? "text-zenshin-navy font-medium" : "text-zenshin-navy/50"
                         }`}
                       >
                         {crumb.title}
                       </span>
                     )}
-                    {!isLast && <ChevronRight className="w-4 h-4 text-gray-300" />}
+                    {!isLast && <ChevronRight className="w-4 h-4 text-zenshin-navy/30" />}
                   </div>
                 );
               });
@@ -4375,16 +4375,16 @@ export function ProjectEditor({
           <input
             type="text"
             {...chartTitleInput.bind}
-            className="text-2xl font-bold text-gray-900 bg-transparent border-none outline-none w-full hover:bg-gray-50 focus:bg-gray-50 rounded px-1 -ml-1 transition-colors"
+            className="text-2xl font-bold text-zenshin-navy bg-transparent border-none outline-none w-full hover:bg-zenshin-cream focus:bg-zenshin-cream rounded px-1 -ml-1 transition-colors"
             placeholder="チャート名を入力..."
           />
         </div>
 
         {/* 下段: メタデータ & フィルター */}
-        <div className="flex items-center gap-4 px-6 py-3 bg-gray-50/50 border-t border-gray-100">
+        <div className="flex items-center gap-4 px-6 py-3 bg-gray-50/50 border-t border-zenshin-navy/5">
           <Popover>
             <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md px-2 py-1.5 transition-colors">
+              <button className="flex items-center gap-2 text-sm text-zenshin-navy/60 hover:text-gray-900 hover:bg-zenshin-navy/8 rounded-md px-2 py-1.5 transition-colors">
                 <CalendarIcon className="w-4 h-4" />
                 <span>
                   {chartDueDate
@@ -4407,7 +4407,7 @@ export function ProjectEditor({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full text-gray-500 hover:text-red-500"
+                    className="w-full text-zenshin-navy/50 hover:text-red-500"
                     onClick={() => handleUpdateChartDueDate(null)}
                   >
                     期限をクリア
@@ -4443,7 +4443,7 @@ export function ProjectEditor({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-sm text-gray-600"
+            className="h-8 text-sm text-zenshin-navy/60"
             onClick={() => setTagManagerOpen(true)}
           >
             <Settings className="w-4 h-4 mr-1.5" />
@@ -4462,16 +4462,16 @@ export function ProjectEditor({
       />
 
       {/* メインエリア */}
-      <div className="flex-1 overflow-hidden bg-[#F5F7FA]">
+      <div className="flex-1 overflow-hidden bg-zenshin-cream">
         {focusedArea ? (
           <div className="h-full p-6">
             {focusedArea === "vision" && (
               <div className="h-full">
-                <div className="flex flex-col bg-white border-2 border-blue-200 rounded-lg shadow-sm h-full">
-                  <div className="px-3 py-2 border-b bg-white flex items-center justify-between rounded-t-lg">
+                <div className="flex flex-col bg-white border-2 border-zenshin-teal/50 rounded-lg shadow-sm h-full">
+                  <div className="px-3 py-2 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg">
                     <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4 text-blue-600" />
-                      <h2 className="text-base font-bold text-foreground leading-tight">Vision</h2>
+                      <Target className="w-4 h-4 text-zenshin-teal" />
+                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">Vision</h2>
                     </div>
                     <Button
                       size="icon"
@@ -4530,10 +4530,10 @@ export function ProjectEditor({
             )}
             {focusedArea === "reality" && (
               <div className="h-full">
-                <div className="flex flex-col bg-white border-2 border-orange-200 rounded-lg shadow-sm h-full overflow-hidden">
-                  <div className="px-3 py-2 border-b bg-white flex items-center justify-between rounded-t-lg shrink-0">
+                <div className="flex flex-col bg-white border-2 border-zenshin-orange/50 rounded-lg shadow-sm h-full overflow-hidden">
+                  <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-orange-600" />
+                      <AlertCircle className="w-4 h-4 text-zenshin-orange" />
                       <h2 className="text-base font-bold text-foreground leading-tight">
                         Reality
                       </h2>
@@ -4601,10 +4601,10 @@ export function ProjectEditor({
             )}
             {focusedArea === "tension" && (
               <div className="h-full">
-                <div className="flex flex-col bg-white border-2 border-gray-300 rounded-lg shadow-sm h-full overflow-hidden">
-                  <div className="px-3 py-2 border-b bg-white flex items-center justify-between rounded-t-lg shrink-0">
+                <div className="flex flex-col bg-white border-2 border-zenshin-navy/30 rounded-lg shadow-sm h-full overflow-hidden">
+                  <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-yellow-500" />
+                      <Zap className="w-4 h-4 text-zenshin-navy" />
                       <h2 className="text-base font-bold text-foreground leading-tight">
                         Tension & Action
                       </h2>
@@ -4709,11 +4709,11 @@ export function ProjectEditor({
             <div className="w-1/2 h-full p-6 flex flex-col gap-4 overflow-hidden">
               {/* Vision Area - 50% */}
               <div className="flex-1 min-h-0">
-                <div className="h-full flex flex-col bg-white border-2 border-blue-200 rounded-lg shadow-sm overflow-hidden">
-                  <div className="px-3 py-2 border-b bg-white flex items-center justify-between rounded-t-lg">
+                <div className="h-full flex flex-col bg-white border-2 border-zenshin-teal/50 rounded-lg shadow-sm overflow-hidden">
+                  <div className="px-3 py-2 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg">
                     <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4 text-blue-600" />
-                      <h2 className="text-base font-bold text-foreground leading-tight">Vision</h2>
+                      <Target className="w-4 h-4 text-zenshin-teal" />
+                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">Vision</h2>
                     </div>
                     <Button
                       size="icon"
@@ -4776,11 +4776,11 @@ export function ProjectEditor({
               
               {/* Reality Area - 50% */}
               <div className="flex-1 min-h-0">
-                <div className="h-full flex flex-col bg-white border-2 border-orange-200 rounded-lg shadow-sm overflow-hidden">
-                  <div className="px-3 py-2 border-b bg-white flex items-center justify-between rounded-t-lg shrink-0">
+                <div className="h-full flex flex-col bg-white border-2 border-zenshin-orange/50 rounded-lg shadow-sm overflow-hidden">
+                  <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-orange-600" />
-                      <h2 className="text-base font-bold text-foreground leading-tight">Reality</h2>
+                      <AlertCircle className="w-4 h-4 text-zenshin-orange" />
+                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">Reality</h2>
                     </div>
                     <Button
                       size="icon"
@@ -4844,11 +4844,11 @@ export function ProjectEditor({
 
             {/* Right Panel: Tension & Action - 50% */}
             <div className="w-1/2 h-full p-6 overflow-hidden">
-              <div className="flex flex-col bg-white border-2 border-gray-300 rounded-lg shadow-sm h-full overflow-hidden">
-                <div className="px-3 py-2 border-b bg-white flex items-center justify-between rounded-t-lg shrink-0">
+              <div className="flex flex-col bg-white border-2 border-zenshin-navy/30 rounded-lg shadow-sm h-full overflow-hidden">
+                <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
                   <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-yellow-500" />
-                    <h2 className="text-base font-bold text-foreground leading-tight">Tension & Action</h2>
+                    <Zap className="w-4 h-4 text-zenshin-navy" />
+                    <h2 className="text-base font-bold text-zenshin-navy leading-tight">Tension & Action</h2>
                   </div>
                   <Button
                     size="icon"
