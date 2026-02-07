@@ -325,12 +325,12 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
       >
         <div className="px-8 py-4 border-b bg-zenshin-cream">
           <div className="flex items-center justify-between mb-4">
-            <TabsList>
-              <TabsTrigger value="kanban" className="flex items-center gap-2">
+            <TabsList className="bg-zenshin-navy/5 p-0.5">
+              <TabsTrigger value="kanban" className="flex items-center gap-2 text-zenshin-navy/60 data-[state=active]:bg-white data-[state=active]:text-zenshin-navy data-[state=active]:shadow-sm hover:text-zenshin-navy transition-colors">
                 <LayoutGrid className="w-4 h-4" />
                 カンバン
               </TabsTrigger>
-              <TabsTrigger value="tree" className="flex items-center gap-2">
+              <TabsTrigger value="tree" className="flex items-center gap-2 text-zenshin-navy/60 data-[state=active]:bg-white data-[state=active]:text-zenshin-navy data-[state=active]:shadow-sm hover:text-zenshin-navy transition-colors">
                 <GitBranch className="w-4 h-4" />
                 ツリー
               </TabsTrigger>
