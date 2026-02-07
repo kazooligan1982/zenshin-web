@@ -270,7 +270,7 @@ export function TreeView({
       case "in_progress":
         return <Clock className="w-4 h-4 text-blue-500" />;
       case "pending":
-        return <Pause className="w-4 h-4 text-zenshin-navy" />;
+        return <Pause className="w-4 h-4 text-amber-500" />;
       case "canceled":
         return <XCircle className="w-4 h-4 text-zenshin-navy/40" />;
       default:
@@ -405,7 +405,7 @@ export function TreeView({
     return (
       <button
         onClick={handleSort}
-        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1 text-xs font-medium text-zenshin-navy/50 hover:text-zenshin-navy transition-colors"
       >
         {label}
         {isActive ? (
@@ -438,9 +438,9 @@ export function TreeView({
       <div key={node.id}>
         <div
           className={cn(
-            "relative grid grid-cols-[1fr_120px_120px_120px] gap-2 items-center py-2 px-4 border-b text-sm transition-colors",
+            "relative grid grid-cols-[1fr_100px_80px_80px] gap-2 items-center py-2 px-4 border-b text-sm transition-colors",
             isTension && "bg-zenshin-cream/60 font-semibold",
-            isAction && "cursor-pointer hover:bg-zenshin-cream/50"
+            isAction && "bg-white cursor-pointer hover:bg-zenshin-cream/50"
           )}
           onClick={(event) => handleActionClick(node, event)}
         >
@@ -470,7 +470,7 @@ export function TreeView({
             )}
 
             {isTension ? (
-              <Zap className="w-4 h-4 text-zenshin-navy shrink-0" />
+              <Zap className="w-4 h-4 text-zenshin-navy/60 shrink-0" />
             ) : (
               getStatusIcon(node.status || null, node.is_completed || null)
             )}
@@ -497,7 +497,7 @@ export function TreeView({
 
           </div>
 
-          <div className="flex items-center justify-center text-muted-foreground text-xs status-select">
+          <div className="flex items-center justify-center text-zenshin-navy/60 text-xs status-select">
             {isAction && (
               <Select
                 value={node.status || (node.is_completed ? "done" : "todo")}
@@ -510,7 +510,7 @@ export function TreeView({
                   )
                 }
               >
-                <SelectTrigger className="h-8 w-[120px] border-0 bg-transparent shadow-none hover:bg-accent focus:ring-0">
+                <SelectTrigger className="h-7 w-auto gap-0.5 px-2 border-0 bg-transparent shadow-none hover:bg-zenshin-navy/5 focus:ring-0 text-xs rounded-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -527,12 +527,14 @@ export function TreeView({
           <div className="flex items-center justify-center">
             {isAction &&
               (node.assignee ? (
-              <div className="flex items-center gap-1 text-xs text-zenshin-navy/60">
-                  <User className="w-4 h-4" />
-                  <span className="truncate max-w-[60px]">{node.assignee}</span>
-                </div>
+              <div
+                className="w-5 h-5 rounded-full bg-zenshin-teal/15 text-zenshin-teal text-[10px] font-medium flex items-center justify-center"
+                title={node.assignee}
+              >
+                {node.assignee.charAt(0).toUpperCase()}
+              </div>
               ) : (
-                <UserPlus className="w-4 h-4 text-zenshin-navy/30" />
+                <UserPlus className="w-4 h-4 text-zenshin-navy/20" />
               ))}
           </div>
 
@@ -590,28 +592,28 @@ export function TreeView({
     <div className="flex flex-col h-full pl-2">
       <div className="flex items-center justify-between px-4 py-2 border-b bg-white">
         <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-blue-500" />
+          <Target className="w-5 h-5 text-zenshin-teal" />
           <span className="font-semibold">{treeData.chart.name}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={expandAll}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-zenshin-navy/60 hover:text-zenshin-navy hover:underline"
           >
             全て展開
           </button>
-          <span className="text-zenshin-navy/30">|</span>
+          <span className="text-zenshin-navy/20">|</span>
           <button
             onClick={collapseAll}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-zenshin-navy/60 hover:text-zenshin-navy hover:underline"
           >
             全て折りたたむ
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_120px_120px_120px] gap-2 items-center px-4 py-2 border-b bg-muted/30 text-xs font-medium text-muted-foreground sticky top-0 z-10">
-        <span className="text-xs font-medium text-muted-foreground">タイトル</span>
+      <div className="grid grid-cols-[1fr_100px_80px_80px] gap-2 items-center px-4 py-2 border-b bg-zenshin-cream/80 text-xs font-medium text-zenshin-navy/50 sticky top-0 z-10">
+        <span className="text-xs font-medium text-zenshin-navy/50">タイトル</span>
         <SortableHeader label="ステータス" sortKey="status" />
         <SortableHeader label="担当者" sortKey="assignee" />
         <SortableHeader label="期限" sortKey="due_date" />
@@ -673,13 +675,13 @@ export function TreeView({
               </AlertDialogDescription>
             </AlertDialogHeader>
             {confirmDialog.incompleteActions.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-3">
+              <div className="bg-zenshin-cream/50 rounded-lg p-3">
                 <p className="text-xs text-zenshin-navy/50 mb-2">未完了のアクション:</p>
                 <ul className="space-y-1">
                   {confirmDialog.incompleteActions.map((action) => (
                     <li
                       key={action.id}
-                      className="text-sm text-gray-700 flex items-center gap-2"
+                      className="text-sm text-zenshin-navy flex items-center gap-2"
                     >
                       <Circle className="w-3 h-3 text-zenshin-navy/40" />
                       {action.title}
