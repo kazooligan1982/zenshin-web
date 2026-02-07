@@ -338,19 +338,13 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
           </div>
 
           {/* フィルターバー */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
-              <Filter className="w-4 h-4" />
-              <span>フィルター</span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-8 w-[130px] text-xs border-zenshin-navy/15">
+                <SelectTrigger className="h-7 w-auto gap-1 px-2.5 text-xs font-medium border-0 bg-transparent hover:bg-zenshin-navy/5 rounded-md shadow-none focus:ring-0 text-zenshin-navy/70">
                   <SelectValue placeholder="ステータス" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">すべて</SelectItem>
+                  <SelectItem value="all">ステータス</SelectItem>
                   <SelectItem value="todo">未着手</SelectItem>
                   <SelectItem value="in_progress">進行中</SelectItem>
                   <SelectItem value="done">完了</SelectItem>
@@ -360,11 +354,11 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
               </Select>
 
               <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                <SelectTrigger className="h-8 w-[120px] text-xs border-zenshin-navy/15">
+                <SelectTrigger className="h-7 w-auto gap-1 px-2.5 text-xs font-medium border-0 bg-transparent hover:bg-zenshin-navy/5 rounded-md shadow-none focus:ring-0 text-zenshin-navy/70">
                   <SelectValue placeholder="担当者" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">すべて</SelectItem>
+                  <SelectItem value="all">担当者</SelectItem>
                   <SelectItem value="unassigned">未割り当て</SelectItem>
                   {assignees.map((a) => (
                     <SelectItem key={a} value={a}>
@@ -375,11 +369,11 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
               </Select>
 
               <Select value={dueDateFilter} onValueChange={setDueDateFilter}>
-                <SelectTrigger className="h-8 w-[120px] text-xs border-zenshin-navy/15">
+                <SelectTrigger className="h-7 w-auto gap-1 px-2.5 text-xs font-medium border-0 bg-transparent hover:bg-zenshin-navy/5 rounded-md shadow-none focus:ring-0 text-zenshin-navy/70">
                   <SelectValue placeholder="期限" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">すべて</SelectItem>
+                  <SelectItem value="all">期限</SelectItem>
                   <SelectItem value="overdue">期限切れ</SelectItem>
                   <SelectItem value="today">今日</SelectItem>
                   <SelectItem value="this_week">今週</SelectItem>
@@ -388,16 +382,17 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
                 </SelectContent>
               </Select>
 
-              <div className="relative min-w-[220px]">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zenshin-navy/40" />
+              <div className="flex-1" />
+
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zenshin-navy/30" />
                 <Input
-                  placeholder="アクション名で検索..."
+                  placeholder="検索..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 pl-8 text-xs border-zenshin-navy/15"
+                  className="h-7 w-[160px] pl-7 text-xs border-0 bg-zenshin-navy/5 rounded-md shadow-none focus-visible:ring-1 focus-visible:ring-zenshin-navy/20 placeholder:text-zenshin-navy/30"
                 />
               </div>
-            </div>
           </div>
         </div>
 
