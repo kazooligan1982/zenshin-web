@@ -60,7 +60,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import TextareaAutosize from "react-textarea-autosize";
 import {
   Select,
   SelectContent,
@@ -462,34 +461,14 @@ function SortableVisionItem({
         <GripVertical className="h-4 w-4 text-zenshin-navy/40" />
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
-        <Badge
-          variant="outline"
-          className="bg-blue-50 text-blue-600 border-blue-200 text-[10px] h-6 inline-flex items-center px-2 shrink-0"
-          style={{ minHeight: "1.5rem" }}
-        >
-          V-{String(index + 1).padStart(2, "0")}
-        </Badge>
-        {area && (
-          <Badge
-            variant="outline"
-            className="text-[10px] h-6 inline-flex items-center px-2 shrink-0"
-            style={{
-              minHeight: "1.5rem",
-              backgroundColor: `${area.color}20`,
-              borderColor: area.color,
-              color: area.color,
-            }}
-          >
-            {area.name}
-          </Badge>
-        )}
-      </div>
+      <span className="text-[11px] font-mono text-zenshin-teal/50 w-5 text-right shrink-0 leading-6">
+        {index + 1}
+      </span>
 
       <div className="flex-1 min-w-0">
         <Input
           {...visionInput.bind}
-          placeholder="Visionを記述..."
+          placeholder="理想の状態を書く..."
           className="text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable"
           onKeyDown={(e) => {
             visionInput.handleKeyDown(e);
@@ -538,7 +517,7 @@ function SortableVisionItem({
                         className="h-5 w-5 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="h-5 w-5 rounded-full bg-purple-500 text-white text-[10px] flex items-center justify-center font-medium">
+                      <div className="h-5 w-5 rounded-full bg-zenshin-navy text-white text-[10px] flex items-center justify-center font-medium">
                         {vision.assignee.charAt(0).toUpperCase()}
                       </div>
                     )
@@ -584,7 +563,7 @@ function SortableVisionItem({
                         className="h-4 w-4 rounded-full object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div className="h-4 w-4 rounded-full bg-purple-500 text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
+                      <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
                         {(currentUser.name || currentUser.email || "?")
                           .charAt(0)
                           .toUpperCase()}
@@ -623,7 +602,7 @@ function SortableVisionItem({
             <FileText size={16} />
           </Button>
           {(vision.comment_count ?? 0) > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold text-white ring-2 ring-white pointer-events-none z-10">
+            <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-zenshin-teal px-1 text-[10px] font-bold text-white ring-2 ring-white pointer-events-none z-10">
               {(vision.comment_count ?? 0) > 99 ? "99+" : vision.comment_count ?? 0}
             </span>
           )}
@@ -768,38 +747,15 @@ function SortableRealityItem({
             <GripVertical className="w-4 h-4" />
           </div>
         )}
-        <div className="flex items-center gap-1 shrink-0">
-          <Badge
-            variant="outline"
-            className="bg-orange-50 text-orange-600 border-orange-200 text-[10px] h-6 inline-flex items-center px-2 shrink-0"
-            style={{ minHeight: "1.5rem" }}
-          >
-            R-{String(index + 1).padStart(2, "0")}
-          </Badge>
-          {area && (
-            <Badge
-              variant="outline"
-              className="text-[10px] h-6 inline-flex items-center px-2 shrink-0"
-              style={{
-                minHeight: "1.5rem",
-                backgroundColor: `${area.color}20`,
-                borderColor: area.color,
-                color: area.color,
-              }}
-            >
-              {area.name}
-            </Badge>
-          )}
-        </div>
+        <span className="text-[11px] font-mono text-zenshin-orange/50 w-5 text-right shrink-0 leading-6">
+          {index + 1}
+        </span>
       </div>
       <div className="flex-1 min-w-0 overflow-hidden">
-        <TextareaAutosize
+        <Input
           {...realityInput.bind}
-          placeholder="Realityを記述..."
-          minRows={1}
-          maxRows={5}
-          className={cn(TEXTAREA_CLASSES, "keyboard-focusable")}
-          style={TEXT_FIXED_STYLE as any}
+          placeholder="今の現実を書く..."
+          className="text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable"
           disabled={reality.isLocked}
           onKeyDown={(e) => {
             if (e.nativeEvent.isComposing) return;
@@ -853,7 +809,7 @@ function SortableRealityItem({
             <FileText size={16} />
           </Button>
           {(reality.comment_count ?? 0) > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold text-white ring-2 ring-white pointer-events-none z-10">
+            <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-zenshin-teal px-1 text-[10px] font-bold text-white ring-2 ring-white pointer-events-none z-10">
               {(reality.comment_count ?? 0) > 99 ? "99+" : reality.comment_count ?? 0}
             </span>
           )}
@@ -1184,15 +1140,13 @@ function SortableActionItem({
           </PopoverContent>
         </Popover>
       </div>
-      <Badge
-        variant="outline"
-        className={`bg-purple-100 text-purple-700 border-purple-300 text-[10px] h-6 inline-flex items-center px-2 shrink-0 ${
+      <span
+        className={`text-[11px] font-mono text-zenshin-navy/35 w-5 text-right shrink-0 leading-6 ${
           isCompleted ? "opacity-60" : ""
         }`}
-        style={{ minHeight: "1.5rem" }}
       >
-        A-{String(actionIndex + 1).padStart(2, "0")}
-      </Badge>
+        {actionIndex + 1}
+      </span>
       {!hideAreaBadge && (
         <Badge
           variant="outline"
@@ -1305,7 +1259,7 @@ function SortableActionItem({
                       className="h-5 w-5 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="h-5 w-5 rounded-full bg-purple-500 text-white text-[10px] flex items-center justify-center font-medium">
+                    <div className="h-5 w-5 rounded-full bg-zenshin-navy text-white text-[10px] flex items-center justify-center font-medium">
                       {actionPlan.assignee.charAt(0).toUpperCase()}
                     </div>
                   )
@@ -1356,7 +1310,7 @@ function SortableActionItem({
                         className="h-4 w-4 rounded-full object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div className="h-4 w-4 rounded-full bg-purple-500 text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
+                      <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
                         {(currentUser.name || currentUser.email || "?")
                           .charAt(0)
                           .toUpperCase()}
@@ -1396,7 +1350,7 @@ function SortableActionItem({
               <FileText size={16} />
             </Button>
             {(actionPlan.comment_count ?? 0) > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold text-white ring-2 ring-white pointer-events-none z-10">
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-zenshin-teal px-1 text-[10px] font-bold text-white ring-2 ring-white pointer-events-none z-10">
                 {(actionPlan.comment_count ?? 0) > 99 ? "99+" : actionPlan.comment_count ?? 0}
               </span>
             )}
@@ -1441,7 +1395,7 @@ function SortableActionItem({
             className={cn(
               "flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1",
               actionPlan.childChartId || actionPlan.hasSubChart
-                ? "bg-purple-100 ring-1 ring-purple-300"
+                ? "bg-zenshin-navy/10 ring-1 ring-zenshin-navy/30"
                 : "hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100"
             )}
           >
@@ -1452,7 +1406,7 @@ function SortableActionItem({
               className={cn(
                 "h-8 w-8 shrink-0 transition-opacity hover:bg-transparent rounded-full p-0",
                 actionPlan.childChartId || actionPlan.hasSubChart
-                  ? "text-purple-600 opacity-100"
+                  ? "text-zenshin-navy opacity-100"
                   : "text-zenshin-navy/40 hover:text-gray-600"
               )}
               disabled={telescopingActionId === actionPlan.id}
@@ -1697,7 +1651,7 @@ function TensionGroup({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Input
             {...tensionTitleInput.bind}
-            placeholder="Tensionタイトルを入力..."
+            placeholder="VisionとRealityのギャップは？"
             className="text-base font-semibold bg-transparent border-none focus-visible:ring-0 flex-1 min-w-0 keyboard-focusable"
             onKeyDown={(e) => {
               tensionTitleInput.handleKeyDown(e);
@@ -2020,7 +1974,7 @@ function ActionSection({
                 handleKeyboardNavigation(e);
               }
             }}
-            placeholder={`「${areaName}」におけるTension(課題)を入力...`}
+            placeholder={`「${areaName}」のTensionを追加...`}
             className="h-8 text-sm keyboard-focusable"
           />
         </div>
@@ -4376,7 +4330,7 @@ export function ProjectEditor({
             type="text"
             {...chartTitleInput.bind}
             className="text-2xl font-bold text-zenshin-navy bg-transparent border-none outline-none w-full hover:bg-zenshin-cream focus:bg-zenshin-cream rounded px-1 -ml-1 transition-colors"
-            placeholder="チャート名を入力..."
+            placeholder="チャートの目的を一言で"
           />
         </div>
 
@@ -4507,7 +4461,7 @@ export function ProjectEditor({
                           }
                           newVisionInput.handleKeyDown(e);
                         }}
-                        placeholder="新しいVisionを入力... (Enterで追加)"
+                        placeholder="＋ 新しいVisionを追加"
                         className="text-sm h-7 flex-1"
                         disabled={isSubmittingVision}
                       />
@@ -4576,7 +4530,7 @@ export function ProjectEditor({
                           }
                           newRealityInput.handleKeyDown(e);
                         }}
-                        placeholder="新しいRealityを入力... (Enterで追加)"
+                        placeholder="＋ 新しいRealityを追加"
                         className="text-sm h-7 flex-1"
                         disabled={isSubmittingReality}
                       />
@@ -4753,7 +4707,7 @@ export function ProjectEditor({
                           }
                           newVisionInput.handleKeyDown(e);
                         }}
-                        placeholder="新しいVisionを入力... (Enterで追加)"
+                        placeholder="＋ 新しいVisionを追加"
                         className="text-sm h-7 flex-1"
                         disabled={isSubmittingVision}
                       />
@@ -4820,7 +4774,7 @@ export function ProjectEditor({
                           }
                           newRealityInput.handleKeyDown(e);
                         }}
-                        placeholder="新しいRealityを入力... (Enterで追加)"
+                        placeholder="＋ 新しいRealityを追加"
                         className="text-sm h-7 flex-1"
                         disabled={isSubmittingReality}
                       />
