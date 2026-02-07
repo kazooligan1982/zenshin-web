@@ -112,3 +112,41 @@
 ## Links
 - 仕様書: `ZENSHIN_CHART.md`（root）
 - トランスクリプト: `/mnt/transcripts/` 配下
+
+## Jam.dev（バグ報告ツール）
+
+### 概要
+βテスターからのフィードバック収集に使用。スクリーンショット/録画 + コンソールログ + デバイス情報を自動取得。
+
+### 設定済み
+- ✅ Chrome拡張機能インストール
+- ✅ GitHub連携（zenshin-web リポジトリ）
+- ✅ Slack連携（U2Cワークスペース）
+- ✅ Team プラン（14日間無料トライアル、AI機能有効）
+- ✅ Recording Link: https://recorder.jam.dev/XuL8jPv
+
+### 運用フロー
+
+| 用途 | ツール |
+|------|--------|
+| 自分の開発・デバッグ | Chrome 拡張 |
+| βテスターからの報告 | Recording Links → Slack (#zenshin-bugs) |
+| Issue 化 | Slack で確認 → 手動で GitHub へ |
+
+### 使い方
+
+**自分で使う場合（Chrome拡張）：**
+1. バグを発見 → 拡張機能アイコンをクリック
+2. スクショ or 録画を選択
+3. 送信先を選択（Slack / GitHub）
+
+**βテスターに依頼する場合：**
+1. Recording Link を共有: https://recorder.jam.dev/XuL8jPv
+2. テスターがリンクを開いて録画
+3. テスターが Slack (#zenshin-bugs) に送信
+4. 有用なフィードバックのみ手動で GitHub Issue 化
+
+### AI機能（Jam AI）
+- 自動タイトル生成
+- 再現手順（repro steps）自動生成
+- エラー分析・コード修正提案（JamGPT）
