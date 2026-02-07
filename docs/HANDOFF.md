@@ -150,3 +150,22 @@
 - 自動タイトル生成
 - 再現手順（repro steps）自動生成
 - エラー分析・コード修正提案（JamGPT）
+
+## パフォーマンス改善（2026-02-07）
+
+### 実施内容
+- `ProjectEditor` を `next/dynamic` で動的インポート
+- モーダル系コンポーネント（FocusModeModal, ActionEditModal, AreaManager等）を動的インポート
+- `@next/bundle-analyzer` を導入
+
+### 結果
+| 指標 | 改善前 | 改善後 | 改善率 |
+|------|--------|--------|--------|
+| DOMContentLoaded | 5.51s | 2.80s | 49%改善 |
+| Load | 5.88s | 3.15s | 46%改善 |
+| 転送サイズ | 3.7 MB | 3.6 MB | 微減 |
+
+### 今後の改善候補
+- `project-editor.tsx` のファイル分割（4000行超）
+- 画像の next/image 最適化
+- Supabaseクライアントの遅延ロード
