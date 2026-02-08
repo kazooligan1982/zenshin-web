@@ -1,8 +1,5 @@
 import Link from "next/link";
-import { format } from "date-fns";
-import { ja } from "date-fns/locale";
 import {
-  LayoutDashboard,
   FolderOpen,
   Target,
   CheckCircle2,
@@ -11,8 +8,6 @@ import {
   TrendingUp,
   AlertCircle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { getDashboardData } from "./actions";
 import { DashboardChartFilter } from "./dashboard-chart-filter";
 
