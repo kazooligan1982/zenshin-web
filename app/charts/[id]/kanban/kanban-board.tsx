@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Search, Filter, LayoutGrid, GitBranch, Zap } from "lucide-react";
+import { Search, LayoutGrid, GitBranch, Zap } from "lucide-react";
 
 interface Action {
   id: string;
@@ -82,7 +82,9 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchActions();
+    if (viewMode === "kanban") {
+      fetchActions();
+    }
   }, [projectId, viewMode]);
 
   const fetchActions = async () => {
@@ -300,10 +302,69 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
     );
   };
 
-  if (isLoading) {
+  if (isLoading && viewMode === "kanban") {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-zenshin-navy/40" />
+      <div className="flex flex-col h-full bg-zenshin-cream animate-pulse">
+        {/* Header skeleton */}
+        <div className="px-8 py-6 border-b bg-zenshin-cream">
+          <div className="h-7 w-24 bg-zenshin-navy/10 rounded-lg mb-2" />
+          <div className="flex gap-2 mt-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-9 w-28 bg-zenshin-navy/8 rounded-lg" />
+            ))}
+          </div>
+        </div>
+        {viewMode === "kanban" ? (
+          <div className="flex-1 p-6">
+            <div className="grid grid-cols-3 gap-6 h-full">
+              {[1, 2, 3].map((col) => (
+                <div key={col} className="space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-5 w-24 bg-zenshin-navy/10 rounded" />
+                    <div className="h-5 w-6 bg-zenshin-navy/6 rounded-full" />
+                  </div>
+                  {[1, 2, 3].map((card) => (
+                    <div
+                      key={card}
+                      className="h-24 bg-white/80 rounded-xl border border-zenshin-navy/8 p-4"
+                    >
+                      <div className="h-4 w-3/4 bg-zenshin-navy/8 rounded mb-2" />
+                      <div className="h-3 w-1/2 bg-zenshin-navy/6 rounded mb-3" />
+                      <div className="flex gap-2">
+                        <div className="h-5 w-14 bg-zenshin-navy/6 rounded-full" />
+                        <div className="h-5 w-14 bg-zenshin-navy/6 rounded-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 p-6 space-y-4">
+            {[1, 2, 3].map((section) => (
+              <div key={section} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-5 w-5 bg-zenshin-navy/10 rounded" />
+                  <div className="h-5 w-48 bg-zenshin-navy/10 rounded" />
+                  <div className="h-5 w-6 bg-zenshin-navy/6 rounded-full" />
+                </div>
+                <div className="ml-8 space-y-2">
+                  {[1, 2, 3].map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-center gap-3 p-3 bg-white/80 rounded-lg border border-zenshin-navy/8"
+                    >
+                      <div className="h-4 w-4 bg-zenshin-navy/8 rounded" />
+                      <div className="h-4 w-2/3 bg-zenshin-navy/8 rounded" />
+                      <div className="ml-auto h-5 w-14 bg-zenshin-navy/6 rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
