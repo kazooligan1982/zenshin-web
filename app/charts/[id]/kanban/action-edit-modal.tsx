@@ -101,6 +101,12 @@ export function ActionEditModal({
   const [actionComments, setActionComments] = useState<any[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [currentUserId, setCurrentUserId] = useState("");
+  const [currentUser, setCurrentUser] = useState<{
+    id?: string;
+    email: string;
+    name?: string;
+    avatar_url?: string | null;
+  } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     actionTitle: string;
@@ -126,7 +132,18 @@ export function ActionEditModal({
     const loadUser = async () => {
       if (!supabase) return;
       const { data } = await supabase.auth.getUser();
-      setCurrentUserId(data.user?.id || "");
+      const userId = data.user?.id || "";
+      setCurrentUserId(userId);
+      if (userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, email, name, avatar_url")
+          .eq("id", userId)
+          .single();
+        if (profile) {
+          setCurrentUser(profile);
+        }
+      }
     };
     if (isOpen) {
       void loadUser();
@@ -340,7 +357,7 @@ export function ActionEditModal({
                 <Input
                   value={assignee}
                   onChange={(e) => setAssignee(e.target.value)}
-                  placeholder="未設定"
+                  placeholder="担当者名を入力"
                   className="w-full h-10 bg-background"
                 />
               </div>
@@ -380,6 +397,7 @@ export function ActionEditModal({
               itemId={action.id}
               initialComments={actionComments}
               currentUserId={currentUserId}
+              currentUser={currentUser}
               chartId={projectId}
               onCommentAdded={loadActionComments}
             />
