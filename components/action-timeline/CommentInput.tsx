@@ -126,7 +126,7 @@ export function CommentInput({
       <button
         onClick={handleSubmit}
         disabled={!content.trim() || isSubmitting}
-        className="shrink-0 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+        className="shrink-0 px-4 bg-zenshin-teal text-white rounded-lg hover:bg-zenshin-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         title="送信 (Cmd+Enter)"
       >
         <Send className="h-4 w-4" />

@@ -130,14 +130,14 @@ export function TimelineItem({
             className="w-8 h-8 rounded-full object-cover"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-sm font-semibold text-white">
+          <div className="w-8 h-8 rounded-full bg-zenshin-teal flex items-center justify-center text-sm font-semibold text-white">
             {userInitial}
           </div>
         )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-semibold text-sm text-gray-900">{userName}</span>
+          <span className="font-semibold text-sm text-zenshin-navy">{userName}</span>
           <span className="text-xs text-gray-400">{relativeTime}</span>
           {comment.updated_at !== comment.created_at && (
             <span className="text-xs text-gray-400">(編集済み)</span>
@@ -157,7 +157,7 @@ export function TimelineItem({
               <button
                 onClick={handleUpdate}
                 disabled={isLoading}
-                className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1 bg-zenshin-teal text-white text-sm rounded hover:bg-zenshin-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isLoading ? "保存中..." : "保存"}
               </button>
@@ -167,7 +167,7 @@ export function TimelineItem({
                   setEditContent(comment.content)
                 }}
                 disabled={isLoading}
-                className="px-3 py-1 bg-gray-200 text-sm rounded hover:bg-gray-300 disabled:opacity-50 transition-colors"
+                className="px-3 py-1 bg-zenshin-navy/10 text-sm rounded hover:bg-zenshin-navy/15 disabled:opacity-50 transition-colors"
               >
                 キャンセル
               </button>
@@ -185,7 +185,7 @@ export function TimelineItem({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
+              className="shrink-0 p-1 hover:bg-zenshin-navy/5 rounded transition-colors"
               onClick={(e) => {
                 e.stopPropagation()
               }}

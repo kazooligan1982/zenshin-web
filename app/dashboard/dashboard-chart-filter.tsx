@@ -35,7 +35,7 @@ export function DashboardChartFilter({
 
   return (
     <Select value={selectedChartId} onValueChange={handleChange}>
-      <SelectTrigger className="w-[200px]">
+      <SelectTrigger className="w-[220px] border-zenshin-navy/15 text-zenshin-navy [&>span]:truncate">
         <SelectValue placeholder="全体" />
       </SelectTrigger>
       <SelectContent>

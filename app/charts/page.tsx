@@ -142,14 +142,13 @@ function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; isMaster
 
   // TODO: Replace with real action status data from backend
   const mockStatus = {
-    total: Math.floor(Math.random() * 12) + 3,
-    done: Math.floor(Math.random() * 5),
-    inProgress: Math.floor(Math.random() * 4),
-    onHold: Math.floor(Math.random() * 2),
+    total: 0,
+    done: 0,
+    inProgress: 0,
+    onHold: 0,
     notStarted: 0,
     cancelled: 0,
   };
-  mockStatus.notStarted = Math.max(0, mockStatus.total - mockStatus.done - mockStatus.inProgress - mockStatus.onHold);
 
   const bgClass = isMaster
     ? "bg-zenshin-cream/60 border-zenshin-navy/12 hover:bg-white"
