@@ -565,8 +565,30 @@ export function TreeView({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-2 border-zenshin-navy/30 border-t-zenshin-navy/60 rounded-full" />
+      <div className="p-6 space-y-6 animate-pulse">
+        {[1, 2, 3].map((section) => (
+          <div key={section} className="space-y-3">
+            {/* Tension header */}
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 bg-zenshin-navy/10 rounded" />
+              <div className="h-5 w-48 bg-zenshin-navy/10 rounded" />
+              <div className="h-5 w-6 bg-zenshin-navy/6 rounded-full" />
+            </div>
+            {/* Action items */}
+            <div className="ml-8 space-y-2">
+              {[1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-3 p-3 bg-white/80 rounded-lg border border-zenshin-navy/8"
+                >
+                  <div className="h-4 w-4 bg-zenshin-navy/8 rounded" />
+                  <div className="h-4 w-2/3 bg-zenshin-navy/8 rounded" />
+                  <div className="ml-auto h-5 w-14 bg-zenshin-navy/6 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
