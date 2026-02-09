@@ -2441,7 +2441,7 @@ export function ProjectEditor({
         areas: initialChart.areas,
         dueDate: initialChart.due_date,
       }),
-    [initialChart]
+    [initialChart.id]
   );
 
   // Chartデータが更新されたら状態を更新
@@ -2929,30 +2929,43 @@ export function ProjectEditor({
     );
   };
 
-  // Vision追加: 堅実な実装（Optimistic UIなし）
+  // Vision追加: 楽観的UI（ローカルState即時更新）
   const handleAddVision = async (content: string) => {
     if (!content.trim() || isSubmittingVision) return;
-    
+
     setIsSubmittingVision(true);
     const contentToAdd = content.trim();
     // 選択中のエリアIDを取得（"all"の場合はnull）
     const areaId = selectedAreaId === "all" ? null : selectedAreaId;
 
+    // 楽観的にローカルStateを即時更新
+    const tempId = `temp-${Date.now()}`;
+    const optimisticVision: VisionItem = {
+      id: tempId,
+      content: contentToAdd,
+      createdAt: new Date().toISOString(),
+      area_id: areaId,
+    };
+    setVisions((prev) => [...prev, optimisticVision]);
+    newVisionInput.setValue("");
+
     try {
       const newVision = await addVision(chartId, contentToAdd, areaId);
-
       if (newVision) {
-        // 成功時のみフォームをクリア
-        newVisionInput.setValue("");
-        // revalidatePathが呼ばれたので、ページを再取得
-        router.refresh();
+        // 成功: tempIdを実際のIDに置換
+        setVisions((prev) =>
+          prev.map((v) => (v.id === tempId ? newVision : v))
+        );
       } else {
-        // エラー時は入力内容を保持（既に入力されているので何もしない）
-        console.error("[handleAddVision] 保存失敗 - 入力内容を保持");
+        // 失敗: 楽観的に追加したものを削除
+        setVisions((prev) => prev.filter((v) => v.id !== tempId));
+        newVisionInput.setValue(contentToAdd);
+        console.error("[handleAddVision] 保存失敗 - ロールバック");
       }
     } catch (error) {
       console.error("[handleAddVision] エラー:", error);
-      // エラー時は入力内容を保持（既に入力されているので何もしない）
+      setVisions((prev) => prev.filter((v) => v.id !== tempId));
+      newVisionInput.setValue(contentToAdd);
     } finally {
       setIsSubmittingVision(false);
     }
@@ -3057,30 +3070,43 @@ export function ProjectEditor({
     });
   };
 
-  // Reality追加: 堅実な実装（Optimistic UIなし）
+  // Reality追加: 楽観的UI（ローカルState即時更新）
   const handleAddReality = async (content: string) => {
     if (!content.trim() || isSubmittingReality) return;
-    
+
     setIsSubmittingReality(true);
     const contentToAdd = content.trim();
     // 選択中のエリアIDを取得（"all"の場合はnull）
     const areaId = selectedAreaId === "all" ? null : selectedAreaId;
 
+    // 楽観的にローカルStateを即時更新
+    const tempId = `temp-${Date.now()}`;
+    const optimisticReality: RealityItem = {
+      id: tempId,
+      content: contentToAdd,
+      createdAt: new Date().toISOString(),
+      area_id: areaId,
+    };
+    setRealities((prev) => [...prev, optimisticReality]);
+    newRealityInput.setValue("");
+
     try {
       const newReality = await addReality(chartId, contentToAdd, areaId);
-
       if (newReality) {
-        // 成功時のみフォームをクリア
-        newRealityInput.setValue("");
-        // revalidatePathが呼ばれたので、ページを再取得
-        router.refresh();
+        // 成功: tempIdを実際のIDに置換
+        setRealities((prev) =>
+          prev.map((r) => (r.id === tempId ? newReality : r))
+        );
       } else {
-        // エラー時は入力内容を保持（既に入力されているので何もしない）
-        console.error("[handleAddReality] 保存失敗 - 入力内容を保持");
+        // 失敗: 楽観的に追加したものを削除
+        setRealities((prev) => prev.filter((r) => r.id !== tempId));
+        newRealityInput.setValue(contentToAdd);
+        console.error("[handleAddReality] 保存失敗 - ロールバック");
       }
     } catch (error) {
       console.error("[handleAddReality] エラー:", error);
-      // エラー時は入力内容を保持（既に入力されているので何もしない）
+      setRealities((prev) => prev.filter((r) => r.id !== tempId));
+      newRealityInput.setValue(contentToAdd);
     } finally {
       setIsSubmittingReality(false);
     }
@@ -3091,19 +3117,30 @@ export function ProjectEditor({
     field: "content" | "isLocked" | "areaId" | "dueDate",
     value: string | boolean | null
   ) => {
-    // Server updateのみ（Optimistic UIなし）
+    // 楽観的にローカルStateを即時更新
+    const originalRealities = [...realities];
+    setRealities((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        if (field === "content") return { ...r, content: value as string };
+        if (field === "isLocked") return { ...r, isLocked: value as boolean };
+        if (field === "areaId") return { ...r, area_id: value as string | null };
+        if (field === "dueDate") return { ...r, dueDate: (value as string) || undefined };
+        return r;
+      })
+    );
+    if (field === "areaId") {
+      const areaName = value
+        ? chart.areas.find((area: Area) => area.id === value)?.name
+        : "未分類";
+      toast.success(`${areaName ?? "未分類"} に移動しました`);
+    }
+
     const success = await updateRealityItem(id, chartId, field, value);
-    if (success) {
-      if (field === "areaId") {
-        const areaName = value
-          ? chart.areas.find((area: Area) => area.id === value)?.name
-          : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`);
-      }
-      // 成功時はページを再取得
-      router.refresh();
-    } else {
-      console.error("[handleUpdateReality] 更新失敗");
+    if (!success) {
+      // 失敗: ロールバック
+      setRealities(originalRealities);
+      console.error("[handleUpdateReality] 更新失敗 - ロールバック");
     }
   };
 
@@ -3195,10 +3232,36 @@ export function ProjectEditor({
 
   const handleAddTension = async (title: string, areaId?: string | null) => {
     if (!title.trim()) return;
-    const newTension = await addTension(chartId, title.trim(), areaId);
-    if (newTension) {
-      // 成功時はページを再取得
-      router.refresh();
+    const titleToAdd = title.trim();
+
+    // 楽観的にローカルStateを即時更新
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTension: Tension = {
+      id: tempId,
+      title: titleToAdd,
+      status: "active" as TensionStatus,
+      area_id: areaId ?? null,
+      visionIds: [],
+      realityIds: [],
+      actionPlans: [],
+    };
+    setTensions((prev) => [...prev, optimisticTension]);
+
+    try {
+      const newTension = await addTension(chartId, titleToAdd, areaId);
+      if (newTension) {
+        // 成功: tempIdを実際のデータに置換
+        setTensions((prev) =>
+          prev.map((t) => (t.id === tempId ? newTension : t))
+        );
+      } else {
+        // 失敗: ロールバック
+        setTensions((prev) => prev.filter((t) => t.id !== tempId));
+        console.error("[handleAddTension] 保存失敗 - ロールバック");
+      }
+    } catch (error) {
+      console.error("[handleAddTension] エラー:", error);
+      setTensions((prev) => prev.filter((t) => t.id !== tempId));
     }
   };
 

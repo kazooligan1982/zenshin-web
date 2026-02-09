@@ -347,7 +347,6 @@ export async function createVision(
       chart_id: chartId,
       content: content.trim(),
       user_id: user.id,
-      created_by: user.id,
     };
     if (areaId) {
       insertData.area_id = areaId;
