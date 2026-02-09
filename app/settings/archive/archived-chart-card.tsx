@@ -5,7 +5,6 @@ import { RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { restoreChart, deleteChart } from "@/app/charts/actions";
 
 type ArchivedChart = {
@@ -50,30 +49,34 @@ export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
   };
 
   return (
-    <Card>
-      <CardContent className="p-4 flex items-center justify-between gap-4">
-        <div>
-          <h3 className="font-medium">{chart.title}</h3>
-          <p className="text-sm text-muted-foreground">
-            アーカイブ日: {chart.archived_at}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleRestore} disabled={isLoading}>
-            <RotateCcw className="w-4 h-4 mr-1" />
-            復元
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDelete}
-            disabled={isLoading}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-4 flex items-center justify-between gap-4">
+      <div>
+        <h3 className="font-medium text-zenshin-navy">{chart.title}</h3>
+        <p className="text-sm text-zenshin-navy/40">
+          アーカイブ日: {chart.archived_at}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRestore}
+          disabled={isLoading}
+          className="border-zenshin-navy/10 text-zenshin-navy hover:bg-zenshin-cream"
+        >
+          <RotateCcw className="w-4 h-4 mr-1" />
+          復元
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleDelete}
+          disabled={isLoading}
+          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
   );
 }
