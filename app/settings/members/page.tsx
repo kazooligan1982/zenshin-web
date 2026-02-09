@@ -1,13 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy, Check, Users, Crown, User } from "lucide-react";
@@ -73,8 +66,8 @@ export default function MembersPage() {
   };
 
   const getRoleIcon = (role: string) => {
-    if (role === "owner") return <Crown className="h-4 w-4 text-yellow-500" />;
-    return <User className="h-4 w-4 text-gray-400" />;
+    if (role === "owner") return <Crown className="h-4 w-4 text-amber-500" />;
+    return <User className="h-4 w-4 text-zenshin-navy/30" />;
   };
 
   const getRoleLabel = (role: string) => {
@@ -85,91 +78,90 @@ export default function MembersPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">メンバー</h1>
-        <div className="animate-pulse space-y-4">
-          <div className="h-32 bg-gray-200 rounded-lg" />
-          <div className="h-48 bg-gray-200 rounded-lg" />
+      <div className="max-w-4xl mx-auto py-10 px-6 animate-pulse">
+        <div className="h-7 w-32 bg-zenshin-navy/10 rounded-lg mb-8" />
+        <div className="space-y-4">
+          <div className="h-36 bg-white rounded-2xl border border-zenshin-navy/8" />
+          <div className="h-52 bg-white rounded-2xl border border-zenshin-navy/8" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">メンバー</h1>
+    <div className="max-w-4xl mx-auto py-10 px-6">
+      <div className="flex items-center gap-3 mb-8">
+        <Users className="w-7 h-7 text-zenshin-navy/40" />
+        <h1 className="text-2xl font-bold text-zenshin-navy">メンバー</h1>
+      </div>
 
       {/* 招待リンク */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">メンバーを招待</CardTitle>
-          <CardDescription>
-            招待リンクを共有して、ワークスペースにメンバーを追加できます。
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {inviteUrl ? (
-            <div className="flex gap-2">
-              <Input value={inviteUrl} readOnly className="font-mono text-sm" />
-              <Button onClick={handleCopy} variant="outline" size="icon">
-                {isCopied ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          ) : (
-            <Button onClick={handleGenerateLink} disabled={isGenerating}>
-              {isGenerating ? "生成中..." : "招待リンクを生成"}
+      <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-zenshin-navy mb-1">メンバーを招待</h2>
+        <p className="text-sm text-zenshin-navy/40 mb-4">
+          招待リンクを共有して、ワークスペースにメンバーを追加できます。
+        </p>
+        {inviteUrl ? (
+          <div className="flex gap-2">
+            <Input value={inviteUrl} readOnly className="font-mono text-sm border-zenshin-navy/10" />
+            <Button onClick={handleCopy} variant="outline" size="icon" className="border-zenshin-navy/10 hover:bg-zenshin-cream">
+              {isCopied ? (
+                <Check className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Copy className="h-4 w-4 text-zenshin-navy/40" />
+              )}
             </Button>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ) : (
+          <Button
+            onClick={handleGenerateLink}
+            disabled={isGenerating}
+            className="bg-zenshin-orange hover:bg-zenshin-orange/90 text-white"
+          >
+            {isGenerating ? "生成中..." : "招待リンクを生成"}
+          </Button>
+        )}
+      </div>
 
       {/* メンバー一覧 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            メンバー一覧（{members.length}人）
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="divide-y">
-            {members.map((member) => (
-              <div
-                key={member.id}
-                className="py-3 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  {member.avatar_url ? (
-                    <img
-                      src={member.avatar_url}
-                      alt=""
-                      className="h-10 w-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      <User className="h-5 w-5 text-gray-500" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium">{member.name || member.email}</p>
-                    {member.name && (
-                      <p className="text-sm text-gray-500">{member.email}</p>
-                    )}
+      <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6">
+        <h2 className="text-lg font-semibold text-zenshin-navy flex items-center gap-2 mb-4">
+          <Users className="h-5 w-5 text-zenshin-navy/40" />
+          メンバー一覧（{members.length}人）
+        </h2>
+        <div className="divide-y divide-zenshin-navy/8">
+          {members.map((member) => (
+            <div
+              key={member.id}
+              className="py-4 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                {member.avatar_url ? (
+                  <img
+                    src={member.avatar_url}
+                    alt=""
+                    className="h-10 w-10 rounded-full"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-zenshin-navy/8 flex items-center justify-center">
+                    <User className="h-5 w-5 text-zenshin-navy/30" />
                   </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  {getRoleIcon(member.role)}
-                  {getRoleLabel(member.role)}
+                )}
+                <div>
+                  <p className="font-medium text-zenshin-navy">{member.name || member.email}</p>
+                  {member.name && (
+                    <p className="text-sm text-zenshin-navy/40">{member.email}</p>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <div className="flex items-center gap-2 text-sm text-zenshin-navy/50">
+                {getRoleIcon(member.role)}
+                {getRoleLabel(member.role)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
