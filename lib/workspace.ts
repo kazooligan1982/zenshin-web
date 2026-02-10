@@ -284,3 +284,62 @@ export async function getUserWorkspaces(): Promise<
     role: m.role,
   }));
 }
+
+// メンバーをワークスペースから削除
+export async function removeMember(
+  workspaceId: string,
+  targetUserId: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "認証が必要です" };
+
+  // 操作者の権限を確認
+  const { data: currentMember } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!currentMember || !["owner", "admin"].includes(currentMember.role)) {
+    return { success: false, error: "権限がありません" };
+  }
+
+  // 対象メンバーの権限を確認
+  const { data: targetMember } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", targetUserId)
+    .single();
+
+  if (!targetMember) {
+    return { success: false, error: "メンバーが見つかりません" };
+  }
+
+  // オーナーは削除できない
+  if (targetMember.role === "owner") {
+    return { success: false, error: "オーナーは削除できません" };
+  }
+
+  // 自分自身は削除できない
+  if (targetUserId === user.id) {
+    return { success: false, error: "自分自身を削除することはできません" };
+  }
+
+  const { error } = await supabase
+    .from("workspace_members")
+    .delete()
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", targetUserId);
+
+  if (error) {
+    console.error("[removeMember] Failed:", error);
+    return { success: false, error: "削除に失敗しました" };
+  }
+
+  return { success: true };
+}
