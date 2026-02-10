@@ -4284,6 +4284,20 @@ export function ProjectEditor({
 
       setChart((prev) => ({ ...prev, due_date: dueDate }));
       setChartDueDate(dueDate);
+
+      // 親アクションの日付も同期（子→親）
+      if (chart.parentActionId) {
+        const { error: parentError } = await supabase
+          .from("actions")
+          .update({
+            due_date: dueDate,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", chart.parentActionId);
+        if (parentError) {
+          console.error("[handleUpdateChartDueDate] parent action sync error:", parentError);
+        }
+      }
     } catch (err) {
       console.error("[handleUpdateChartDueDate] Exception:", err);
     }
