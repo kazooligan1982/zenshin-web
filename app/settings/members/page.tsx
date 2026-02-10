@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Copy, Check, Users, Crown, User } from "lucide-react";
+import { Copy, Check, Users, Crown, User, X, Loader2 } from "lucide-react";
 import {
   createInvitation,
   getWorkspaceMembers,
-  getCurrentWorkspaceId,
+  getCurrentWorkspace,
+  removeMember,
 } from "@/lib/workspace";
 import { toast } from "sonner";
 
@@ -25,12 +26,17 @@ export default function MembersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState<string>("");
 
   useEffect(() => {
     async function loadData() {
-      const workspaceId = await getCurrentWorkspaceId();
-      if (workspaceId) {
-        const memberList = await getWorkspaceMembers(workspaceId);
+      const workspace = await getCurrentWorkspace();
+      if (workspace) {
+        setWorkspaceId(workspace.id);
+        setCurrentRole(workspace.role);
+        const memberList = await getWorkspaceMembers(workspace.id);
         setMembers(memberList);
       }
       setIsLoading(false);
@@ -39,13 +45,8 @@ export default function MembersPage() {
   }, []);
 
   const handleGenerateLink = async () => {
+    if (!workspaceId) return;
     setIsGenerating(true);
-    const workspaceId = await getCurrentWorkspaceId();
-    if (!workspaceId) {
-      toast.error("ワークスペースが見つかりません");
-      setIsGenerating(false);
-      return;
-    }
 
     const result = await createInvitation(workspaceId);
     if (result) {
@@ -64,6 +65,24 @@ export default function MembersPage() {
     toast.success("コピーしました");
     setTimeout(() => setIsCopied(false), 2000);
   };
+
+  const handleRemoveMember = async (member: Member) => {
+    if (!workspaceId) return;
+    if (!confirm(`${member.name || member.email} をワークスペースから削除しますか？`)) return;
+
+    setRemovingId(member.id);
+    const result = await removeMember(workspaceId, member.id);
+
+    if (result.success) {
+      setMembers((prev) => prev.filter((m) => m.id !== member.id));
+      toast.success("メンバーを削除しました");
+    } else {
+      toast.error(result.error || "削除に失敗しました");
+    }
+    setRemovingId(null);
+  };
+
+  const canManageMembers = ["owner", "admin"].includes(currentRole);
 
   const getRoleIcon = (role: string) => {
     if (role === "owner") return <Crown className="h-4 w-4 text-amber-500" />;
@@ -96,32 +115,34 @@ export default function MembersPage() {
       </div>
 
       {/* 招待リンク */}
-      <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-zenshin-navy mb-1">メンバーを招待</h2>
-        <p className="text-sm text-zenshin-navy/40 mb-4">
-          招待リンクを共有して、ワークスペースにメンバーを追加できます。
-        </p>
-        {inviteUrl ? (
-          <div className="flex gap-2">
-            <Input value={inviteUrl} readOnly className="font-mono text-sm border-zenshin-navy/10" />
-            <Button onClick={handleCopy} variant="outline" size="icon" className="border-zenshin-navy/10 hover:bg-zenshin-cream">
-              {isCopied ? (
-                <Check className="h-4 w-4 text-emerald-500" />
-              ) : (
-                <Copy className="h-4 w-4 text-zenshin-navy/40" />
-              )}
+      {canManageMembers && (
+        <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-zenshin-navy mb-1">メンバーを招待</h2>
+          <p className="text-sm text-zenshin-navy/40 mb-4">
+            招待リンクを共有して、ワークスペースにメンバーを追加できます。
+          </p>
+          {inviteUrl ? (
+            <div className="flex gap-2">
+              <Input value={inviteUrl} readOnly className="font-mono text-sm border-zenshin-navy/10" />
+              <Button onClick={handleCopy} variant="outline" size="icon" className="border-zenshin-navy/10 hover:bg-zenshin-cream">
+                {isCopied ? (
+                  <Check className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <Copy className="h-4 w-4 text-zenshin-navy/40" />
+                )}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={handleGenerateLink}
+              disabled={isGenerating}
+              className="bg-zenshin-orange hover:bg-zenshin-orange/90 text-white"
+            >
+              {isGenerating ? "生成中..." : "招待リンクを生成"}
             </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={handleGenerateLink}
-            disabled={isGenerating}
-            className="bg-zenshin-orange hover:bg-zenshin-orange/90 text-white"
-          >
-            {isGenerating ? "生成中..." : "招待リンクを生成"}
-          </Button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* メンバー一覧 */}
       <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6">
@@ -154,9 +175,26 @@ export default function MembersPage() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-zenshin-navy/50">
-                {getRoleIcon(member.role)}
-                {getRoleLabel(member.role)}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-sm text-zenshin-navy/50">
+                  {getRoleIcon(member.role)}
+                  {getRoleLabel(member.role)}
+                </div>
+                {canManageMembers && member.role !== "owner" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveMember(member)}
+                    disabled={removingId === member.id}
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                  >
+                    {removingId === member.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           ))}
