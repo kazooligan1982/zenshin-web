@@ -35,71 +35,60 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
       console.warn("Chart not found:", chartId);
       return null;
     }
-    // Visionsを取得: target_date降順 (未来が上、NULLは最初) -> sort_order昇順
-    const { data: visions, error: visionsError } = await supabase
-      .from("visions")
-      .select("*, vision_comments(count)")
-      .eq("chart_id", chartId)
-      .order("target_date", { ascending: false, nullsFirst: true })
-      .order("sort_order", { ascending: true, nullsFirst: false });
+    // 並列クエリ: Visions, Realities, Tensions, Areas, Actionsを同時に取得
+    const [
+      { data: visions, error: visionsError },
+      { data: realities, error: realitiesError },
+      { data: tensions, error: tensionsError },
+      { data: areas, error: areasError },
+      { data: actions },
+    ] = await Promise.all([
+      supabase
+        .from("visions")
+        .select("*, vision_comments(count)")
+        .eq("chart_id", chartId)
+        .order("target_date", { ascending: false, nullsFirst: true })
+        .order("sort_order", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("realities")
+        .select("*, reality_comments(count)")
+        .eq("chart_id", chartId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("tensions")
+        .select("*")
+        .eq("chart_id", chartId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("areas")
+        .select("*")
+        .eq("chart_id", chartId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("actions")
+        .select("*, action_comments(count)")
+        .eq("chart_id", chartId)
+        .order("created_at", { ascending: true }),
+    ]);
 
-    if (visionsError) {
-      console.error("Error fetching visions:", visionsError);
-    }
+    if (visionsError) console.error("Error fetching visions:", visionsError);
+    if (realitiesError) console.error("Error fetching realities:", realitiesError);
+    if (tensionsError) console.error("Error fetching tensions:", tensionsError);
+    if (areasError) console.error("Error fetching areas:", areasError);
 
-    // Realitiesを取得: created_at昇順（古いものが上、新しいものが下）
-    const { data: realities, error: realitiesError } = await supabase
-      .from("realities")
-      .select("*, reality_comments(count)")
-      .eq("chart_id", chartId)
-      .order("created_at", { ascending: true });
-
-    if (realitiesError) {
-      console.error("Error fetching realities:", realitiesError);
-    }
-
-    // Tensionsを取得
-    const { data: tensions, error: tensionsError } = await supabase
-      .from("tensions")
-      .select("*")
-      .eq("chart_id", chartId)
-      .order("created_at", { ascending: true });
-
-    if (tensionsError) {
-      console.error("Error fetching tensions:", tensionsError);
-    }
-
-    // Areasを取得: sort_order昇順
-    const { data: areas, error: areasError } = await supabase
-      .from("areas")
-      .select("*")
-      .eq("chart_id", chartId)
-      .order("sort_order", { ascending: true });
-
-    if (areasError) {
-      console.error("Error fetching areas:", areasError);
-      console.error("Areas error details:", JSON.stringify(areasError, null, 2));
-    }
-
-    // Tension-Vision関係を取得
+    // Tension関係を並列取得
     const tensionIds = tensions?.map((t: any) => t.id) || [];
-    const { data: tensionVisions } = await supabase
-      .from("tension_visions")
-      .select("*")
-      .in("tension_id", tensionIds);
-
-    // Tension-Reality関係を取得
-    const { data: tensionRealities } = await supabase
-      .from("tension_realities")
-      .select("*")
-      .in("tension_id", tensionIds);
-
-    // Actionsを取得: chart_idで取得（tension_idがnullのものも含む）
-    const { data: actions } = await supabase
-      .from("actions")
-      .select("*, action_comments(count)")
-      .eq("chart_id", chartId)
-      .order("created_at", { ascending: true });
+    const [{ data: tensionVisions }, { data: tensionRealities }] =
+      await Promise.all([
+        supabase
+          .from("tension_visions")
+          .select("*")
+          .in("tension_id", tensionIds.length > 0 ? tensionIds : ["__none__"]),
+        supabase
+          .from("tension_realities")
+          .select("*")
+          .in("tension_id", tensionIds.length > 0 ? tensionIds : ["__none__"]),
+      ]);
 
     // データを整形
     const visionMap = new Map(
@@ -185,11 +174,11 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
       };
     });
 
-    // パンくずリストをSQL関数で取得
-    const breadcrumbsList = await getBreadcrumbsFromSQL(chart.id);
-
-    // 親チャート情報を取得（後方互換性のため）
-    const parentInfo = await getParentChartInfo(chart.id);
+    // パンくずリスト + 親チャート情報を並列取得
+    const [breadcrumbsList, parentInfo] = await Promise.all([
+      getBreadcrumbsFromSQL(chart.id),
+      getParentChartInfo(chart.id),
+    ]);
 
     // Areasを整形
     const areasList: Area[] = (areas || []).map((a: any) => ({
