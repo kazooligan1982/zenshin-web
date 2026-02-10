@@ -16,6 +16,7 @@ import {
   fetchRealityComments,
   fetchVisionComments,
 } from "@/app/charts/[id]/actions";
+import { getCurrentWorkspaceId } from "@/lib/workspace";
 
 interface ItemDetailPanelProps {
   isOpen: boolean;
@@ -60,6 +61,13 @@ export function ItemDetailPanel({
   const [actionComments, setActionComments] = useState<TimelineComment[]>([]);
   const [visionComments, setVisionComments] = useState<TimelineComment[]>([]);
   const [realityComments, setRealityComments] = useState<TimelineComment[]>([]);
+  const [workspaceId, setWorkspaceId] = useState<string>("");
+
+  useEffect(() => {
+    if (isOpen) {
+      getCurrentWorkspaceId().then((id) => setWorkspaceId(id ?? ""));
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -237,6 +245,7 @@ export function ItemDetailPanel({
                       currentUserId={currentUserId ?? ""}
                       currentUser={currentUser}
                       chartId={chartId}
+                      workspaceId={workspaceId}
                       onCommentAdded={handleActionCommentAdded}
                       onCommentDeleted={handleActionCommentDeleted}
                     />
@@ -250,6 +259,7 @@ export function ItemDetailPanel({
                       currentUserId={currentUserId ?? ""}
                       currentUser={currentUser}
                       chartId={chartId}
+                      workspaceId={workspaceId}
                       onCommentAdded={handleVisionCommentAdded}
                       onCommentDeleted={handleVisionCommentDeleted}
                     />
@@ -263,6 +273,7 @@ export function ItemDetailPanel({
                       currentUserId={currentUserId ?? ""}
                       currentUser={currentUser}
                       chartId={chartId}
+                      workspaceId={workspaceId}
                       onCommentAdded={handleRealityCommentAdded}
                       onCommentDeleted={handleRealityCommentDeleted}
                     />

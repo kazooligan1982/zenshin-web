@@ -176,7 +176,11 @@ export function TimelineItem({
         ) : (
           <div
             className="text-sm text-gray-700 prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: linkifyUrls(comment.content) }}
+            dangerouslySetInnerHTML={{
+              __html: comment.content.trimStart().startsWith("<")
+                ? comment.content
+                : linkifyUrls(comment.content),
+            }}
           />
         )}
       </div>

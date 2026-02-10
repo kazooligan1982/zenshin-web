@@ -12,6 +12,7 @@ interface TimelineProps {
   currentUserId: string
   currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null
   chartId: string
+  workspaceId: string
   onCommentAdded?: () => void
   onCommentDeleted?: () => void
 }
@@ -25,6 +26,7 @@ export function Timeline({
   currentUserId,
   currentUser,
   chartId,
+  workspaceId,
   onCommentAdded,
   onCommentDeleted,
 }: TimelineProps) {
@@ -118,6 +120,7 @@ export function Timeline({
           type={type}
           itemId={itemId}
           chartId={chartId}
+          workspaceId={workspaceId}
           currentUserId={currentUserId}
           currentUser={currentUser}
           onOptimisticAdd={handleOptimisticAdd}

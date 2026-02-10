@@ -35,16 +35,19 @@ async function getVisionTagMap(
     };
   }
 
-  const { data: tensionVisions } = await supabase
-    .from("tension_visions")
-    .select("tension_id, vision_id")
-    .in("tension_id", tensionIds);
-
-  const { data: visions } = await supabase
-    .from("visions")
-    .select("id, content")
-    .eq("chart_id", chartId)
-    .order("created_at", { ascending: true });
+  const [tensionVisionsRes, visionsRes] = await Promise.all([
+    supabase
+      .from("tension_visions")
+      .select("tension_id, vision_id")
+      .in("tension_id", tensionIds),
+    supabase
+      .from("visions")
+      .select("id, content")
+      .eq("chart_id", chartId)
+      .order("created_at", { ascending: true }),
+  ]);
+  const tensionVisions = tensionVisionsRes.data;
+  const visions = visionsRes.data;
 
   const visionIndexMap = new Map<string, number>();
   const visionContentMap = new Map<string, string>();
@@ -111,7 +114,27 @@ async function getActionsWithHierarchy(
       .eq("chart_id", chartId)
       .order("created_at", { ascending: true });
 
-    for (const action of actions || []) {
+    const actionsList = actions || [];
+    const actionsWithChildren = actionsList.filter(
+      (a: any) => a.child_chart_id
+    );
+    const childResults = await Promise.all(
+      actionsWithChildren.map((a: any) =>
+        getActionsWithHierarchy(
+          supabase,
+          a.child_chart_id,
+          depth + 1,
+          a.id,
+          tensionInfo
+        )
+      )
+    );
+    const childMap = new Map<string, ActionWithHierarchy[]>();
+    actionsWithChildren.forEach((a: any, i: number) => {
+      childMap.set(a.id, childResults[i]);
+    });
+
+    for (const action of actionsList) {
       results.push({
         id: action.id,
         title: action.title || action.content || "(無題)",
@@ -130,23 +153,28 @@ async function getActionsWithHierarchy(
         vision_title: tensionInfo?.visionTitle || null,
         has_children: !!action.child_chart_id,
       });
-
       if (action.child_chart_id) {
-        const childActions = await getActionsWithHierarchy(
-          supabase,
-          action.child_chart_id,
-          depth + 1,
-          action.id,
-          tensionInfo
-        );
-        results.push(...childActions);
+        results.push(...(childMap.get(action.id) || []));
       }
     }
 
     return results;
   }
 
-  for (const tension of tensions || []) {
+  const tensionActionResults = await Promise.all(
+    (tensions || []).map((tension: any) =>
+      supabase
+        .from("actions")
+        .select("*")
+        .eq("tension_id", tension.id)
+        .order("created_at", { ascending: true })
+    )
+  );
+
+  for (let i = 0; i < (tensions || []).length; i++) {
+    const tension = (tensions || [])[i];
+    const { data: actions } = tensionActionResults[i];
+    const actionsList = actions || [];
     const currentTensionInfo = {
       title: tension.title || tension.description || null,
       areaName: tension.areas?.name || null,
@@ -154,13 +182,26 @@ async function getActionsWithHierarchy(
       visionTitle: tensionVisionTitleMap?.get(tension.id) || null,
     };
 
-    const { data: actions } = await supabase
-      .from("actions")
-      .select("*")
-      .eq("tension_id", tension.id)
-      .order("created_at", { ascending: true });
+    const actionsWithChildren = actionsList.filter(
+      (a: any) => a.child_chart_id
+    );
+    const childResults = await Promise.all(
+      actionsWithChildren.map((a: any) =>
+        getActionsWithHierarchy(
+          supabase,
+          a.child_chart_id,
+          depth + 1,
+          a.id,
+          currentTensionInfo
+        )
+      )
+    );
+    const childMap = new Map<string, ActionWithHierarchy[]>();
+    actionsWithChildren.forEach((a: any, idx: number) => {
+      childMap.set(a.id, childResults[idx]);
+    });
 
-    for (const action of actions || []) {
+    for (const action of actionsList) {
       const relatedVisions = tensionVisions
         .filter((tv: any) => tv.tension_id === action.tension_id)
         .map((tv: any) => {
@@ -188,16 +229,8 @@ async function getActionsWithHierarchy(
         has_children: !!action.child_chart_id,
         vision_tags: relatedVisions,
       });
-
       if (action.child_chart_id) {
-        const childActions = await getActionsWithHierarchy(
-          supabase,
-          action.child_chart_id,
-          depth + 1,
-          action.id,
-          currentTensionInfo
-        );
-        results.push(...childActions);
+        results.push(...(childMap.get(action.id) || []));
       }
     }
   }
