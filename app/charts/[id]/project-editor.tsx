@@ -2976,19 +2976,14 @@ export function ProjectEditor({
     field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId",
     value: string | boolean | null
   ) => {
-    if (field === "assignee") {
+    // 楽観的にローカル状態を即座に更新
+    if (field === "assignee" || field === "dueDate" || field === "targetDate") {
       setVisions((prev) =>
         prev.map((vision) =>
-          vision.id === id ? { ...vision, assignee: value as string } : vision
+          vision.id === id ? { ...vision, [field]: value } : vision
         )
       );
-      const success = await updateVisionItem(id, chartId, field, value);
-      if (!success) {
-        console.error("[handleUpdateVision] 更新失敗");
-      }
-      return;
     }
-    // Server updateのみ（Optimistic UIなし）
     const success = await updateVisionItem(id, chartId, field, value);
     if (success) {
       if (field === "areaId") {
@@ -2997,18 +2992,16 @@ export function ProjectEditor({
           : "未分類";
         toast.success(`${areaName ?? "未分類"} に移動しました`);
       }
-      // targetDate、isLockedが変更された場合は即座に反映するため、refreshする
-      // contentの場合は画面リセットを避けるため、refreshしない
-      if (
-        field === "dueDate" ||
-        field === "targetDate" ||
-        field === "isLocked" ||
-        field === "areaId"
-      ) {
+      // isLocked、areaIdが変更された場合のみrefresh（コンテンツ構造に影響するため）
+      if (field === "isLocked" || field === "areaId") {
         router.refresh();
       }
     } else {
       console.error("[handleUpdateVision] 更新失敗");
+      // 失敗時はロールバック
+      if (field === "assignee" || field === "dueDate" || field === "targetDate") {
+        router.refresh();
+      }
     }
   };
 
@@ -3534,18 +3527,18 @@ export function ProjectEditor({
       }));
     }
 
-    // Server updateのみ（Optimistic UIなし）
+    // dueDateは楽観的にローカル状態を更新
+    if (field === "dueDate") {
+      updateActionInState((action) => ({
+        ...action,
+        dueDate: value as string | undefined,
+      }));
+    }
     const success = await updateActionPlanItem(actionId, tensionId, field, value, chartId);
-    if (success) {
-      // dueDateが変更された場合は即座に反映するため、refreshする
-      // titleの場合は画面リセットを避けるため、refreshしない
-      // isCompletedが変更された場合も即座に反映するため、refreshする
-      if (field === "dueDate") {
-        router.refresh();
-      }
-    } else {
+    if (!success) {
       console.error("[handleUpdateActionPlan] 更新失敗");
-      if (field === "status" || field === "isCompleted") {
+      // 失敗時はロールバック
+      if (field === "dueDate" || field === "status" || field === "isCompleted") {
         router.refresh();
       }
     }
