@@ -6,9 +6,7 @@ export default function SignupPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-          <span className="text-white font-bold text-xl">Z</span>
-        </div>
+        <img src="/zenshin-icon.svg" alt="ZENSHIN CHART" className="w-12 h-12 mx-auto mb-4" />
         <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
         <p className="text-muted-foreground mt-2">アカウント作成</p>
       </div>

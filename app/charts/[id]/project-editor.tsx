@@ -381,6 +381,7 @@ const splitItemsByDate = <T extends { id: string }>(
 interface ProjectEditorProps {
   initialChart: Chart;
   chartId: string;
+  workspaceId?: string;
   currentUserId: string;
   currentUser?: {
     id: string;
@@ -2107,6 +2108,7 @@ function ActionSection({
 export function ProjectEditor({
   initialChart,
   chartId,
+  workspaceId,
   currentUserId,
   currentUser: initialCurrentUser,
 }: ProjectEditorProps) {
@@ -5040,6 +5042,7 @@ export function ProjectEditor({
           currentUserId={currentUserId || currentUser?.id}
           currentUser={currentUser}
           chartId={chartId}
+          workspaceId={workspaceId}
           onAddHistory={handleAddHistory}
           onCommentCountChange={handleCommentCountChange}
         />

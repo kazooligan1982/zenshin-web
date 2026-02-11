@@ -24,6 +24,8 @@ export async function searchWorkspaceItems(
       .select("id, title")
       .eq("workspace_id", workspaceId);
 
+    console.log("[Search] workspaceId:", workspaceId, "charts found:", chartsInWorkspace?.length, "error:", chartsError);
+
     if (chartsError || !chartsInWorkspace?.length) {
       return [];
     }
@@ -77,11 +79,11 @@ export async function searchWorkspaceItems(
 
     const actionsQuery = supabase
       .from("actions")
-      .select("id, title, content, chart_id")
+      .select("id, title, chart_id")
       .in("chart_id", chartIds)
       .limit(LIMIT_PER_TABLE);
     if (hasQuery) {
-      actionsQuery.or(`title.ilike.${pattern},content.ilike.${pattern}`);
+      actionsQuery.ilike("title", pattern);
     }
 
     const [
@@ -97,6 +99,14 @@ export async function searchWorkspaceItems(
       tensionsQuery,
       actionsQuery,
     ]);
+
+    console.log("[Search] query results:", {
+      charts: chartsData?.length ?? "err:" + chartsErr?.message,
+      visions: visionsData?.length ?? "err:" + visionsErr?.message,
+      realities: realitiesData?.length ?? "err:" + realitiesErr?.message,
+      tensions: tensionsData?.length ?? "err:" + tensionsErr?.message,
+      actions: actionsData?.length ?? "err:" + actionsErr?.message,
+    });
 
     if (chartsErr || visionsErr || realitiesErr || tensionsErr || actionsErr) {
       return [];
@@ -163,13 +173,9 @@ export async function searchWorkspaceItems(
       (row: {
         id: string;
         title: string | null;
-        content: string | null;
         chart_id: string;
       }) => {
-        const title =
-          row.title?.trim() ||
-          (row.content?.trim() || "").slice(0, 200) ||
-          "(無題)";
+        const title = row.title?.trim() || "(無題)";
         results.push({
           type: "action",
           id: row.id,

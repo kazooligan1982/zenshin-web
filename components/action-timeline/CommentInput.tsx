@@ -26,22 +26,36 @@ function createMentionSuggestion(workspaceId: string) {
   return {
     char: "@",
     items: async ({ query }: { query: string }) => {
+      console.log("[Mention] workspaceId:", workspaceId, "query:", query);
       if (!workspaceId) return [];
       const results = await searchWorkspaceItems(workspaceId, query);
-      return results.slice(0, 10).map((r) => ({
-        ...r,
-        id: `${r.type}:${r.id}`,
-        label: r.title,
+      console.log("[Mention] results:", results);
+      return results.slice(0, 10).map((item) => ({
+        id: `${item.type}:${item.chartId}:${item.id}`,
+        label: item.title,
+        type: item.type,
+        title: item.title,
+        chartTitle: item.chartTitle,
+        chartId: item.chartId,
       }));
     },
     render: () => {
       let component: HTMLDivElement | null = null;
       let selectedIndex = 0;
+      let isLoading = false;
       let items: { id: string; label: string; type: string; title: string; chartTitle: string }[] = [];
       let command: (item: { id: string; label: string }) => void = () => {};
 
       function updateDropdown() {
         if (!component) return;
+        if (isLoading) {
+          component.innerHTML = '<div class="px-3 py-2 text-sm text-gray-400">検索中...</div>';
+          return;
+        }
+        if (items.length === 0) {
+          component.innerHTML = '<div class="px-3 py-2 text-sm text-gray-400">見つかりません</div>';
+          return;
+        }
         const typeLabels: Record<string, string> = {
           chart: "📊",
           vision: "🎯",
@@ -50,9 +64,7 @@ function createMentionSuggestion(workspaceId: string) {
           action: "✅",
         };
         component.innerHTML =
-          items.length === 0
-            ? '<div class="px-3 py-2 text-sm text-gray-400">見つかりません</div>'
-            : items
+          items
                 .map(
                   (item, index) =>
                     `<div class="px-3 py-1.5 text-sm rounded cursor-pointer flex items-center gap-2 ${
@@ -74,15 +86,11 @@ function createMentionSuggestion(workspaceId: string) {
       }
 
       return {
-        onStart: (props: {
-          command: (item: { id: string; label: string }) => void;
-          items: { id: string; label: string; type: string; title: string; chartTitle: string }[];
-          editor: { view: { coordsAtPos: (pos: number) => { left: number; bottom: number } }; state: { doc: { resolve: (pos: number) => unknown } }; schema: { nodes: Record<string, { type: { name: string } }> } };
-          range: { from: number };
-        }) => {
+        onStart: (props: any) => {
           command = props.command;
           items = props.items;
           selectedIndex = 0;
+          isLoading = !props.items.length;
 
           component = document.createElement("div");
           component.className =
@@ -96,13 +104,11 @@ function createMentionSuggestion(workspaceId: string) {
           component.style.top = `${coords.bottom + 4}px`;
           document.body.appendChild(component);
         },
-        onUpdate: (props: {
-          command: (item: { id: string; label: string }) => void;
-          items: { id: string; label: string; type: string; title: string; chartTitle: string }[];
-        }) => {
+        onUpdate: (props: any) => {
           items = props.items;
           command = props.command;
           selectedIndex = 0;
+          isLoading = false;
           updateDropdown();
         },
         onKeyDown: (props: { event: KeyboardEvent }) => {
@@ -145,6 +151,7 @@ export function CommentInput({
   onFailed,
 }: CommentInputProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(true);
   const handleSubmitRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const mentionSuggestion = useMemo(
@@ -153,6 +160,10 @@ export function CommentInput({
   );
 
   const editor = useEditor({
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      setIsEmpty(editor.isEmpty);
+    },
     extensions: [
       StarterKit.configure({
         heading: false,
@@ -164,6 +175,20 @@ export function CommentInput({
       Mention.configure({
         HTMLAttributes: {
           class: "mention",
+        },
+        renderHTML({ options, node }) {
+          const idParts = (node.attrs.id || "").split(":");
+          const type = idParts[0] || "";
+          return [
+            "span",
+            {
+              ...options.HTMLAttributes,
+              "data-type": "mention",
+              "data-id": node.attrs.id,
+              "data-mention-type": type,
+            },
+            `@${node.attrs.label ?? node.attrs.id}`,
+          ];
         },
         suggestion: mentionSuggestion as any,
       }),
@@ -240,8 +265,6 @@ export function CommentInput({
   useEffect(() => {
     handleSubmitRef.current = handleSubmit;
   }, [handleSubmit]);
-
-  const isEmpty = editor?.isEmpty ?? true;
 
   return (
     <div className="flex gap-2">

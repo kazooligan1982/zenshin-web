@@ -189,10 +189,24 @@ select:-webkit-autofill {
   margin-bottom: 0;
 }
 
-.tiptap ul,
-.tiptap ol {
+.tiptap ul {
+  list-style-type: disc;
   padding-left: 1.5em;
   margin: 0.25em 0;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+
+.tiptap li {
+  margin: 0.1em 0;
+}
+
+.tiptap li p {
+  margin: 0;
 }
 
 .tiptap code {

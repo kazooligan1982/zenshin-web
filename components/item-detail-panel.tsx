@@ -16,7 +16,6 @@ import {
   fetchRealityComments,
   fetchVisionComments,
 } from "@/app/charts/[id]/actions";
-import { getCurrentWorkspaceId } from "@/lib/workspace";
 
 interface ItemDetailPanelProps {
   isOpen: boolean;
@@ -28,6 +27,7 @@ interface ItemDetailPanelProps {
   currentUserId?: string | null;
   currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
   chartId: string;
+  workspaceId?: string;
   onCommentCountChange?: (
     itemType: "vision" | "reality" | "action",
     itemId: string,
@@ -52,6 +52,7 @@ export function ItemDetailPanel({
   currentUserId,
   currentUser,
   chartId,
+  workspaceId = "",
   onCommentCountChange,
   onAddHistory,
 }: ItemDetailPanelProps) {
@@ -61,13 +62,6 @@ export function ItemDetailPanel({
   const [actionComments, setActionComments] = useState<TimelineComment[]>([]);
   const [visionComments, setVisionComments] = useState<TimelineComment[]>([]);
   const [realityComments, setRealityComments] = useState<TimelineComment[]>([]);
-  const [workspaceId, setWorkspaceId] = useState<string>("");
-
-  useEffect(() => {
-    if (isOpen) {
-      getCurrentWorkspaceId().then((id) => setWorkspaceId(id ?? ""));
-    }
-  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {

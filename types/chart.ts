@@ -84,6 +84,7 @@ export interface Chart {
   title: string;
   description?: string | null;
   due_date?: string | null;
+  workspace_id?: string | null;
   visions: VisionItem[];
   realities: RealityItem[];
   tensions: Tension[];

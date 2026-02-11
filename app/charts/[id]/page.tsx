@@ -63,6 +63,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       <ProjectEditor
         initialChart={chart}
         chartId={id}
+        workspaceId={chart.workspace_id ?? ""}
         currentUserId={user?.id ?? ""}
         currentUser={currentUser}
       />

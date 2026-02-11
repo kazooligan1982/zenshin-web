@@ -60,7 +60,7 @@ export function LoginForm({ redirectTo = "/charts" }: LoginFormProps) {
           required
         />
       </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full bg-[#282A2E] hover:bg-[#3a3c40] text-white" disabled={isLoading}>
         {isLoading ? "ログイン中..." : "ログイン"}
       </Button>
     </form>

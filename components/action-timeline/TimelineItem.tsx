@@ -175,11 +175,24 @@ export function TimelineItem({
           </div>
         ) : (
           <div
-            className="text-sm text-gray-700 prose prose-sm max-w-none"
+            className="text-sm text-gray-700 prose prose-sm max-w-none [&_.mention]:bg-blue-100 [&_.mention]:text-blue-700 [&_.mention]:px-1 [&_.mention]:py-0.5 [&_.mention]:rounded [&_.mention]:text-xs [&_.mention]:font-medium [&_.mention]:cursor-pointer [&_.mention]:no-underline"
             dangerouslySetInnerHTML={{
               __html: comment.content.trimStart().startsWith("<")
                 ? comment.content
                 : linkifyUrls(comment.content),
+            }}
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              const mention = target.closest(".mention") as HTMLElement;
+              if (mention) {
+                const mentionId = mention.getAttribute("data-id");
+                if (mentionId) {
+                  const [type, chartId] = mentionId.split(":");
+                  if (chartId) {
+                    router.push(`/charts/${chartId}`);
+                  }
+                }
+              }
             }}
           />
         )}
