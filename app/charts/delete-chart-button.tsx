@@ -4,43 +4,68 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteChart } from "./actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function DeleteChartButton({ chartId }: { chartId: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const handleDelete = async (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!confirm("このチャートを削除しますか？")) return;
-
+  const handleDelete = async () => {
+    setOpen(false);
     setIsDeleting(true);
     try {
       await deleteChart(chartId);
-      toast.success("チャートを削除しました", {
-        action: {
-          label: "元に戻す",
-          onClick: () => {
-            toast.info("復元機能は準備中です");
-          },
-        },
-      });
+      toast.success("チャートを削除しました", { duration: 3000 });
     } catch (error) {
       console.error("Failed to delete chart:", error);
-      toast.error("削除に失敗しました");
+      toast.error("削除に失敗しました", { duration: 5000 });
     } finally {
       setIsDeleting(false);
     }
   };
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={isDeleting}
-      className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-500 transition-colors"
-      title="削除"
-    >
-      <Trash2 className="w-4 h-4" />
-    </button>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <button
+          disabled={isDeleting}
+          className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-500 transition-colors"
+          title="削除"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
+            このチャートを削除しますか？
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-sm text-gray-500">
+            この操作は取り消せません。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="gap-2">
+          <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
+            キャンセル
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="rounded-lg px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600"
+            onClick={handleDelete}
+          >
+            削除する
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

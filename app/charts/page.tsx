@@ -7,13 +7,17 @@ import {
   FolderOpen,
   Sparkles,
   ArrowUpRight,
+  ChevronRight,
+  ChevronDown,
+  CheckCircle2,
 } from "lucide-react";
 import { DeleteChartButton } from "./delete-chart-button";
 import { NewChartButton } from "./new-chart-button";
+import { CompletedChartsSection } from "./completed-charts-section";
 import { getChartsHierarchy, type ChartWithMeta, type ProjectGroup } from "./actions";
 
 export default async function ChartsPage() {
-  const { projectGroups, recentCharts } = await getChartsHierarchy();
+  const { projectGroups, recentCharts, completedCharts } = await getChartsHierarchy();
 
   return (
     <div className="min-h-screen bg-zenshin-cream">
@@ -76,6 +80,14 @@ export default async function ChartsPage() {
                 <ProjectGroupSection key={group.master.id} group={group} />
               ))}
             </div>
+          )}
+
+          {/* 完了済みチャート */}
+          {completedCharts.length > 0 && (
+            <CompletedChartsSection
+              completedCharts={completedCharts}
+              renderChart={(chart) => <ChartCard chart={chart} />}
+            />
           )}
         </section>
       </div>
@@ -169,9 +181,17 @@ function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; isMaster
         </div>
 
         {/* Row 2: Title */}
-        <h4 className={`font-bold text-zenshin-navy leading-snug mb-3 line-clamp-2 group-hover:text-zenshin-orange transition-colors ${isMaster ? "text-base" : "text-sm"}`}>
-          {chart.title}
-        </h4>
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <h4 className={`font-bold text-zenshin-navy leading-snug line-clamp-2 group-hover:text-zenshin-orange transition-colors flex-1 min-w-0 ${isMaster ? "text-base" : "text-sm"}`}>
+            {chart.title}
+          </h4>
+          {chart.status === "completed" && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full shrink-0">
+              <CheckCircle2 className="w-3 h-3" />
+              完了
+            </span>
+          )}
+        </div>
 
         {/* Row 3: Footer - pinned to bottom */}
         <div className="flex items-center justify-between mt-auto pt-3 border-t border-zenshin-navy/5">

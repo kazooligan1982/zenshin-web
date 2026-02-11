@@ -11,6 +11,16 @@ import {
   removeMember,
 } from "@/lib/workspace";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Member {
   id: string;
@@ -27,6 +37,7 @@ export default function MembersPage() {
   const [isCopied, setIsCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<string>("");
 
@@ -51,9 +62,9 @@ export default function MembersPage() {
     const result = await createInvitation(workspaceId);
     if (result) {
       setInviteUrl(result.url);
-      toast.success("招待リンクを生成しました");
+      toast.success("招待リンクを生成しました", { duration: 3000 });
     } else {
-      toast.error("招待リンクの生成に失敗しました");
+      toast.error("招待リンクの生成に失敗しました", { duration: 5000 });
     }
     setIsGenerating(false);
   };
@@ -62,22 +73,22 @@ export default function MembersPage() {
     if (!inviteUrl) return;
     await navigator.clipboard.writeText(inviteUrl);
     setIsCopied(true);
-    toast.success("コピーしました");
+    toast.success("コピーしました", { duration: 3000 });
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleRemoveMember = async (member: Member) => {
-    if (!workspaceId) return;
-    if (!confirm(`${member.name || member.email} をワークスペースから削除しますか？`)) return;
-
+  const handleRemoveMember = async () => {
+    const member = memberToRemove;
+    if (!workspaceId || !member) return;
+    setMemberToRemove(null);
     setRemovingId(member.id);
     const result = await removeMember(workspaceId, member.id);
 
     if (result.success) {
       setMembers((prev) => prev.filter((m) => m.id !== member.id));
-      toast.success("メンバーを削除しました");
+      toast.success("メンバーを削除しました", { duration: 3000 });
     } else {
-      toast.error(result.error || "削除に失敗しました");
+      toast.error(result.error || "削除に失敗しました", { duration: 5000 });
     }
     setRemovingId(null);
   };
@@ -184,7 +195,7 @@ export default function MembersPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleRemoveMember(member)}
+                    onClick={() => setMemberToRemove(member)}
                     disabled={removingId === member.id}
                     className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
                   >
@@ -200,6 +211,35 @@ export default function MembersPage() {
           ))}
         </div>
       </div>
+
+      {/* メンバー削除確認ダイアログ */}
+      <AlertDialog
+        open={!!memberToRemove}
+        onOpenChange={(open) => !open && setMemberToRemove(null)}
+      >
+        <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
+              メンバーを削除しますか？
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-gray-500">
+              {memberToRemove?.name || memberToRemove?.email}
+              をワークスペースから削除します。この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
+              キャンセル
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600"
+              onClick={handleRemoveMember}
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

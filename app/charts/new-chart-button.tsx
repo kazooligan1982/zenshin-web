@@ -17,11 +17,11 @@ export function NewChartButton() {
 
     try {
       const chart = await createChart("無題のチャート");
-      toast.success("チャートを作成しました");
+      toast.success("チャートを作成しました", { duration: 3000 });
       router.push(`/charts/${chart.id}`);
     } catch (error) {
       console.error("Failed to create chart:", error);
-      toast.error("チャートの作成に失敗しました");
+      toast.error("チャートの作成に失敗しました", { duration: 5000 });
       setIsCreating(false);
     }
   };

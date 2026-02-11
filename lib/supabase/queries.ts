@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { getOrCreateWorkspace } from "@/lib/workspace";
 import type {
   Chart,
+  ChartStatus,
   VisionItem,
   RealityItem,
   Tension,
@@ -197,6 +198,7 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
       description: (chart as any).description || null,
       due_date: (chart as any).due_date || null,
       workspace_id: (chart as any).workspace_id ?? null,
+      status: ((chart as any).status as ChartStatus) || "active",
       visions: Array.from(visionMap.values()) as VisionItem[],
       realities: Array.from(realityMap.values()) as RealityItem[],
       tensions: tensionsWithRelations,
@@ -620,6 +622,7 @@ export async function updateTension(
   updates: Partial<Pick<Tension, "title" | "description" | "status">>
 ): Promise<boolean> {
   try {
+    console.log("[updateTension] called:", tensionId, chartId, updates);
     const serverClient = await createClient();
     const updateData: any = {};
     if (updates.title !== undefined) updateData.title = updates.title;
@@ -634,10 +637,11 @@ export async function updateTension(
       .eq("chart_id", chartId);
 
     if (error) {
-      console.error("Error updating tension:", error);
+      console.error("[updateTension] Error updating tension:", error);
       return false;
     }
 
+    console.log("[updateTension] success");
     return true;
   } catch (error) {
     console.error("Error in updateTension:", error);
@@ -941,6 +945,26 @@ export async function deleteAction(
   } catch (error) {
     console.error("Error in deleteAction:", error);
     return false;
+  }
+}
+
+// Chart status更新
+export async function updateChartStatus(
+  chartId: string,
+  status: ChartStatus
+): Promise<{ error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("charts")
+      .update({ status })
+      .eq("id", chartId);
+
+    if (error) return { error: error.message };
+    return {};
+  } catch (error) {
+    console.error("Error in updateChartStatus:", error);
+    return { error: "予期せぬエラーが発生しました" };
   }
 }
 

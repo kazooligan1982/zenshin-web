@@ -58,6 +58,7 @@ import {
   ArrowUpDown,
   Eye,
   EyeOff,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -145,9 +146,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UndoNotification } from "@/components/undo-notification";
 import { fetchItemHistory, addItemHistoryEntry } from "./actions";
 import { archiveChart, restoreChart, deleteChart } from "@/app/charts/actions";
+import { updateChartStatusAction } from "./actions";
 import type { HistoryItem } from "@/types/chart";
 import { useItemInput } from "@/hooks/use-item-input";
 
@@ -1070,7 +1071,7 @@ function SortableActionItem({
     setIsMovingToTension(true);
     const result = await moveActionToTension(actionPlan.id, targetTensionId, chartId);
     if (!result.success) {
-      toast.error("Tensionへの追加に失敗しました");
+      toast.error("Tensionへの追加に失敗しました", { duration: 5000 });
       setIsMovingToTension(false);
       return;
     }
@@ -1459,45 +1460,18 @@ function SortableActionItem({
               )}
             </Button>
           </div>
-          <div className="flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  title="削除"
-                >
-                  <Trash2 size={16} />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Actionを削除しますか？</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    この操作は取り消せません。本当に削除してもよろしいですか？
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                    No
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteActionPlan(tensionId, actionPlan.id);
-                    }}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Yes
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity opacity-0 group-hover:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteActionPlan(tensionId, actionPlan.id);
+            }}
+            title="削除"
+          >
+            <Trash2 size={16} />
+          </Button>
         </div>
       </div>
       </div>
@@ -1589,6 +1563,8 @@ function TensionGroup({
   onOpenFocus,
   sortByStatus,
   hideCompleted,
+  expandedCompletedTensions = new Set(),
+  toggleCompletedTensionExpand,
 }: {
   tension: Tension;
   tensionIndex: number;
@@ -1615,10 +1591,14 @@ function TensionGroup({
   onOpenFocus: (tension: Tension) => void;
   sortByStatus?: boolean;
   hideCompleted?: boolean;
+  expandedCompletedTensions?: Set<string>;
+  toggleCompletedTensionExpand?: (tensionId: string) => void;
 }) {
   const [isMovingArea, setIsMovingArea] = useState(false);
   const sortByStatusFlag = sortByStatus ?? false;
   const hideCompletedFlag = hideCompleted ?? false;
+  const isResolved = tension.status === "resolved";
+  const isExpanded = expandedCompletedTensions?.has(tension.id) ?? false;
   const tensionTitleInput = useItemInput({
     initialValue: tension.title || "",
     onSave: (val) => {
@@ -1695,23 +1675,87 @@ function TensionGroup({
     if (result.success) {
       const areaName =
         targetAreaId !== null ? areas.find((area) => area.id === targetAreaId)?.name : "未分類";
-      toast.success(`${areaName ?? "未分類"} に移動しました`);
+      toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
     } else {
-      toast.error("移動に失敗しました");
+      toast.error("移動に失敗しました", { duration: 5000 });
     }
     setIsMovingArea(false);
   };
+
+  if (isResolved && !isExpanded) {
+    return (
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "group border border-gray-200 rounded-md bg-white transition-all",
+          isOverlay && "shadow-2xl border-blue-500 ring-2 ring-blue-200"
+        )}
+      >
+        <div
+          className="flex items-center gap-2 px-3 py-2 opacity-60 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => toggleCompletedTensionExpand?.(tension.id)}
+        >
+          <button
+            type="button"
+            className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500 border-2 border-emerald-500 text-white flex items-center justify-center"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("Tension complete clicked (collapsed):", tension.id, tension.status);
+              handleUpdateTension(tension.id, "status", "active");
+            }}
+            title="未完了に戻す"
+          >
+            <Check className="w-3 h-3" />
+          </button>
+          <span className="text-sm font-bold text-zenshin-navy/50 line-through flex-1 truncate">
+            {tension.title}
+          </span>
+          <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
         "group border border-gray-200 rounded-md bg-white transition-all",
-        isOverlay && "shadow-2xl border-blue-500 ring-2 ring-blue-200"
+        isOverlay && "shadow-2xl border-blue-500 ring-2 ring-blue-200",
+        isResolved && isExpanded && "opacity-60"
       )}
     >
       <div className="flex items-center justify-between gap-4 px-3 py-2 border-b bg-gray-50">
         <div className="flex items-center gap-2 flex-1 min-w-0">
+          <button
+            type="button"
+            className={cn(
+              "flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+              tension.status === "resolved"
+                ? "bg-emerald-500 border-emerald-500 text-white"
+                : "border-gray-300 hover:border-emerald-400 text-transparent hover:text-emerald-400"
+            )}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("Tension complete clicked:", tension.id, tension.status);
+              handleUpdateTension(
+                tension.id,
+                "status",
+                tension.status === "resolved" ? "active" : "resolved"
+              );
+            }}
+            title={tension.status === "resolved" ? "未完了に戻す" : "完了にする"}
+          >
+            <Check className="w-3 h-3" />
+          </button>
           <Input
             {...tensionTitleInput.bind}
             placeholder="VisionとRealityのギャップは？"
@@ -1725,6 +1769,15 @@ function TensionGroup({
           />
         </div>
         <div className="flex items-center gap-2">
+          {isResolved && isExpanded && (
+            <button
+              className="p-1 rounded transition-all hover:bg-gray-200"
+              onClick={() => toggleCompletedTensionExpand?.(tension.id)}
+              title="折りたたむ"
+            >
+              <ChevronDown className="h-4 w-4 text-zenshin-navy/50" />
+            </button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -1759,41 +1812,18 @@ function TensionGroup({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 text-zenshin-navy/40 hover:text-gray-600 hover:bg-zenshin-navy/8 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                title="削除"
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Tensionを削除しますか？</AlertDialogTitle>
-                <AlertDialogDescription>
-                  この操作は取り消せません。本当に削除してもよろしいですか？
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={(e) => e.stopPropagation()}>No</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteTension(tension.id);
-                  }}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Yes
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-zenshin-navy/40 hover:text-gray-600 hover:bg-zenshin-navy/8 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteTension(tension.id);
+            }}
+            title="削除"
+          >
+            <Trash2 className="w-3 h-3" />
+          </Button>
         </div>
       </div>
       {!isOverlay && (
@@ -1998,6 +2028,8 @@ function ActionSection({
   onOpenFocus,
   sortByStatus = false,
   hideCompleted = false,
+  expandedCompletedTensions,
+  toggleCompletedTensionExpand,
 }: {
   areaId: string | null;
   areaName: string;
@@ -2031,6 +2063,8 @@ function ActionSection({
   onOpenFocus: (tension: Tension) => void;
   sortByStatus?: boolean;
   hideCompleted?: boolean;
+  expandedCompletedTensions?: Set<string>;
+  toggleCompletedTensionExpand?: (tensionId: string) => void;
 }) {
   const sectionKey = areaId || "uncategorized";
   const sectionId = `action-section-${sectionKey}`;
@@ -2128,6 +2162,8 @@ function ActionSection({
               onOpenFocus={onOpenFocus}
               sortByStatus={sortByStatus}
               hideCompleted={hideCompleted}
+              expandedCompletedTensions={expandedCompletedTensions}
+              toggleCompletedTensionExpand={toggleCompletedTensionExpand}
             />
           ))}
         </div>
@@ -2363,6 +2399,8 @@ export function ProjectEditor({
   >(null);
   const [viewMode, setViewMode] = useState<"default" | "comparison">("default");
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
+  const [archiveChartDialogOpen, setArchiveChartDialogOpen] = useState(false);
+  const [deleteChartDialogOpen, setDeleteChartDialogOpen] = useState(false);
   const chartTitleInput = useItemInput({
     initialValue: chart.title || "",
     onSave: (val) => {
@@ -2390,12 +2428,6 @@ export function ProjectEditor({
       timeoutId: NodeJS.Timeout;
     };
   }>({});
-  
-  // Undo通知の表示状態
-  const [undoNotification, setUndoNotification] = useState<{
-    message: string;
-    onUndo: () => void;
-  } | null>(null);
   
   // サイドパネルの状態
   const [detailPanel, setDetailPanel] = useState<{
@@ -2435,6 +2467,19 @@ export function ProjectEditor({
   const [sortByStatus, setSortByStatus] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
   const [showCompletedTensions, setShowCompletedTensions] = useState(false);
+  const [expandedCompletedTensions, setExpandedCompletedTensions] = useState<Set<string>>(new Set());
+
+  const toggleCompletedTensionExpand = (tensionId: string) => {
+    setExpandedCompletedTensions((prev) => {
+      const next = new Set(prev);
+      if (next.has(tensionId)) {
+        next.delete(tensionId);
+      } else {
+        next.add(tensionId);
+      }
+      return next;
+    });
+  };
 
   const isTensionCompleted = (tension: Tension) => {
     if (tension.status === "resolved") return true;
@@ -3231,7 +3276,7 @@ export function ProjectEditor({
         const areaName = value
           ? chart.areas.find((area: Area) => area.id === value)?.name
           : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`);
+        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
       }
       // isLocked、areaIdが変更された場合のみrefresh（コンテンツ構造に影響するため）
       if (field === "isLocked" || field === "areaId") {
@@ -3260,7 +3305,7 @@ export function ProjectEditor({
     const originalVisions = [...visions];
     setVisions(visions.filter((v) => v.id !== id));
 
-    // 5秒後に実際に削除
+    // 15秒後に実際に削除
     const timeoutId = setTimeout(async () => {
       const success = await removeVision(id, chartId);
       if (success) {
@@ -3268,14 +3313,14 @@ export function ProjectEditor({
       } else {
         // 削除失敗時は元に戻す
         setVisions(originalVisions);
-        toast.error("削除に失敗しました");
+        toast.error("削除に失敗しました", { duration: 5000 });
       }
       setPendingDeletions((prev) => {
         const next = { ...prev };
         delete next[existingKey];
         return next;
       });
-    }, 5000);
+    }, 15000);
 
     // 削除予約を保存
     setPendingDeletions((prev) => ({
@@ -3287,19 +3332,19 @@ export function ProjectEditor({
       },
     }));
 
-    // Undo用の通知を表示
-    setUndoNotification({
-      message: "Visionを削除しました",
-      onUndo: () => {
-        // 削除をキャンセル
-        clearTimeout(timeoutId);
-        setVisions(originalVisions);
-        setPendingDeletions((prev) => {
-          const next = { ...prev };
-          delete next[existingKey];
-          return next;
-        });
-        setUndoNotification(null);
+    toast.success("Visionを削除しました", {
+      duration: 15000,
+      action: {
+        label: "元に戻す",
+        onClick: () => {
+          clearTimeout(timeoutId);
+          setVisions(originalVisions);
+          setPendingDeletions((prev) => {
+            const next = { ...prev };
+            delete next[existingKey];
+            return next;
+          });
+        },
       },
     });
   };
@@ -3372,7 +3417,7 @@ export function ProjectEditor({
       const areaName = value
         ? chart.areas.find((area: Area) => area.id === value)?.name
         : "未分類";
-      toast.success(`${areaName ?? "未分類"} に移動しました`);
+      toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
     }
 
     const success = await updateRealityItem(id, chartId, field, value);
@@ -3397,7 +3442,7 @@ export function ProjectEditor({
     const originalRealities = [...realities];
     setRealities(realities.filter((r) => r.id !== id));
 
-    // 5秒後に実際に削除
+    // 15秒後に実際に削除
     const timeoutId = setTimeout(async () => {
       const success = await removeReality(id, chartId);
       if (success) {
@@ -3405,14 +3450,14 @@ export function ProjectEditor({
       } else {
         // 削除失敗時は元に戻す
         setRealities(originalRealities);
-        toast.error("削除に失敗しました");
+        toast.error("削除に失敗しました", { duration: 5000 });
       }
       setPendingDeletions((prev) => {
         const next = { ...prev };
         delete next[existingKey];
         return next;
       });
-    }, 5000);
+    }, 15000);
 
     // 削除予約を保存
     setPendingDeletions((prev) => ({
@@ -3424,19 +3469,19 @@ export function ProjectEditor({
       },
     }));
 
-    // Undo用の通知を表示
-    setUndoNotification({
-      message: "Realityを削除しました",
-      onUndo: () => {
-        // 削除をキャンセル
-        clearTimeout(timeoutId);
-        setRealities(originalRealities);
-        setPendingDeletions((prev) => {
-          const next = { ...prev };
-          delete next[existingKey];
-          return next;
-        });
-        setUndoNotification(null);
+    toast.success("Realityを削除しました", {
+      duration: 15000,
+      action: {
+        label: "元に戻す",
+        onClick: () => {
+          clearTimeout(timeoutId);
+          setRealities(originalRealities);
+          setPendingDeletions((prev) => {
+            const next = { ...prev };
+            delete next[existingKey];
+            return next;
+          });
+        },
       },
     });
   };
@@ -3509,12 +3554,22 @@ export function ProjectEditor({
     field: "title" | "description" | "status",
     value: string | TensionStatus
   ) => {
+    console.log("[handleUpdateTension] called:", tensionId, field, value);
     // Server updateのみ（Optimistic UIなし）
     const success = await updateTensionItem(tensionId, chartId, field, value);
     if (success) {
-      // titleとdescriptionの場合は画面リセットを避けるため、refreshしない
-      // statusの場合はrefreshして最新状態を反映
+      // statusの場合はローカルstateを即座に更新してUIをリアルタイム反映
       if (field === "status") {
+        setTensions((prev) =>
+          prev.map((t) =>
+            t.id === tensionId ? { ...t, status: value as TensionStatus } : t
+          )
+        );
+        if (value === "resolved") {
+          toast.success("Tensionを完了にしました", { duration: 3000 });
+        } else if (value === "active") {
+          toast.success("Tensionを再開しました", { duration: 3000 });
+        }
         router.refresh();
       }
     } else {
@@ -3536,7 +3591,7 @@ export function ProjectEditor({
     const originalTensions = [...tensions];
     setTensions(tensions.filter((t) => t.id !== tensionId));
 
-    // 5秒後に実際に削除
+    // 15秒後に実際に削除
     const timeoutId = setTimeout(async () => {
       const success = await removeTension(tensionId, chartId);
       if (success) {
@@ -3544,14 +3599,14 @@ export function ProjectEditor({
       } else {
         // 削除失敗時は元に戻す
         setTensions(originalTensions);
-        toast.error("削除に失敗しました");
+        toast.error("削除に失敗しました", { duration: 5000 });
       }
       setPendingDeletions((prev) => {
         const next = { ...prev };
         delete next[existingKey];
         return next;
       });
-    }, 5000);
+    }, 15000);
 
     // 削除予約を保存
     setPendingDeletions((prev) => ({
@@ -3563,19 +3618,19 @@ export function ProjectEditor({
       },
     }));
 
-    // Undo用の通知を表示
-    setUndoNotification({
-      message: "Tensionを削除しました",
-      onUndo: () => {
-        // 削除をキャンセル
-        clearTimeout(timeoutId);
-        setTensions(originalTensions);
-        setPendingDeletions((prev) => {
-          const next = { ...prev };
-          delete next[existingKey];
-          return next;
-        });
-        setUndoNotification(null);
+    toast.success("Tensionを削除しました", {
+      duration: 15000,
+      action: {
+        label: "元に戻す",
+        onClick: () => {
+          clearTimeout(timeoutId);
+          setTensions(originalTensions);
+          setPendingDeletions((prev) => {
+            const next = { ...prev };
+            delete next[existingKey];
+            return next;
+          });
+        },
       },
     });
   };
@@ -3752,7 +3807,7 @@ export function ProjectEditor({
         removeFromTension
       );
       if (!result.success) {
-        toast.error("移動に失敗しました");
+        toast.error("移動に失敗しました", { duration: 5000 });
       }
       return;
     }
@@ -3823,7 +3878,7 @@ export function ProjectEditor({
       setLooseActions(looseActions.filter((a) => a.id !== actionId));
     }
 
-    // 5秒後に実際に削除
+    // 15秒後に実際に削除
     const timeoutId = setTimeout(async () => {
       const success = await removeActionPlan(actionId, tensionId, chartId);
       if (success) {
@@ -3832,14 +3887,14 @@ export function ProjectEditor({
         // 削除失敗時は元に戻す
         setTensions(originalTensions);
         setLooseActions(originalLooseActions);
-        toast.error("削除に失敗しました");
+        toast.error("削除に失敗しました", { duration: 5000 });
       }
       setPendingDeletions((prev) => {
         const next = { ...prev };
         delete next[existingKey];
         return next;
       });
-    }, 5000);
+    }, 15000);
 
     // 削除予約を保存
     setPendingDeletions((prev) => ({
@@ -3852,20 +3907,20 @@ export function ProjectEditor({
       },
     }));
 
-    // Undo用の通知を表示
-    setUndoNotification({
-      message: "Actionを削除しました",
-      onUndo: () => {
-        // 削除をキャンセル
-        clearTimeout(timeoutId);
-        setTensions(originalTensions);
-        setLooseActions(originalLooseActions);
-        setPendingDeletions((prev) => {
-          const next = { ...prev };
-          delete next[existingKey];
-          return next;
-        });
-        setUndoNotification(null);
+    toast.success("Actionを削除しました", {
+      duration: 15000,
+      action: {
+        label: "元に戻す",
+        onClick: () => {
+          clearTimeout(timeoutId);
+          setTensions(originalTensions);
+          setLooseActions(originalLooseActions);
+          setPendingDeletions((prev) => {
+            const next = { ...prev };
+            delete next[existingKey];
+            return next;
+          });
+        },
       },
     });
   };
@@ -4030,14 +4085,14 @@ export function ProjectEditor({
               targetAreaId !== null
                 ? chart.areas.find((a) => a.id === targetAreaId)?.name
                 : "未分類";
-            toast.success(`${areaName ?? "未分類"} に移動しました`);
+            toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
           } else {
             throw new Error("Update failed");
           }
         } catch (error) {
           console.error("❌ Server update failed:", error);
           setVisions(previousState);
-          toast.error("移動に失敗しました");
+          toast.error("移動に失敗しました", { duration: 5000 });
         }
         return;
       }
@@ -4071,7 +4126,7 @@ export function ProjectEditor({
       } catch (error) {
         console.error("Sort order update failed:", error);
         setVisions(previousState);
-        toast.error("並び順の更新に失敗しました");
+        toast.error("並び順の更新に失敗しました", { duration: 5000 });
       }
     } else if (type === "realities") {
       if (!over) return;
@@ -4109,10 +4164,10 @@ export function ProjectEditor({
             targetAreaId !== null
               ? chart.areas.find((a) => a.id === targetAreaId)?.name
               : "未分類";
-          toast.success(`${areaName ?? "未分類"} に移動しました`);
+          toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
         } else {
           setRealities(previousState);
-          toast.error("移動に失敗しました");
+          toast.error("移動に失敗しました", { duration: 5000 });
         }
         return;
       }
@@ -4137,7 +4192,7 @@ export function ProjectEditor({
       } catch (error) {
         console.error("Sort order update failed:", error);
         setRealities(previousState);
-        toast.error("並び順の更新に失敗しました");
+        toast.error("並び順の更新に失敗しました", { duration: 5000 });
       }
     } else if (type === "actions" && tensionId) {
       if (!over) return;
@@ -4176,7 +4231,7 @@ export function ProjectEditor({
       } catch (error) {
         console.error("Sort order update failed:", error);
         setTensions(previousState);
-        toast.error("並び順の更新に失敗しました");
+        toast.error("並び順の更新に失敗しました", { duration: 5000 });
       }
     }
   };
@@ -4231,10 +4286,10 @@ export function ProjectEditor({
         if (result.success) {
           const areaName =
             targetAreaId !== null ? chart.areas.find((a) => a.id === targetAreaId)?.name : "未分類";
-          toast.success(`${areaName ?? "未分類"} に移動しました`);
+          toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
         } else {
           setTensions(previousState);
-          toast.error("移動に失敗しました");
+          toast.error("移動に失敗しました", { duration: 5000 });
         }
         return;
       }
@@ -4275,7 +4330,7 @@ export function ProjectEditor({
       } catch (error) {
         console.error("Sort order update failed:", error);
         setTensions(previousState);
-        toast.error("並び順の更新に失敗しました");
+        toast.error("並び順の更新に失敗しました", { duration: 5000 });
       }
       return;
     }
@@ -4342,11 +4397,11 @@ export function ProjectEditor({
       if (result.success) {
         const areaName =
           targetAreaId !== null ? chart.areas.find((a) => a.id === targetAreaId)?.name : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`);
+        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
       } else {
         setTensions(previousTensions);
         setLooseActions(previousLooseActions);
-        toast.error("移動に失敗しました");
+        toast.error("移動に失敗しました", { duration: 5000 });
       }
       return;
     }
@@ -4380,7 +4435,7 @@ export function ProjectEditor({
         } catch (error) {
           console.error("Sort order update failed:", error);
           setLooseActions(previousState);
-          toast.error("並び順の更新に失敗しました");
+          toast.error("並び順の更新に失敗しました", { duration: 5000 });
         }
       }
     }
@@ -4448,13 +4503,13 @@ export function ProjectEditor({
     try {
       const result = await createSnapshot(chartId, undefined, "manual");
       if (result.success) {
-        toast.success("スナップショットを保存しました");
+        toast.success("スナップショットを保存しました", { duration: 3000 });
       } else {
-        toast.error(`スナップショットの保存に失敗しました: ${result.error || "不明なエラー"}`);
+        toast.error(`スナップショットの保存に失敗しました: ${result.error || "不明なエラー"}`, { duration: 5000 });
       }
     } catch (error) {
       console.error("[handleCreateSnapshot] エラー:", error);
-      toast.error("スナップショットの保存中にエラーが発生しました");
+      toast.error("スナップショットの保存中にエラーが発生しました", { duration: 5000 });
     } finally {
       setIsSavingSnapshot(false);
     }
@@ -4462,18 +4517,17 @@ export function ProjectEditor({
 
   const handleArchiveChart = async () => {
     if (!chart?.id) return;
-    if (!confirm(`「${chart.title}」とその全てのサブチャートをアーカイブしますか？`)) {
-      return;
-    }
+    setArchiveChartDialogOpen(false);
     setIsChartMenuLoading(true);
     try {
       const result = await archiveChart(chart.id);
       toast.success(`${result.archivedCount}件のチャートをアーカイブしました`, {
+        duration: 3000,
         action: {
           label: "元に戻す",
           onClick: async () => {
             await restoreChart(chart.id);
-            toast.success("アーカイブを復元しました");
+            toast.success("アーカイブを復元しました", { duration: 3000 });
             router.refresh();
           },
         },
@@ -4485,7 +4539,7 @@ export function ProjectEditor({
       }
     } catch (error) {
       console.error("Failed to archive:", error);
-      toast.error("アーカイブに失敗しました");
+      toast.error("アーカイブに失敗しました", { duration: 5000 });
     } finally {
       setIsChartMenuLoading(false);
     }
@@ -4493,13 +4547,11 @@ export function ProjectEditor({
 
   const handleDeleteChart = async () => {
     if (!chart?.id) return;
-    if (!confirm(`「${chart.title}」を完全に削除しますか？\nこの操作は取り消せません。`)) {
-      return;
-    }
+    setDeleteChartDialogOpen(false);
     setIsChartMenuLoading(true);
     try {
       await deleteChart(chart.id);
-      toast.success("チャートを削除しました");
+      toast.success("チャートを削除しました", { duration: 3000 });
       if (chart.parentChartId) {
         router.push(`/charts/${chart.parentChartId}`);
       } else {
@@ -4507,7 +4559,7 @@ export function ProjectEditor({
       }
     } catch (error) {
       console.error("Failed to delete:", error);
-      toast.error("削除に失敗しました");
+      toast.error("削除に失敗しました", { duration: 5000 });
     } finally {
       setIsChartMenuLoading(false);
     }
@@ -4551,15 +4603,56 @@ export function ProjectEditor({
 
   return (
     <div className="flex flex-col h-screen bg-zenshin-cream">
-      {/* Undo通知（画面中央） */}
-      {undoNotification && (
-        <UndoNotification
-          message={undoNotification.message}
-          onUndo={undoNotification.onUndo}
-          onDismiss={() => setUndoNotification(null)}
-          duration={5000}
-        />
-      )}
+      {/* アーカイブ確認ダイアログ */}
+      <AlertDialog open={archiveChartDialogOpen} onOpenChange={setArchiveChartDialogOpen}>
+        <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
+              チャートをアーカイブしますか？
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-gray-500">
+              「{chart?.title}」とその全てのサブチャートをアーカイブします。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
+              キャンセル
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg px-4 py-2 text-sm bg-zenshin-navy text-white hover:bg-zenshin-navy/90"
+              onClick={handleArchiveChart}
+            >
+              アーカイブする
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 完全削除確認ダイアログ */}
+      <AlertDialog open={deleteChartDialogOpen} onOpenChange={setDeleteChartDialogOpen}>
+        <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
+              チャートを完全に削除しますか？
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-gray-500">
+              この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
+              キャンセル
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600"
+              onClick={handleDeleteChart}
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* ヘッダー */}
       <header className="border-b border-zenshin-navy/10 bg-zenshin-cream sticky top-0 z-10">
         {/* 上段: パンくず & アクション */}
@@ -4626,13 +4719,44 @@ export function ProjectEditor({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={handleArchiveChart} className="gap-2">
+                <DropdownMenuItem
+                  onSelect={async () => {
+                    const newStatus = chart.status === "completed" ? "active" : "completed";
+                    const result = await updateChartStatusAction(chartId, newStatus);
+                    if (result.error) {
+                      toast.error("ステータスの更新に失敗しました", { duration: 5000 });
+                    } else {
+                      setChart((prev) => ({ ...prev, status: newStatus }));
+                      toast.success(
+                        newStatus === "completed" ? "チャートを完了にしました" : "チャートを再開しました",
+                        { duration: 3000 }
+                      );
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  {chart.status === "completed" ? (
+                    <>
+                      <RotateCcw className="w-4 h-4" />
+                      チャートを再開
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      チャートを完了にする
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setArchiveChartDialogOpen(true)}
+                  className="gap-2"
+                >
                   <Archive className="w-4 h-4" />
                   アーカイブ
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={handleDeleteChart}
+                  onSelect={() => setDeleteChartDialogOpen(true)}
                   className="gap-2 text-red-600 focus:text-red-600"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -4644,13 +4768,19 @@ export function ProjectEditor({
         </div>
 
         {/* 中段: タイトル */}
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 flex items-center gap-2 flex-wrap">
           <input
             type="text"
             {...chartTitleInput.bind}
-            className="text-2xl font-bold text-zenshin-navy bg-transparent border-none outline-none w-full hover:bg-zenshin-cream focus:bg-zenshin-cream rounded px-1 -ml-1 transition-colors"
+            className="text-2xl font-bold text-zenshin-navy bg-transparent border-none outline-none w-full hover:bg-zenshin-cream focus:bg-zenshin-cream rounded px-1 -ml-1 transition-colors min-w-0"
             placeholder="チャートの目的を一言で"
           />
+          {chart.status === "completed" && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full shrink-0">
+              <CheckCircle2 className="w-3 h-3" />
+              完了
+            </span>
+          )}
         </div>
 
         {/* 下段: メタデータ & フィルター */}
@@ -5054,6 +5184,8 @@ export function ProjectEditor({
                                     }}
                                     sortByStatus={sortByStatus}
                                     hideCompleted={hideCompleted}
+                                    expandedCompletedTensions={expandedCompletedTensions}
+                                    toggleCompletedTensionExpand={toggleCompletedTensionExpand}
                                   />
                                 );
                               })}
@@ -5109,6 +5241,8 @@ export function ProjectEditor({
                                           }
                                           sortByStatus={sortByStatus}
                                           hideCompleted={hideCompleted}
+                                          expandedCompletedTensions={expandedCompletedTensions}
+                                          toggleCompletedTensionExpand={toggleCompletedTensionExpand}
                                         />
                                       ))}
                                     </div>
@@ -5188,6 +5322,8 @@ export function ProjectEditor({
             showCompletedTensions={showCompletedTensions}
             setShowCompletedTensions={setShowCompletedTensions}
             isTensionCompleted={isTensionCompleted}
+            expandedCompletedTensions={expandedCompletedTensions}
+            toggleCompletedTensionExpand={toggleCompletedTensionExpand}
           />
         ) : (
           <div className="h-full flex gap-4 overflow-hidden">
@@ -5488,6 +5624,8 @@ export function ProjectEditor({
                                   }}
                                   sortByStatus={sortByStatus}
                                   hideCompleted={hideCompleted}
+                                  expandedCompletedTensions={expandedCompletedTensions}
+                                  toggleCompletedTensionExpand={toggleCompletedTensionExpand}
                                 />
                               );
                             })}
@@ -5541,6 +5679,8 @@ export function ProjectEditor({
                                         }
                                         sortByStatus={sortByStatus}
                                         hideCompleted={hideCompleted}
+                                        expandedCompletedTensions={expandedCompletedTensions}
+                                        toggleCompletedTensionExpand={toggleCompletedTensionExpand}
                                       />
                                     ))}
                                   </div>
@@ -5637,6 +5777,8 @@ function ComparisonView({
   showCompletedTensions,
   setShowCompletedTensions,
   isTensionCompleted,
+  expandedCompletedTensions = new Set(),
+  toggleCompletedTensionExpand,
 }: {
   visions: VisionItem[];
   realities: RealityItem[];
@@ -5688,6 +5830,8 @@ function ComparisonView({
   showCompletedTensions: boolean;
   setShowCompletedTensions: (v: boolean) => void;
   isTensionCompleted: (tension: Tension) => boolean;
+  expandedCompletedTensions?: Set<string>;
+  toggleCompletedTensionExpand?: (tensionId: string) => void;
 }) {
   const [visionInputByArea, setVisionInputByArea] = useState<Record<string, string>>({});
   const [realityInputByArea, setRealityInputByArea] = useState<Record<string, string>>({});
@@ -6024,6 +6168,8 @@ function ComparisonView({
                               onOpenFocus={onOpenFocusTension}
                               sortByStatus={sortByStatus}
                               hideCompleted={hideCompleted}
+                              expandedCompletedTensions={expandedCompletedTensions}
+                              toggleCompletedTensionExpand={toggleCompletedTensionExpand}
                             />
                           );
                         })}

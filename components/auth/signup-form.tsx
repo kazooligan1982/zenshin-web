@@ -19,12 +19,12 @@ export function SignupForm() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("パスワードが一致しません");
+      toast.error("パスワードが一致しません", { duration: 5000 });
       return;
     }
 
     if (password.length < 6) {
-      toast.error("パスワードは6文字以上で入力してください");
+      toast.error("パスワードは6文字以上で入力してください", { duration: 5000 });
       return;
     }
 
@@ -42,7 +42,7 @@ export function SignupForm() {
 
     if (error) {
       console.error("Signup error:", error);
-      toast.error("サインアップに失敗しました: " + error.message);
+      toast.error("サインアップに失敗しました: " + error.message, { duration: 5000 });
       setIsLoading(false);
       return;
     }

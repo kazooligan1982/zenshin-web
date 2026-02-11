@@ -27,11 +27,11 @@ export function LoginForm({ redirectTo = "/charts" }: LoginFormProps) {
     });
     if (error) {
       console.error("Login error:", error);
-      toast.error("ログインに失敗しました: " + error.message);
+      toast.error("ログインに失敗しました: " + error.message, { duration: 5000 });
       setIsLoading(false);
       return;
     }
-    toast.success("ログインしました");
+    toast.success("ログインしました", { duration: 3000 });
     router.push(redirectTo);
     router.refresh();
   };
