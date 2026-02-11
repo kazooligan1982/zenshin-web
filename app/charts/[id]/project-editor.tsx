@@ -391,7 +391,6 @@ interface ProjectEditorProps {
   } | null;
 }
 
-
 // SortableItemコンポーネント（Vision用）
 // ============================================
 // SortableVisionItem コンポーネント
@@ -405,6 +404,7 @@ function SortableVisionItem({
   areas,
   onOpenDetail,
   onOpenFocus,
+  onOpenAreaSettings,
   currentUser,
 }: {
   vision: VisionItem;
@@ -419,6 +419,7 @@ function SortableVisionItem({
   areas: Area[];
   onOpenDetail: (vision: VisionItem) => void;
   onOpenFocus: (vision: VisionItem, index: number) => void;
+  onOpenAreaSettings?: () => void;
   currentUser?: {
     id: string;
     email: string;
@@ -643,6 +644,20 @@ function SortableVisionItem({
               >
                 未分類
               </Button>
+              {onOpenAreaSettings && (
+                <div className="border-t border-gray-100 mt-1 pt-1">
+                  <button
+                    className="flex items-center gap-1.5 w-full px-2 py-1.5 text-xs text-gray-500 hover:text-zenshin-navy hover:bg-gray-50 rounded transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenAreaSettings();
+                    }}
+                  >
+                    <Plus className="w-3 h-3" />
+                    新しいタグを追加
+                  </button>
+                </div>
+              )}
             </div>
           </PopoverContent>
         </Popover>
@@ -675,6 +690,7 @@ function SortableRealityItem({
   areas,
   onOpenDetail,
   onOpenFocus,
+  onOpenAreaSettings,
   currentUser,
   disabled = false,
 }: {
@@ -686,6 +702,7 @@ function SortableRealityItem({
   areas: Area[];
   onOpenDetail: (reality: RealityItem) => void;
   onOpenFocus: (reality: RealityItem, index: number) => void;
+  onOpenAreaSettings?: () => void;
   currentUser?: {
     id: string;
     email: string;
@@ -850,6 +867,20 @@ function SortableRealityItem({
               >
                 未分類
               </Button>
+              {onOpenAreaSettings && (
+                <div className="border-t border-gray-100 mt-1 pt-1">
+                  <button
+                    className="flex items-center gap-1.5 w-full px-2 py-1.5 text-xs text-gray-500 hover:text-zenshin-navy hover:bg-gray-50 rounded transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenAreaSettings();
+                    }}
+                  >
+                    <Plus className="w-3 h-3" />
+                    新しいタグを追加
+                  </button>
+                </div>
+              )}
             </div>
           </PopoverContent>
         </Popover>
@@ -2149,6 +2180,7 @@ export function ProjectEditor({
   const [focusedArea, setFocusedArea] = useState<
     "vision" | "reality" | "tension" | null
   >(null);
+  const [viewMode, setViewMode] = useState<"default" | "comparison">("default");
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const chartTitleInput = useItemInput({
     initialValue: chart.title || "",
@@ -2687,6 +2719,7 @@ export function ProjectEditor({
           item.content || ""
         )
       }
+      onOpenAreaSettings={() => setTagManagerOpen(true)}
       currentUser={currentUser}
     />
   );
@@ -2737,6 +2770,7 @@ export function ProjectEditor({
                             item.content || ""
                           )
                         }
+                        onOpenAreaSettings={() => setTagManagerOpen(true)}
                         currentUser={currentUser}
                       />
                     ))
@@ -2788,6 +2822,7 @@ export function ProjectEditor({
                             item.content || ""
                           )
                         }
+                        onOpenAreaSettings={() => setTagManagerOpen(true)}
                         currentUser={currentUser}
                       />
                     ))
@@ -2819,6 +2854,7 @@ export function ProjectEditor({
           item.content || ""
         )
       }
+      onOpenAreaSettings={() => setTagManagerOpen(true)}
       currentUser={currentUser}
     />
   );
@@ -2869,6 +2905,8 @@ export function ProjectEditor({
                             item.content || ""
                           )
                         }
+                        onOpenAreaSettings={() => setTagManagerOpen(true)}
+                        currentUser={currentUser}
                       />
                     ))
                   )}
@@ -2919,6 +2957,8 @@ export function ProjectEditor({
                             item.content || ""
                           )
                         }
+                        onOpenAreaSettings={() => setTagManagerOpen(true)}
+                        currentUser={currentUser}
                       />
                     ))
                   )}
@@ -2932,13 +2972,18 @@ export function ProjectEditor({
   };
 
   // Vision追加: 楽観的UI（ローカルState即時更新）
-  const handleAddVision = async (content: string) => {
+  // areaIdOverride: ComparisonView などからエリアを指定して追加する場合に渡す（"uncategorized" は null にマップ）
+  const handleAddVision = async (content: string, areaIdOverride?: string | null) => {
     if (!content.trim() || isSubmittingVision) return;
 
     setIsSubmittingVision(true);
     const contentToAdd = content.trim();
-    // 選択中のエリアIDを取得（"all"の場合はnull）
-    const areaId = selectedAreaId === "all" ? null : selectedAreaId;
+    const areaId =
+      areaIdOverride !== undefined
+        ? (areaIdOverride === "uncategorized" ? null : areaIdOverride)
+        : selectedAreaId === "all"
+          ? null
+          : selectedAreaId;
 
     // 楽観的にローカルStateを即時更新
     const tempId = `temp-${Date.now()}`;
@@ -2949,7 +2994,7 @@ export function ProjectEditor({
       area_id: areaId,
     };
     setVisions((prev) => [...prev, optimisticVision]);
-    newVisionInput.setValue("");
+    if (areaIdOverride === undefined) newVisionInput.setValue("");
 
     try {
       const newVision = await addVision(chartId, contentToAdd, areaId);
@@ -3066,13 +3111,18 @@ export function ProjectEditor({
   };
 
   // Reality追加: 楽観的UI（ローカルState即時更新）
-  const handleAddReality = async (content: string) => {
+  // areaIdOverride: ComparisonView などからエリアを指定して追加する場合に渡す（"uncategorized" は null にマップ）
+  const handleAddReality = async (content: string, areaIdOverride?: string | null) => {
     if (!content.trim() || isSubmittingReality) return;
 
     setIsSubmittingReality(true);
     const contentToAdd = content.trim();
-    // 選択中のエリアIDを取得（"all"の場合はnull）
-    const areaId = selectedAreaId === "all" ? null : selectedAreaId;
+    const areaId =
+      areaIdOverride !== undefined
+        ? (areaIdOverride === "uncategorized" ? null : areaIdOverride)
+        : selectedAreaId === "all"
+          ? null
+          : selectedAreaId;
 
     // 楽観的にローカルStateを即時更新
     const tempId = `temp-${Date.now()}`;
@@ -3083,7 +3133,7 @@ export function ProjectEditor({
       area_id: areaId,
     };
     setRealities((prev) => [...prev, optimisticReality]);
-    newRealityInput.setValue("");
+    if (areaIdOverride === undefined) newRealityInput.setValue("");
 
     try {
       const newReality = await addReality(chartId, contentToAdd, areaId);
@@ -4410,74 +4460,100 @@ export function ProjectEditor({
         </div>
 
         {/* 下段: メタデータ & フィルター */}
-        <div className="flex items-center gap-4 px-6 py-3 bg-gray-50/50 border-t border-zenshin-navy/5">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 text-sm text-zenshin-navy/60 hover:text-gray-900 hover:bg-zenshin-navy/8 rounded-md px-2 py-1.5 transition-colors">
-                <CalendarIcon className="w-4 h-4" />
-                <span>
-                  {chartDueDate
-                    ? format(new Date(chartDueDate), "yyyy/MM/dd")
-                    : "期限未設定"}
-                </span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
-              <CalendarComponent
-                mode="single"
-                selected={chartDueDate ? new Date(chartDueDate) : undefined}
-                onSelect={(date) => {
-                  handleUpdateChartDueDate(date ? date.toISOString() : null);
-                }}
-                initialFocus
-              />
-              {chartDueDate && (
-                <div className="border-t p-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-zenshin-navy/50 hover:text-red-500"
-                    onClick={() => handleUpdateChartDueDate(null)}
-                  >
-                    期限をクリア
-                  </Button>
-                </div>
-              )}
-            </PopoverContent>
-          </Popover>
-
-          <div className="w-px h-4 bg-gray-300" />
-
-          <Select value={selectedAreaId || "all"} onValueChange={(value) => setSelectedAreaId(value)}>
-            <SelectTrigger className="w-[160px] h-8 text-sm">
-              <SelectValue placeholder="すべてのタグ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">すべてのタグ</SelectItem>
-              <SelectItem value="uncategorized">未分類</SelectItem>
-              {chart.areas.map((area) => (
-                <SelectItem key={area.id} value={area.id}>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: area.color }}
-                    />
-                    {area.name}
+        <div className="flex items-center justify-between px-6 py-3 bg-gray-50/50 border-t border-zenshin-navy/5">
+          <div className="flex items-center gap-1.5">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-zenshin-navy/70 hover:text-zenshin-navy hover:bg-white/60 rounded-lg transition-colors cursor-pointer">
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                  <span>
+                    {chartDueDate
+                      ? format(new Date(chartDueDate), "yyyy/MM/dd")
+                      : "期限未設定"}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
+                <CalendarComponent
+                  mode="single"
+                  selected={chartDueDate ? new Date(chartDueDate) : undefined}
+                  onSelect={(date) => {
+                    handleUpdateChartDueDate(date ? date.toISOString() : null);
+                  }}
+                  initialFocus
+                />
+                {chartDueDate && (
+                  <div className="border-t p-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-zenshin-navy/50 hover:text-red-500"
+                      onClick={() => handleUpdateChartDueDate(null)}
+                    >
+                      期限をクリア
+                    </Button>
                   </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                )}
+              </PopoverContent>
+            </Popover>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-sm text-zenshin-navy/60"
-            onClick={() => setTagManagerOpen(true)}
-          >
-            <Settings className="w-4 h-4 mr-1.5" />
-            タグ設定
-          </Button>
+            <div className="h-3.5 w-px bg-gray-200" />
+
+            <Select value={selectedAreaId || "all"} onValueChange={(value) => setSelectedAreaId(value)}>
+              <SelectTrigger className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-zenshin-navy/70 hover:text-zenshin-navy hover:bg-white/60 rounded-lg transition-colors cursor-pointer border-0 shadow-none bg-transparent h-auto w-auto justify-start min-w-0">
+                <SelectValue placeholder="すべてのタグ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">すべてのタグ</SelectItem>
+                <SelectItem value="uncategorized">未分類</SelectItem>
+                {chart.areas.map((area) => (
+                  <SelectItem key={area.id} value={area.id}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: area.color }}
+                      />
+                      {area.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="h-3.5 w-px bg-gray-200" />
+
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-zenshin-navy/70 hover:text-zenshin-navy hover:bg-white/60 rounded-lg transition-colors cursor-pointer"
+              onClick={() => setTagManagerOpen(true)}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>タグ設定</span>
+            </button>
+          </div>
+
+          {/* モード切替トグル */}
+          <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+            <button
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
+                viewMode === "default"
+                  ? "bg-zenshin-orange text-white shadow-sm"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-200"
+              }`}
+              onClick={() => setViewMode("default")}
+            >
+              標準モード
+            </button>
+            <button
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
+                viewMode === "comparison"
+                  ? "bg-zenshin-orange text-white shadow-sm"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-200"
+              }`}
+              onClick={() => setViewMode("comparison")}
+            >
+              対比モード
+            </button>
+          </div>
         </div>
       </header>
 
@@ -4750,6 +4826,63 @@ export function ProjectEditor({
               </div>
             )}
           </div>
+        ) : viewMode === "comparison" ? (
+          <ComparisonView
+            visions={visions}
+            realities={realities}
+            tensions={tensions}
+            looseActions={looseActions}
+            areas={chart.areas ?? []}
+            selectedAreaFilter={selectedAreaId}
+            structuredData={structuredData}
+            chartId={chartId}
+            sensors={sensors}
+            onTensionDragEnd={handleTensionDragEnd}
+            onVisionRealityDragEnd={handleDragEnd}
+            handleUpdateVision={handleUpdateVision}
+            handleDeleteVision={handleDeleteVision}
+            handleAddVision={handleAddVision}
+            handleUpdateReality={handleUpdateReality}
+            handleDeleteReality={handleDeleteReality}
+            handleAddReality={handleAddReality}
+            isSubmittingVision={isSubmittingVision}
+            isSubmittingReality={isSubmittingReality}
+            handleUpdateActionPlan={handleUpdateActionPlan}
+            handleDeleteActionPlan={handleDeleteActionPlan}
+            handleTelescopeClick={handleTelescopeClick}
+            telescopingActionId={telescopingActionId}
+            currentUser={currentUser}
+            onOpenDetailPanel={handleOpenDetailPanel}
+            onOpenAreaSettings={() => setTagManagerOpen(true)}
+            highlightedItemId={highlightedItemId}
+            onOpenFocusVision={(item, itemIndex) =>
+              openFocusMode(
+                "vision",
+                item.id,
+                `Vision V-${String(itemIndex + 1).padStart(2, "0")}`,
+                item.content || ""
+              )
+            }
+            onOpenFocusReality={(item, itemIndex) =>
+              openFocusMode(
+                "reality",
+                item.id,
+                `Reality R-${String(itemIndex + 1).padStart(2, "0")}`,
+                item.content || ""
+              )
+            }
+            getSortedAndNumberedActions={getSortedAndNumberedActions}
+            isSubmittingAction={isSubmittingAction}
+            onAddAction={handleAddActionPlan}
+            onAddTension={handleAddTension}
+            toggleVisionRealityLink={toggleVisionRealityLink}
+            setHighlightedItemId={setHighlightedItemId}
+            handleUpdateTension={handleUpdateTension}
+            handleDeleteTension={handleDeleteTension}
+            onOpenFocusTension={(t) =>
+              openFocusMode("tension", t.id, t.title || "Tension", t.title || "")
+            }
+          />
         ) : (
           <div className="h-full flex gap-4 overflow-hidden">
             {/* Left Panel: Context Source (Vision + Reality) */}
@@ -5047,6 +5180,390 @@ export function ProjectEditor({
           onCommentCountChange={handleCommentCountChange}
         />
       )}
+    </div>
+  );
+}
+
+function ComparisonView({
+  visions,
+  realities,
+  tensions,
+  looseActions,
+  areas,
+  selectedAreaFilter,
+  structuredData,
+  chartId,
+  sensors,
+  onTensionDragEnd,
+  onVisionRealityDragEnd,
+  handleUpdateVision,
+  handleDeleteVision,
+  handleAddVision,
+  handleUpdateReality,
+  handleDeleteReality,
+  handleAddReality,
+  isSubmittingVision,
+  isSubmittingReality,
+  handleUpdateActionPlan,
+  handleDeleteActionPlan,
+  handleTelescopeClick,
+  telescopingActionId,
+  currentUser,
+  onOpenDetailPanel,
+  onOpenAreaSettings,
+  highlightedItemId,
+  onOpenFocusVision,
+  onOpenFocusReality,
+  getSortedAndNumberedActions,
+  isSubmittingAction,
+  onAddAction,
+  onAddTension,
+  toggleVisionRealityLink,
+  setHighlightedItemId,
+  handleUpdateTension,
+  handleDeleteTension,
+  onOpenFocusTension,
+}: {
+  visions: VisionItem[];
+  realities: RealityItem[];
+  tensions: Tension[];
+  looseActions: ActionPlan[];
+  areas: Area[];
+  selectedAreaFilter: string;
+  structuredData: StructuredData;
+  chartId: string;
+  sensors: ReturnType<typeof useSensors>;
+  onTensionDragEnd: (event: DragEndEvent) => void;
+  onVisionRealityDragEnd: (event: DragEndEvent, type: "visions" | "realities") => void;
+  handleUpdateVision: (id: string, field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId", value: string | boolean | null) => Promise<void>;
+  handleDeleteVision: (id: string) => Promise<void>;
+  handleAddVision: (content: string, areaId?: string | null) => void;
+  handleUpdateReality: (id: string, field: "content" | "isLocked" | "areaId" | "dueDate", value: string | boolean | null) => Promise<void>;
+  handleDeleteReality: (id: string) => Promise<void>;
+  handleAddReality: (content: string, areaId?: string | null) => void;
+  isSubmittingVision: boolean;
+  isSubmittingReality: boolean;
+  handleUpdateActionPlan: (
+    tensionId: string | null,
+    actionId: string,
+    field: "title" | "dueDate" | "assignee" | "status" | "hasSubChart" | "subChartId" | "childChartId" | "isCompleted" | "description" | "areaId",
+    value: string | boolean | null
+  ) => Promise<void>;
+  handleDeleteActionPlan: (tensionId: string | null, actionId: string) => Promise<void>;
+  handleTelescopeClick: (actionPlan: ActionPlan, tensionId: string | null) => Promise<void>;
+  telescopingActionId: string | null;
+  currentUser: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
+  onOpenDetailPanel: (itemType: "vision" | "reality" | "action", itemId: string, itemContent: string) => void;
+  onOpenAreaSettings?: () => void;
+  highlightedItemId: string | null;
+  onOpenFocusVision: (item: VisionItem, index: number) => void;
+  onOpenFocusReality: (item: RealityItem, index: number) => void;
+  getSortedAndNumberedActions: (actions: ActionPlan[]) => Array<{ action: ActionPlan; number: number }>;
+  isSubmittingAction: Record<string, boolean>;
+  onAddAction: (tensionId: string | null, title: string, areaId?: string | null) => void;
+  onAddTension: (title: string, areaId?: string | null) => void;
+  toggleVisionRealityLink: (tensionId: string, type: "vision" | "reality", id: string) => void;
+  setHighlightedItemId: (id: string | null) => void;
+  handleUpdateTension: (tensionId: string, field: "title" | "description" | "status", value: string | TensionStatus) => void;
+  handleDeleteTension: (tensionId: string) => void;
+  onOpenFocusTension: (tension: Tension) => void;
+}) {
+  const [visionInputByArea, setVisionInputByArea] = useState<Record<string, string>>({});
+  const [realityInputByArea, setRealityInputByArea] = useState<Record<string, string>>({});
+
+  const allAreaIds = useMemo(() => {
+    const areaIds = new Set<string>();
+    visions.forEach((v) => areaIds.add(v.area_id || "uncategorized"));
+    realities.forEach((r) => areaIds.add(r.area_id || "uncategorized"));
+    return Array.from(areaIds);
+  }, [visions, realities]);
+
+  const getAreaName = (areaId: string) => {
+    if (areaId === "uncategorized") return "未分類";
+    const area = areas.find((a) => a.id === areaId);
+    return area?.name || "未分類";
+  };
+
+  const getAreaColor = (areaId: string) => {
+    if (areaId === "uncategorized") return "#9CA3AF";
+    const area = areas.find((a) => a.id === areaId);
+    return area?.color || "#9CA3AF";
+  };
+
+  const areaOrder =
+    selectedAreaFilter === "all"
+      ? [...areas.map((a) => a.id), null]
+      : selectedAreaFilter === "uncategorized"
+        ? [null]
+        : [selectedAreaFilter];
+
+  const handleVrDragEnd = (event: DragEndEvent) => {
+    const isVision = visions.some((v) => v.id === event.active.id);
+    onVisionRealityDragEnd(event, isVision ? "visions" : "realities");
+  };
+
+  return (
+    <div className="h-full flex flex-col overflow-auto">
+      {/* V/R対比エリア — コンテンツに合わせて伸びる */}
+      <div className="flex-none p-6 pb-3">
+        <DndContext
+          id="dnd-context-comparison-vr"
+          sensors={sensors}
+          collisionDetection={customCollisionDetection}
+          onDragEnd={handleVrDragEnd}
+        >
+          <div className="space-y-6">
+            {allAreaIds.map((areaId) => {
+              const areaVisions = visions.filter((v) => (v.area_id || "uncategorized") === areaId);
+              const areaRealities = realities.filter((r) => (r.area_id || "uncategorized") === areaId);
+
+              if (selectedAreaFilter !== "all" && selectedAreaFilter !== areaId) return null;
+              if (areaVisions.length === 0 && areaRealities.length === 0) return null;
+
+              const visionInput = visionInputByArea[areaId] ?? "";
+              const realityInput = realityInputByArea[areaId] ?? "";
+              const setVisionInput = (v: string) =>
+                setVisionInputByArea((prev) => ({ ...prev, [areaId]: v }));
+              const setRealityInput = (v: string) =>
+                setRealityInputByArea((prev) => ({ ...prev, [areaId]: v }));
+
+              return (
+                <div
+                  key={areaId}
+                  className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+                >
+                  {/* タグ名ヘッダー — カードの上部 */}
+                  <div className="px-4 py-2 bg-gray-50 border-b flex items-center gap-2">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: getAreaColor(areaId) }}
+                    />
+                    <span className="text-sm font-semibold text-zenshin-navy">
+                      {getAreaName(areaId)}
+                    </span>
+                  </div>
+
+                  {/* V | R 横並び */}
+                  <div className="grid grid-cols-2 divide-x divide-gray-200">
+                    {/* Vision側 */}
+                    <div className="p-0">
+                      <div className="px-3 py-1.5 bg-zenshin-teal/8 border-b border-gray-100 flex items-center gap-1.5">
+                        <Target className="w-3.5 h-3.5 text-zenshin-teal" />
+                        <span className="text-xs font-bold text-zenshin-teal uppercase tracking-wider">Vision</span>
+                      </div>
+                      <div className="space-y-1 px-2 py-2 min-h-[40px]">
+                        <SortableContext items={areaVisions} strategy={verticalListSortingStrategy}>
+                          {areaVisions.length === 0 ? (
+                            <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
+                              アイテムなし
+                            </div>
+                          ) : (
+                            areaVisions.map((vision, index) => (
+                              <SortableVisionItem
+                                key={vision.id}
+                                vision={vision}
+                                index={index}
+                                chartId={chartId}
+                                onUpdate={handleUpdateVision}
+                                onDelete={handleDeleteVision}
+                                areas={areas}
+                                onOpenDetail={(item) =>
+                                  onOpenDetailPanel("vision", item.id, item.content || "")
+                                }
+                                onOpenFocus={(item, itemIndex) =>
+                                  onOpenFocusVision(item, itemIndex)
+                                }
+                                onOpenAreaSettings={onOpenAreaSettings}
+                                currentUser={currentUser}
+                              />
+                            ))
+                          )}
+                        </SortableContext>
+                      </div>
+                      <div className="p-2 border-t border-gray-100 flex gap-2">
+                        <Input
+                          value={visionInput}
+                          onChange={(e) => setVisionInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.nativeEvent.isComposing) return;
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              if (visionInput.trim()) {
+                                handleAddVision(visionInput.trim(), areaId === "uncategorized" ? null : areaId);
+                                setVisionInput("");
+                              }
+                              return;
+                            }
+                          }}
+                          placeholder="＋ 新しいVisionを追加"
+                          className="text-sm h-7 flex-1"
+                          disabled={isSubmittingVision}
+                        />
+                        <Button
+                          onClick={() => {
+                            if (visionInput.trim()) {
+                              handleAddVision(visionInput.trim(), areaId === "uncategorized" ? null : areaId);
+                              setVisionInput("");
+                            }
+                          }}
+                          size="icon"
+                          className="h-7 w-7 shrink-0"
+                          disabled={!visionInput.trim() || isSubmittingVision}
+                        >
+                          {isSubmittingVision ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Plus className="w-3 h-3" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Reality側 */}
+                    <div className="p-0">
+                      <div className="px-3 py-1.5 bg-zenshin-orange/8 border-b border-gray-100 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-zenshin-orange" />
+                        <span className="text-xs font-bold text-zenshin-orange uppercase tracking-wider">Reality</span>
+                      </div>
+                      <div className="space-y-1 px-2 py-2 min-h-[40px]">
+                        <SortableContext items={areaRealities} strategy={verticalListSortingStrategy}>
+                          {areaRealities.length === 0 ? (
+                            <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
+                              アイテムなし
+                            </div>
+                          ) : (
+                            areaRealities.map((reality, index) => (
+                              <SortableRealityItem
+                                key={reality.id}
+                                reality={reality}
+                                index={index}
+                                highlightedItemId={highlightedItemId}
+                                handleUpdateReality={handleUpdateReality}
+                                handleDeleteReality={handleDeleteReality}
+                                areas={areas}
+                                onOpenDetail={(item) =>
+                                  onOpenDetailPanel("reality", item.id, item.content || "")
+                                }
+                                onOpenFocus={(item, itemIndex) =>
+                                  onOpenFocusReality(item, itemIndex)
+                                }
+                                onOpenAreaSettings={onOpenAreaSettings}
+                                currentUser={currentUser}
+                              />
+                            ))
+                          )}
+                        </SortableContext>
+                      </div>
+                      <div className="p-2 border-t border-gray-100 flex gap-2">
+                        <Input
+                          value={realityInput}
+                          onChange={(e) => setRealityInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.nativeEvent.isComposing) return;
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              if (realityInput.trim()) {
+                                handleAddReality(realityInput.trim(), areaId === "uncategorized" ? null : areaId);
+                                setRealityInput("");
+                              }
+                              return;
+                            }
+                          }}
+                          placeholder="＋ 新しいRealityを追加"
+                          className="text-sm h-7 flex-1"
+                          disabled={isSubmittingReality}
+                        />
+                        <Button
+                          onClick={() => {
+                            if (realityInput.trim()) {
+                              handleAddReality(realityInput.trim(), areaId === "uncategorized" ? null : areaId);
+                              setRealityInput("");
+                            }
+                          }}
+                          size="icon"
+                          className="h-7 w-7 shrink-0"
+                          disabled={!realityInput.trim() || isSubmittingReality}
+                        >
+                          {isSubmittingReality ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Plus className="w-3 h-3" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </DndContext>
+      </div>
+
+      {/* T&Aエリア — 残りの高さを使う、最低でも画面の80%確保 */}
+      <div className="flex-1 min-h-[80vh] px-6 pt-3 pb-6">
+        <div className="flex flex-col bg-white border-2 border-zenshin-navy/30 rounded-lg shadow-sm overflow-hidden h-full">
+          <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center gap-2 rounded-t-lg shrink-0">
+            <Zap className="w-4 h-4 text-zenshin-navy" />
+            <h2 className="text-base font-bold text-zenshin-navy leading-tight">Tension & Action</h2>
+          </div>
+          <ScrollArea className="flex-1 min-h-0 overflow-auto">
+            <div className="p-3 space-y-4" data-nav-scope="tension-action">
+              <DndContext
+                id="dnd-context-action-comparison"
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onTensionDragEnd}
+              >
+                <div className="space-y-4">
+                  {areaOrder.map((areaId) => {
+                    const area = areaId ? areas.find((a) => a.id === areaId) : null;
+                    const areaName = area ? area.name : "未分類";
+                    const areaColor = area ? area.color : "#9CA3AF";
+                    const group = areaId
+                      ? structuredData.categorized.find((g) => g.area.id === areaId)
+                      : structuredData.uncategorized;
+
+                    const tensionsInSection = group ? group.tensions : [];
+                    const looseActionsInSection = group ? group.orphanedActions : [];
+
+                    return (
+                      <ActionSection
+                        key={areaId || "uncategorized"}
+                        areaId={areaId}
+                        areaName={areaName}
+                        areaColor={areaColor}
+                        tensionsInSection={tensionsInSection}
+                        looseActions={looseActionsInSection}
+                        allTensions={tensions}
+                        handleUpdateActionPlan={handleUpdateActionPlan}
+                        handleDeleteActionPlan={handleDeleteActionPlan}
+                        handleTelescopeClick={handleTelescopeClick}
+                        telescopingActionId={telescopingActionId}
+                        currentUser={currentUser}
+                        areas={areas}
+                        chartId={chartId}
+                        onOpenDetailPanel={onOpenDetailPanel}
+                        getSortedAndNumberedActions={getSortedAndNumberedActions}
+                        isSubmittingAction={isSubmittingAction}
+                        onAddAction={onAddAction}
+                        onAddTension={onAddTension}
+                        visions={visions}
+                        realities={realities}
+                        toggleVisionRealityLink={toggleVisionRealityLink}
+                        setHighlightedItemId={setHighlightedItemId}
+                        handleUpdateTension={handleUpdateTension}
+                        handleDeleteTension={handleDeleteTension}
+                        onOpenFocus={onOpenFocusTension}
+                      />
+                    );
+                  })}
+                </div>
+              </DndContext>
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
     </div>
   );
 }
