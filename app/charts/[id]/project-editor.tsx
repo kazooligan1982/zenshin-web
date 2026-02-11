@@ -33,6 +33,7 @@ import {
   Telescope,
   Plus,
   ChevronRight,
+  ChevronDown,
   Trash2,
   X,
   Check,
@@ -54,6 +55,9 @@ import {
   Pause,
   XCircle,
   Archive,
+  ArrowUpDown,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -1583,6 +1587,8 @@ function TensionGroup({
   isSubmittingAction,
   isOverlay = false,
   onOpenFocus,
+  sortByStatus,
+  hideCompleted,
 }: {
   tension: Tension;
   tensionIndex: number;
@@ -1607,8 +1613,12 @@ function TensionGroup({
   isSubmittingAction: Record<string, boolean>;
   isOverlay?: boolean;
   onOpenFocus: (tension: Tension) => void;
+  sortByStatus?: boolean;
+  hideCompleted?: boolean;
 }) {
   const [isMovingArea, setIsMovingArea] = useState(false);
+  const sortByStatusFlag = sortByStatus ?? false;
+  const hideCompletedFlag = hideCompleted ?? false;
   const tensionTitleInput = useItemInput({
     initialValue: tension.title || "",
     onSave: (val) => {
@@ -1630,10 +1640,31 @@ function TensionGroup({
     id: `action-list-${tension.id}`,
     data: { areaId: areaId ?? null, type: "action-area" },
   });
-  const { datedItems, undatedItems, indexById } = splitItemsByDate(
-    tension.actionPlans,
+  const visibleActions = hideCompletedFlag
+    ? tension.actionPlans.filter((a) => a.status !== "done" && !a.isCompleted)
+    : tension.actionPlans;
+  const hiddenCount = hideCompletedFlag
+    ? tension.actionPlans.length - visibleActions.length
+    : 0;
+  const STATUS_ORDER = ["in_progress", "todo", "pending", "unset", "done", "canceled"] as const;
+  const getStatusKey = (a: ActionPlan) => {
+    if (a.isCompleted || a.status === "done") return "done";
+    return a.status || "unset";
+  };
+  const groupedByStatus = sortByStatusFlag
+    ? STATUS_ORDER.reduce<{ key: string; actions: ActionPlan[] }[]>((acc, key) => {
+        const group = visibleActions.filter((a) => getStatusKey(a) === key);
+        if (group.length > 0) acc.push({ key, actions: group });
+        return acc;
+      }, [])
+    : null;
+  const dateSplit = splitItemsByDate(
+    visibleActions,
     (action) => action.dueDate || null
   );
+  const { datedItems, undatedItems, indexById } = dateSplit;
+  const allItemsForIndex = [...dateSplit.datedItems, ...dateSplit.undatedItems];
+  const indexByIdAll = new Map(allItemsForIndex.map((item, i) => [item.id, i]));
   const { setNodeRef } = useDroppable({
     id: `tension-${tension.id}`,
     data: {
@@ -1767,56 +1798,65 @@ function TensionGroup({
       </div>
       {!isOverlay && (
         <div className="px-3 py-2">
-        {datedItems.length > 0 && (
-          <SortableContext
-            items={datedItems.map((a) => a.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {datedItems.map((action) => (
-              <SortableActionItem
-                key={action.id}
-                actionPlan={action}
-                actionIndex={indexById.get(action.id) ?? 0}
-                tensionId={tension.id}
-                parentTensionAreaId={tension.area_id ?? null}
-                hideAreaBadge
-                isCompleted={action.isCompleted || false}
-                handleUpdateActionPlan={handleUpdateActionPlan}
-                handleDeleteActionPlan={handleDeleteActionPlan}
-                handleTelescopeClick={handleTelescopeClick}
-                telescopingActionId={telescopingActionId}
-                currentUser={currentUser}
-                areas={areas}
-                chartId={chartId}
-                onOpenDetailPanel={onOpenDetailPanel}
-                disabled
-              />
+        {sortByStatusFlag && groupedByStatus ? (
+          <div className="space-y-0">
+            {groupedByStatus.map(({ key, actions: groupActions }, idx) => (
+              <div key={key}>
+                <div
+                  className={
+                    idx === 0
+                      ? "flex items-center gap-1.5 px-2 pt-1 pb-1"
+                      : "flex items-center gap-1.5 px-2 pt-3 pb-1 border-t border-gray-100"
+                  }
+                >
+                  {getActionStatusIcon(
+                    key === "unset" ? null : (key as ActionPlan["status"]),
+                    key === "done"
+                  )}
+                  <span className="text-xs font-medium text-gray-500">
+                    {getActionStatusLabel(
+                      key === "unset" ? null : (key as ActionPlan["status"]),
+                      key === "done"
+                    )}{" "}
+                    ({groupActions.length})
+                  </span>
+                </div>
+                <SortableContext
+                  items={groupActions.map((a) => a.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {groupActions.map((action) => (
+                    <SortableActionItem
+                      key={action.id}
+                      actionPlan={action}
+                      actionIndex={indexByIdAll.get(action.id) ?? 0}
+                      tensionId={tension.id}
+                      parentTensionAreaId={tension.area_id ?? null}
+                      hideAreaBadge
+                      isCompleted={action.isCompleted || false}
+                      handleUpdateActionPlan={handleUpdateActionPlan}
+                      handleDeleteActionPlan={handleDeleteActionPlan}
+                      handleTelescopeClick={handleTelescopeClick}
+                      telescopingActionId={telescopingActionId}
+                      currentUser={currentUser}
+                      areas={areas}
+                      chartId={chartId}
+                      onOpenDetailPanel={onOpenDetailPanel}
+                      disabled={key === "done"}
+                    />
+                  ))}
+                </SortableContext>
+              </div>
             ))}
-          </SortableContext>
-        )}
-        {datedItems.length > 0 && undatedItems.length > 0 && (
-          <div className="h-px bg-zenshin-navy/8 my-3" />
-        )}
-        <div ref={setActionListRef} className="min-h-[40px]">
-          <SortableContext
-            items={undatedItems.map((a) => a.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div id={`action-list-container-${tension.id}`} className="space-y-0">
-              {undatedItems.length === 0 ? (
-                isDragging ? (
-                  <div
-                    className={`border-2 border-dashed rounded p-6 text-center transition-colors ${
-                      isActionListOver
-                        ? "border-blue-400 bg-blue-50 text-blue-600"
-                        : "border-gray-300 text-zenshin-navy/40"
-                    }`}
-                  >
-                    <div className="text-sm font-medium">ここにドロップ</div>
-                  </div>
-                ) : null
-              ) : (
-                undatedItems.map((action) => (
+          </div>
+        ) : (
+          <>
+            {datedItems.length > 0 && (
+              <SortableContext
+                items={datedItems.map((a) => a.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {datedItems.map((action) => (
                   <SortableActionItem
                     key={action.id}
                     actionPlan={action}
@@ -1833,12 +1873,63 @@ function TensionGroup({
                     areas={areas}
                     chartId={chartId}
                     onOpenDetailPanel={onOpenDetailPanel}
+                    disabled
                   />
-                ))
-              )}
+                ))}
+              </SortableContext>
+            )}
+            {datedItems.length > 0 && undatedItems.length > 0 && (
+              <div className="h-px bg-zenshin-navy/8 my-3" />
+            )}
+            <div ref={setActionListRef} className="min-h-[40px]">
+              <SortableContext
+                items={undatedItems.map((a) => a.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div id={`action-list-container-${tension.id}`} className="space-y-0">
+                  {undatedItems.length === 0 ? (
+                    isDragging ? (
+                      <div
+                        className={`border-2 border-dashed rounded p-6 text-center transition-colors ${
+                          isActionListOver
+                            ? "border-blue-400 bg-blue-50 text-blue-600"
+                            : "border-gray-300 text-zenshin-navy/40"
+                        }`}
+                      >
+                        <div className="text-sm font-medium">ここにドロップ</div>
+                      </div>
+                    ) : null
+                  ) : (
+                    undatedItems.map((action) => (
+                      <SortableActionItem
+                        key={action.id}
+                        actionPlan={action}
+                        actionIndex={indexById.get(action.id) ?? 0}
+                        tensionId={tension.id}
+                        parentTensionAreaId={tension.area_id ?? null}
+                        hideAreaBadge
+                        isCompleted={action.isCompleted || false}
+                        handleUpdateActionPlan={handleUpdateActionPlan}
+                        handleDeleteActionPlan={handleDeleteActionPlan}
+                        handleTelescopeClick={handleTelescopeClick}
+                        telescopingActionId={telescopingActionId}
+                        currentUser={currentUser}
+                        areas={areas}
+                        chartId={chartId}
+                        onOpenDetailPanel={onOpenDetailPanel}
+                      />
+                    ))
+                  )}
+                </div>
+              </SortableContext>
             </div>
-          </SortableContext>
-        </div>
+          </>
+        )}
+        {hideCompletedFlag && hiddenCount > 0 && (
+          <div className="text-center py-1.5 text-xs text-gray-300">
+            {hiddenCount}件の完了済みActionを非表示中
+          </div>
+        )}
         <div className="p-2 border-t border-zenshin-navy/5 bg-white">
           <div className="flex gap-2">
             <Input
@@ -1905,6 +1996,8 @@ function ActionSection({
   handleUpdateTension,
   handleDeleteTension,
   onOpenFocus,
+  sortByStatus = false,
+  hideCompleted = false,
 }: {
   areaId: string | null;
   areaName: string;
@@ -1936,6 +2029,8 @@ function ActionSection({
   handleUpdateTension: (tensionId: string, field: "title" | "description" | "status", value: string | TensionStatus) => void;
   handleDeleteTension: (tensionId: string) => void;
   onOpenFocus: (tension: Tension) => void;
+  sortByStatus?: boolean;
+  hideCompleted?: boolean;
 }) {
   const sectionKey = areaId || "uncategorized";
   const sectionId = `action-section-${sectionKey}`;
@@ -2031,6 +2126,8 @@ function ActionSection({
               onAddAction={onAddAction}
               isSubmittingAction={isSubmittingAction}
               onOpenFocus={onOpenFocus}
+              sortByStatus={sortByStatus}
+              hideCompleted={hideCompleted}
             />
           ))}
         </div>
@@ -2039,10 +2136,34 @@ function ActionSection({
       {looseActions.length > 0 && <div className="border-t border-gray-200 my-6" />}
 
       {/* 未割り当てのAction */}
-      {(() => {
+      {looseActions.length > 0 &&
+      (() => {
+        const LOOSE_STATUS_ORDER = ["in_progress", "todo", "pending", "unset", "done", "canceled"] as const;
+        const visibleLoose = hideCompleted
+          ? looseActions.filter((a) => a.status !== "done" && !a.isCompleted)
+          : looseActions;
+        const looseHiddenCount = hideCompleted
+          ? looseActions.length - visibleLoose.length
+          : 0;
+        const looseGroupedByStatus = sortByStatus
+          ? LOOSE_STATUS_ORDER.reduce<{ key: string; actions: ActionPlan[] }[]>(
+              (acc, key) => {
+                const group = visibleLoose.filter((a) => {
+                  if (a.isCompleted || a.status === "done") return key === "done";
+                  return (a.status || "unset") === key;
+                });
+                if (group.length > 0) acc.push({ key, actions: group });
+                return acc;
+              },
+              [] as { key: string; actions: ActionPlan[] }[]
+            )
+          : null;
         const { datedItems, undatedItems, indexById } = splitItemsByDate(
-          looseActions,
+          visibleLoose,
           (action) => action.dueDate || null
+        );
+        const looseIndexById = new Map(
+          visibleLoose.map((a, i) => [a.id, i])
         );
 
         const shouldHideAreaBadge = (actionAreaId: string | null) =>
@@ -2058,6 +2179,59 @@ function ActionSection({
                   : "border border-transparent"
             }`}
           >
+            {sortByStatus && looseGroupedByStatus && looseGroupedByStatus.length > 0 ? (
+              <div className="space-y-0">
+                {looseGroupedByStatus.map(({ key, actions: groupActions }, idx) => (
+                  <div key={key}>
+                    <div
+                      className={
+                        idx === 0
+                          ? "flex items-center gap-1.5 px-2 pt-1 pb-1"
+                          : "flex items-center gap-1.5 px-2 pt-3 pb-1 border-t border-gray-100"
+                      }
+                    >
+                      {getActionStatusIcon(
+                        key === "unset" ? null : (key as ActionPlan["status"]),
+                        key === "done"
+                      )}
+                      <span className="text-xs font-medium text-gray-500">
+                        {getActionStatusLabel(
+                          key === "unset" ? null : (key as ActionPlan["status"]),
+                          key === "done"
+                        )}{" "}
+                        ({groupActions.length})
+                      </span>
+                    </div>
+                    <SortableContext
+                      items={groupActions.map((a) => a.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {groupActions.map((action) => (
+                        <SortableActionItem
+                          key={action.id}
+                          actionPlan={action}
+                          actionIndex={looseIndexById.get(action.id) ?? 0}
+                          tensionId={null}
+                          hideAreaBadge={shouldHideAreaBadge(action.area_id ?? null)}
+                          availableTensions={availableTensions}
+                          isCompleted={action.isCompleted || false}
+                          handleUpdateActionPlan={handleUpdateActionPlan}
+                          handleDeleteActionPlan={handleDeleteActionPlan}
+                          handleTelescopeClick={handleTelescopeClick}
+                          telescopingActionId={telescopingActionId}
+                          currentUser={currentUser}
+                          areas={areas}
+                          chartId={chartId}
+                          onOpenDetailPanel={onOpenDetailPanel}
+                          disabled={key === "done"}
+                        />
+                      ))}
+                    </SortableContext>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
             {datedItems.length > 0 && (
               <SortableContext
                 items={datedItems.map((a) => a.id)}
@@ -2128,6 +2302,13 @@ function ActionSection({
                 </SortableContext>
               )}
             </div>
+              </>
+            )}
+            {hideCompleted && looseHiddenCount > 0 && (
+              <div className="text-center py-1.5 text-xs text-gray-300">
+                {looseHiddenCount}件の完了済みActionを非表示中
+              </div>
+            )}
           </div>
         );
       })()}
@@ -2251,7 +2432,20 @@ export function ProjectEditor({
   } | null>(initialCurrentUser ?? null);
   const [chartDueDate, setChartDueDate] = useState<string | null>(initialChart.due_date || null);
   const [selectedAreaId, setSelectedAreaId] = useState<string>("all"); // エリア選択状態
+  const [sortByStatus, setSortByStatus] = useState(false);
+  const [hideCompleted, setHideCompleted] = useState(false);
+  const [showCompletedTensions, setShowCompletedTensions] = useState(false);
 
+  const isTensionCompleted = (tension: Tension) => {
+    if (tension.status === "resolved") return true;
+    if (
+      tension.actionPlans.length > 0 &&
+      tension.actionPlans.every((a) => a.status === "done" || a.isCompleted)
+    ) {
+      return true;
+    }
+    return false;
+  };
 
   const openFocusMode = (
     sectionType: "vision" | "reality" | "tension",
@@ -4732,14 +4926,43 @@ export function ProjectEditor({
                         Tension & Action
                       </h2>
                     </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6 hover:bg-zenshin-navy/15 rounded transition-colors"
-                      onClick={() => setFocusedArea(null)}
-                    >
-                      <Minimize2 className="w-3 h-3" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className={`h-6 w-6 rounded transition-colors ${
+                          sortByStatus
+                            ? "bg-zenshin-navy/15 text-zenshin-navy"
+                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        }`}
+                        onClick={() => setSortByStatus(!sortByStatus)}
+                        title="ステータス順に並べ替え"
+                      >
+                        <ArrowUpDown className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className={`h-6 w-6 rounded transition-colors ${
+                          hideCompleted
+                            ? "bg-zenshin-orange/15 text-zenshin-orange"
+                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        }`}
+                        onClick={() => setHideCompleted(!hideCompleted)}
+                        title={hideCompleted ? "完了済みを表示" : "完了済みを非表示"}
+                      >
+                        {hideCompleted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        onClick={() => setFocusedArea(null)}
+                        title="元に戻す"
+                      >
+                        <Minimize2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                   <ScrollArea className="flex-1 min-h-0">
                     <div className="p-3 space-y-4" data-nav-scope="tension-action">
@@ -4750,6 +4973,19 @@ export function ProjectEditor({
                             : selectedAreaId === "uncategorized"
                               ? [null]
                               : [selectedAreaId];
+
+                        const allCompletedTensions: Tension[] = [];
+                        areaOrder.forEach((areaId) => {
+                          const group = areaId
+                            ? structuredData.categorized.find(
+                                (g) => g.area.id === areaId
+                              )
+                            : structuredData.uncategorized;
+                          const tensions = group ? group.tensions : [];
+                          allCompletedTensions.push(
+                            ...tensions.filter((t) => isTensionCompleted(t))
+                          );
+                        });
 
                         return (
                           <DndContext
@@ -4772,6 +5008,9 @@ export function ProjectEditor({
                                   : structuredData.uncategorized;
 
                                 const tensionsInSection = group ? group.tensions : [];
+                                const activeTensions = tensionsInSection.filter(
+                                  (t) => !isTensionCompleted(t)
+                                );
                                 const looseActionsInSection = group
                                   ? group.orphanedActions
                                   : [];
@@ -4782,7 +5021,7 @@ export function ProjectEditor({
                                     areaId={areaId}
                                     areaName={areaName}
                                     areaColor={areaColor}
-                                    tensionsInSection={tensionsInSection}
+                                    tensionsInSection={activeTensions}
                                     looseActions={looseActionsInSection}
                                     allTensions={tensions}
                                     handleUpdateActionPlan={handleUpdateActionPlan}
@@ -4813,9 +5052,69 @@ export function ProjectEditor({
                                         tension.title || ""
                                       );
                                     }}
+                                    sortByStatus={sortByStatus}
+                                    hideCompleted={hideCompleted}
                                   />
                                 );
                               })}
+                              {allCompletedTensions.length > 0 && (
+                                <div className="border-t border-gray-100 mt-2">
+                                  <button
+                                    type="button"
+                                    className="flex items-center gap-2 px-4 py-2.5 w-full text-left text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                                    onClick={() =>
+                                      setShowCompletedTensions(!showCompletedTensions)
+                                    }
+                                  >
+                                    {showCompletedTensions ? (
+                                      <ChevronDown className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <ChevronRight className="w-3.5 h-3.5" />
+                                    )}
+                                    完了済みTension（{allCompletedTensions.length}件）
+                                  </button>
+                                  {showCompletedTensions && (
+                                    <div className="opacity-60">
+                                      {allCompletedTensions.map((tension) => (
+                                        <TensionGroup
+                                          key={tension.id}
+                                          tension={tension}
+                                          tensionIndex={0}
+                                          areaId={tension.area_id ?? null}
+                                          handleUpdateTension={handleUpdateTension}
+                                          handleDeleteTension={handleDeleteTension}
+                                          handleUpdateActionPlan={
+                                            handleUpdateActionPlan
+                                          }
+                                          handleDeleteActionPlan={
+                                            handleDeleteActionPlan
+                                          }
+                                          handleTelescopeClick={
+                                            handleTelescopeClick
+                                          }
+                                          telescopingActionId={telescopingActionId}
+                                          currentUser={currentUser}
+                                          areas={chart.areas}
+                                          chartId={chartId}
+                                          onOpenDetailPanel={handleOpenDetailPanel}
+                                          onAddAction={handleAddActionPlan}
+                                          isSubmittingAction={isSubmittingAction}
+                                          onOpenFocus={(t) =>
+                                            openFocusMode(
+                                              "tension",
+                                              t.id,
+                                              t.title || "Tension",
+                                              t.title || ""
+                                            )
+                                          }
+                                          sortByStatus={sortByStatus}
+                                          hideCompleted={hideCompleted}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </DndContext>
                         );
@@ -4882,6 +5181,13 @@ export function ProjectEditor({
             onOpenFocusTension={(t) =>
               openFocusMode("tension", t.id, t.title || "Tension", t.title || "")
             }
+            sortByStatus={sortByStatus}
+            setSortByStatus={setSortByStatus}
+            hideCompleted={hideCompleted}
+            setHideCompleted={setHideCompleted}
+            showCompletedTensions={showCompletedTensions}
+            setShowCompletedTensions={setShowCompletedTensions}
+            isTensionCompleted={isTensionCompleted}
           />
         ) : (
           <div className="h-full flex gap-4 overflow-hidden">
@@ -5056,22 +5362,51 @@ export function ProjectEditor({
                     <Zap className="w-4 h-4 text-zenshin-navy" />
                     <h2 className="text-base font-bold text-zenshin-navy leading-tight">Tension & Action</h2>
                   </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 hover:bg-zenshin-navy/15 hover:text-zenshin-navy rounded transition-colors"
-                    onClick={() =>
-                      setFocusedArea(focusedArea === "tension" ? null : "tension")
-                    }
-                    onMouseEnter={() => setHoveredSection("tension")}
-                    onMouseLeave={() => setHoveredSection(null)}
-                  >
-                    {focusedArea === "tension" ? (
-                      <Minimize2 className="w-3 h-3" />
-                    ) : (
-                      <Maximize2 className="w-3 h-3" />
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className={`h-6 w-6 rounded transition-colors ${
+                        sortByStatus
+                          ? "bg-zenshin-navy/15 text-zenshin-navy"
+                          : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setSortByStatus(!sortByStatus)}
+                      title="ステータス順に並べ替え"
+                    >
+                      <ArrowUpDown className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className={`h-6 w-6 rounded transition-colors ${
+                        hideCompleted
+                          ? "bg-zenshin-orange/15 text-zenshin-orange"
+                          : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setHideCompleted(!hideCompleted)}
+                      title={hideCompleted ? "完了済みを表示" : "完了済みを非表示"}
+                    >
+                      {hideCompleted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      onClick={() =>
+                        setFocusedArea(focusedArea === "tension" ? null : "tension")
+                      }
+                      onMouseEnter={() => setHoveredSection("tension")}
+                      onMouseLeave={() => setHoveredSection(null)}
+                      title={focusedArea === "tension" ? "元に戻す" : "拡大表示"}
+                    >
+                      {focusedArea === "tension" ? (
+                        <Minimize2 className="w-3 h-3" />
+                      ) : (
+                        <Maximize2 className="w-3 h-3" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <ScrollArea className="flex-1 min-h-0">
                   <div className="p-3 space-y-4" data-nav-scope="tension-action">
@@ -5082,6 +5417,17 @@ export function ProjectEditor({
                           : selectedAreaId === "uncategorized"
                             ? [null]
                             : [selectedAreaId];
+
+                      const allCompletedTensions: Tension[] = [];
+                      areaOrder.forEach((areaId) => {
+                        const group = areaId
+                          ? structuredData.categorized.find((g) => g.area.id === areaId)
+                          : structuredData.uncategorized;
+                        const tensionsFromGroup = group ? group.tensions : [];
+                        allCompletedTensions.push(
+                          ...tensionsFromGroup.filter((t) => isTensionCompleted(t))
+                        );
+                      });
 
                       return (
                         <DndContext
@@ -5100,6 +5446,9 @@ export function ProjectEditor({
                                 : structuredData.uncategorized;
 
                               const tensionsInSection = group ? group.tensions : [];
+                              const activeTensions = tensionsInSection.filter(
+                                (t) => !isTensionCompleted(t)
+                              );
                               const looseActionsInSection = group ? group.orphanedActions : [];
 
                               return (
@@ -5108,7 +5457,7 @@ export function ProjectEditor({
                                   areaId={areaId}
                                   areaName={areaName}
                                   areaColor={areaColor}
-                                  tensionsInSection={tensionsInSection}
+                                  tensionsInSection={activeTensions}
                                   looseActions={looseActionsInSection}
                                   allTensions={tensions}
                                   handleUpdateActionPlan={handleUpdateActionPlan}
@@ -5137,9 +5486,67 @@ export function ProjectEditor({
                                       tension.title || ""
                                     );
                                   }}
+                                  sortByStatus={sortByStatus}
+                                  hideCompleted={hideCompleted}
                                 />
                               );
                             })}
+                            {allCompletedTensions.length > 0 && (
+                              <div className="border-t border-gray-100 mt-2">
+                                <button
+                                  type="button"
+                                  className="flex items-center gap-2 px-4 py-2.5 w-full text-left text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                                  onClick={() =>
+                                    setShowCompletedTensions(!showCompletedTensions)
+                                  }
+                                >
+                                  {showCompletedTensions ? (
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                  )}
+                                  完了済みTension（{allCompletedTensions.length}件）
+                                </button>
+                                {showCompletedTensions && (
+                                  <div className="opacity-60">
+                                    {allCompletedTensions.map((tension) => (
+                                      <TensionGroup
+                                        key={tension.id}
+                                        tension={tension}
+                                        tensionIndex={0}
+                                        areaId={tension.area_id ?? null}
+                                        handleUpdateTension={handleUpdateTension}
+                                        handleDeleteTension={handleDeleteTension}
+                                        handleUpdateActionPlan={
+                                          handleUpdateActionPlan
+                                        }
+                                        handleDeleteActionPlan={
+                                          handleDeleteActionPlan
+                                        }
+                                        handleTelescopeClick={handleTelescopeClick}
+                                        telescopingActionId={telescopingActionId}
+                                        currentUser={currentUser}
+                                        areas={chart.areas}
+                                        chartId={chartId}
+                                        onOpenDetailPanel={handleOpenDetailPanel}
+                                        onAddAction={handleAddActionPlan}
+                                        isSubmittingAction={isSubmittingAction}
+                                        onOpenFocus={(t) =>
+                                          openFocusMode(
+                                            "tension",
+                                            t.id,
+                                            t.title || "Tension",
+                                            t.title || ""
+                                          )
+                                        }
+                                        sortByStatus={sortByStatus}
+                                        hideCompleted={hideCompleted}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </DndContext>
                       );
@@ -5223,6 +5630,13 @@ function ComparisonView({
   handleUpdateTension,
   handleDeleteTension,
   onOpenFocusTension,
+  sortByStatus,
+  setSortByStatus,
+  hideCompleted,
+  setHideCompleted,
+  showCompletedTensions,
+  setShowCompletedTensions,
+  isTensionCompleted,
 }: {
   visions: VisionItem[];
   realities: RealityItem[];
@@ -5267,6 +5681,13 @@ function ComparisonView({
   handleUpdateTension: (tensionId: string, field: "title" | "description" | "status", value: string | TensionStatus) => void;
   handleDeleteTension: (tensionId: string) => void;
   onOpenFocusTension: (tension: Tension) => void;
+  sortByStatus: boolean;
+  setSortByStatus: (v: boolean) => void;
+  hideCompleted: boolean;
+  setHideCompleted: (v: boolean) => void;
+  showCompletedTensions: boolean;
+  setShowCompletedTensions: (v: boolean) => void;
+  isTensionCompleted: (tension: Tension) => boolean;
 }) {
   const [visionInputByArea, setVisionInputByArea] = useState<Record<string, string>>({});
   const [realityInputByArea, setRealityInputByArea] = useState<Record<string, string>>({});
@@ -5503,9 +5924,39 @@ function ComparisonView({
       {/* T&Aエリア — 残りの高さを使う、最低でも画面の80%確保 */}
       <div className="flex-1 min-h-[80vh] px-6 pt-3 pb-6">
         <div className="flex flex-col bg-white border-2 border-zenshin-navy/30 rounded-lg shadow-sm overflow-hidden h-full">
-          <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center gap-2 rounded-t-lg shrink-0">
-            <Zap className="w-4 h-4 text-zenshin-navy" />
-            <h2 className="text-base font-bold text-zenshin-navy leading-tight">Tension & Action</h2>
+          <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-zenshin-navy" />
+              <h2 className="text-base font-bold text-zenshin-navy leading-tight">Tension & Action</h2>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                className={`h-6 w-6 rounded transition-colors ${
+                  sortByStatus
+                    ? "bg-zenshin-navy/15 text-zenshin-navy"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                }`}
+                onClick={() => setSortByStatus(!sortByStatus)}
+                title="ステータス順に並べ替え"
+              >
+                <ArrowUpDown className="w-3 h-3" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={`h-6 w-6 rounded transition-colors ${
+                  hideCompleted
+                    ? "bg-zenshin-orange/15 text-zenshin-orange"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                }`}
+                onClick={() => setHideCompleted(!hideCompleted)}
+                title={hideCompleted ? "完了済みを表示" : "完了済みを非表示"}
+              >
+                {hideCompleted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              </Button>
+            </div>
           </div>
           <ScrollArea className="flex-1 min-h-0 overflow-auto">
             <div className="p-3 space-y-4" data-nav-scope="tension-action">
@@ -5516,48 +5967,114 @@ function ComparisonView({
                 onDragEnd={onTensionDragEnd}
               >
                 <div className="space-y-4">
-                  {areaOrder.map((areaId) => {
-                    const area = areaId ? areas.find((a) => a.id === areaId) : null;
-                    const areaName = area ? area.name : "未分類";
-                    const areaColor = area ? area.color : "#9CA3AF";
-                    const group = areaId
-                      ? structuredData.categorized.find((g) => g.area.id === areaId)
-                      : structuredData.uncategorized;
-
-                    const tensionsInSection = group ? group.tensions : [];
-                    const looseActionsInSection = group ? group.orphanedActions : [];
-
+                  {(() => {
+                    const allCompletedTensions: Tension[] = [];
+                    areaOrder.forEach((areaId) => {
+                      const group = areaId
+                        ? structuredData.categorized.find((g) => g.area.id === areaId)
+                        : structuredData.uncategorized;
+                      const tensionsFromGroup = group ? group.tensions : [];
+                      allCompletedTensions.push(
+                        ...tensionsFromGroup.filter((t) => isTensionCompleted(t))
+                      );
+                    });
                     return (
-                      <ActionSection
-                        key={areaId || "uncategorized"}
-                        areaId={areaId}
-                        areaName={areaName}
-                        areaColor={areaColor}
-                        tensionsInSection={tensionsInSection}
-                        looseActions={looseActionsInSection}
-                        allTensions={tensions}
-                        handleUpdateActionPlan={handleUpdateActionPlan}
-                        handleDeleteActionPlan={handleDeleteActionPlan}
-                        handleTelescopeClick={handleTelescopeClick}
-                        telescopingActionId={telescopingActionId}
-                        currentUser={currentUser}
-                        areas={areas}
-                        chartId={chartId}
-                        onOpenDetailPanel={onOpenDetailPanel}
-                        getSortedAndNumberedActions={getSortedAndNumberedActions}
-                        isSubmittingAction={isSubmittingAction}
-                        onAddAction={onAddAction}
-                        onAddTension={onAddTension}
-                        visions={visions}
-                        realities={realities}
-                        toggleVisionRealityLink={toggleVisionRealityLink}
-                        setHighlightedItemId={setHighlightedItemId}
-                        handleUpdateTension={handleUpdateTension}
-                        handleDeleteTension={handleDeleteTension}
-                        onOpenFocus={onOpenFocusTension}
-                      />
+                      <>
+                        {areaOrder.map((areaId) => {
+                          const area = areaId ? areas.find((a) => a.id === areaId) : null;
+                          const areaName = area ? area.name : "未分類";
+                          const areaColor = area ? area.color : "#9CA3AF";
+                          const group = areaId
+                            ? structuredData.categorized.find((g) => g.area.id === areaId)
+                            : structuredData.uncategorized;
+
+                          const tensionsInSection = group ? group.tensions : [];
+                          const activeTensions = tensionsInSection.filter(
+                            (t) => !isTensionCompleted(t)
+                          );
+                          const looseActionsInSection = group ? group.orphanedActions : [];
+
+                          return (
+                            <ActionSection
+                              key={areaId || "uncategorized"}
+                              areaId={areaId}
+                              areaName={areaName}
+                              areaColor={areaColor}
+                              tensionsInSection={activeTensions}
+                              looseActions={looseActionsInSection}
+                              allTensions={tensions}
+                              handleUpdateActionPlan={handleUpdateActionPlan}
+                              handleDeleteActionPlan={handleDeleteActionPlan}
+                              handleTelescopeClick={handleTelescopeClick}
+                              telescopingActionId={telescopingActionId}
+                              currentUser={currentUser}
+                              areas={areas}
+                              chartId={chartId}
+                              onOpenDetailPanel={onOpenDetailPanel}
+                              getSortedAndNumberedActions={getSortedAndNumberedActions}
+                              isSubmittingAction={isSubmittingAction}
+                              onAddAction={onAddAction}
+                              onAddTension={onAddTension}
+                              visions={visions}
+                              realities={realities}
+                              toggleVisionRealityLink={toggleVisionRealityLink}
+                              setHighlightedItemId={setHighlightedItemId}
+                              handleUpdateTension={handleUpdateTension}
+                              handleDeleteTension={handleDeleteTension}
+                              onOpenFocus={onOpenFocusTension}
+                              sortByStatus={sortByStatus}
+                              hideCompleted={hideCompleted}
+                            />
+                          );
+                        })}
+                        {allCompletedTensions.length > 0 && (
+                          <div className="border-t border-gray-100 mt-2">
+                            <button
+                              type="button"
+                              className="flex items-center gap-2 px-4 py-2.5 w-full text-left text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                              onClick={() =>
+                                setShowCompletedTensions(!showCompletedTensions)
+                              }
+                            >
+                              {showCompletedTensions ? (
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              )}
+                              完了済みTension（{allCompletedTensions.length}件）
+                            </button>
+                            {showCompletedTensions && (
+                              <div className="opacity-60">
+                                {allCompletedTensions.map((tension) => (
+                                  <TensionGroup
+                                    key={tension.id}
+                                    tension={tension}
+                                    tensionIndex={0}
+                                    areaId={tension.area_id ?? null}
+                                    handleUpdateTension={handleUpdateTension}
+                                    handleDeleteTension={handleDeleteTension}
+                                    handleUpdateActionPlan={handleUpdateActionPlan}
+                                    handleDeleteActionPlan={handleDeleteActionPlan}
+                                    handleTelescopeClick={handleTelescopeClick}
+                                    telescopingActionId={telescopingActionId}
+                                    currentUser={currentUser}
+                                    areas={areas}
+                                    chartId={chartId}
+                                    onOpenDetailPanel={onOpenDetailPanel}
+                                    onAddAction={onAddAction}
+                                    isSubmittingAction={isSubmittingAction}
+                                    onOpenFocus={onOpenFocusTension}
+                                    sortByStatus={sortByStatus}
+                                    hideCompleted={hideCompleted}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               </DndContext>
             </div>
