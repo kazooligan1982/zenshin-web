@@ -381,6 +381,7 @@ const splitItemsByDate = <T extends { id: string }>(
 interface ProjectEditorProps {
   initialChart: Chart;
   chartId: string;
+  workspaceId?: string;
   currentUserId: string;
   currentUser?: {
     id: string;
@@ -2107,6 +2108,7 @@ function ActionSection({
 export function ProjectEditor({
   initialChart,
   chartId,
+  workspaceId,
   currentUserId,
   currentUser: initialCurrentUser,
 }: ProjectEditorProps) {
@@ -4284,6 +4286,20 @@ export function ProjectEditor({
 
       setChart((prev) => ({ ...prev, due_date: dueDate }));
       setChartDueDate(dueDate);
+
+      // 親アクションの日付も同期（子→親）
+      if (chart.parentActionId) {
+        const { error: parentError } = await supabase
+          .from("actions")
+          .update({
+            due_date: dueDate,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", chart.parentActionId);
+        if (parentError) {
+          console.error("[handleUpdateChartDueDate] parent action sync error:", parentError);
+        }
+      }
     } catch (err) {
       console.error("[handleUpdateChartDueDate] Exception:", err);
     }
@@ -5026,6 +5042,7 @@ export function ProjectEditor({
           currentUserId={currentUserId || currentUser?.id}
           currentUser={currentUser}
           chartId={chartId}
+          workspaceId={workspaceId}
           onAddHistory={handleAddHistory}
           onCommentCountChange={handleCommentCountChange}
         />

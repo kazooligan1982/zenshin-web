@@ -196,6 +196,7 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
       title: chart.title,
       description: (chart as any).description || null,
       due_date: (chart as any).due_date || null,
+      workspace_id: (chart as any).workspace_id ?? null,
       visions: Array.from(visionMap.values()) as VisionItem[],
       realities: Array.from(realityMap.values()) as RealityItem[],
       tensions: tensionsWithRelations,

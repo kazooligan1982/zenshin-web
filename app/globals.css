@@ -171,3 +171,101 @@ select:-webkit-autofill {
     transform: translate(-50%, -50%) scale(1);
   }
 }
+
+/* Tiptap Editor Styles */
+.tiptap {
+  outline: none;
+}
+
+.tiptap p {
+  margin: 0.25em 0;
+}
+
+.tiptap p:first-child {
+  margin-top: 0;
+}
+
+.tiptap p:last-child {
+  margin-bottom: 0;
+}
+
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+
+.tiptap li {
+  margin: 0.1em 0;
+}
+
+.tiptap li p {
+  margin: 0;
+}
+
+.tiptap code {
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.875em;
+}
+
+.tiptap pre {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.5em 0;
+  overflow-x: auto;
+}
+
+.tiptap pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 0.5em 0;
+  color: #6b7280;
+}
+
+/* Mention chip styles */
+.mention {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.mention:hover {
+  background-color: #bfdbfe;
+}
+
+/* Mention dropdown */
+.mention-dropdown {
+  min-width: 240px;
+  max-width: 400px;
+}
+
+/* Tiptap placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

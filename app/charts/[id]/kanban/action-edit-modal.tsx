@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Timeline } from "@/components/action-timeline/Timeline";
 import { supabase } from "@/lib/supabase";
+import { getCurrentWorkspaceId } from "@/lib/workspace";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -114,6 +115,13 @@ export function ActionEditModal({
     incompleteActions: { id: string; title: string; status: string }[];
     nextStatus: "done" | "canceled";
   } | null>(null);
+  const [workspaceId, setWorkspaceId] = useState<string>("");
+
+  useEffect(() => {
+    if (isOpen) {
+      getCurrentWorkspaceId().then((id) => setWorkspaceId(id ?? ""));
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (action) {
@@ -399,6 +407,7 @@ export function ActionEditModal({
               currentUserId={currentUserId}
               currentUser={currentUser}
               chartId={projectId}
+              workspaceId={workspaceId}
               onCommentAdded={loadActionComments}
             />
           </div>
