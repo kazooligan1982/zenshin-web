@@ -5374,7 +5374,7 @@ function ComparisonView({
                                   onOpenFocusVision(item, itemIndex)
                                 }
                                 onOpenAreaSettings={onOpenAreaSettings}
-                                currentUser={currentUser}
+                                currentUser={currentUser as any}
                               />
                             ))
                           )}
