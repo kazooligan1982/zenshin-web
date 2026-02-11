@@ -21,6 +21,7 @@ import {
   updateAction,
   deleteAction,
   updateChart,
+  updateChartStatus,
   telescopeAction,
   getChildChartProgress,
   createArea,
@@ -37,6 +38,7 @@ import type {
   TensionStatus,
   Area,
   HistoryItem,
+  ChartStatus,
 } from "@/types/chart";
 
 // Chart取得
@@ -187,12 +189,14 @@ export async function updateTensionItem(
   field: "title" | "description" | "status",
   value: string | TensionStatus
 ) {
+  console.log("[updateTensionItem] called:", tensionId, field, value);
   const updates: Partial<Tension> = {};
   if (field === "title") updates.title = value as string;
   if (field === "description") updates.description = value as string;
   if (field === "status") updates.status = value as TensionStatus;
 
   const result = await updateTension(tensionId, chartId, updates);
+  console.log("[updateTensionItem] result:", result);
   if (result) {
     revalidatePath(`/charts/${chartId}`);
   } else {
@@ -1157,6 +1161,18 @@ export async function updateChartData(
     revalidatePath(`/charts/${chartId}`);
   } else {
     console.error("[updateChartData] 更新失敗");
+  }
+  return result;
+}
+
+// Chart status更新
+export async function updateChartStatusAction(
+  chartId: string,
+  status: ChartStatus
+): Promise<{ error?: string }> {
+  const result = await updateChartStatus(chartId, status);
+  if (!result.error) {
+    revalidatePath(`/charts/${chartId}`);
   }
   return result;
 }

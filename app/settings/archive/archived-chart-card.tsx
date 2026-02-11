@@ -6,6 +6,17 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { restoreChart, deleteChart } from "@/app/charts/actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type ArchivedChart = {
   id: string;
@@ -16,33 +27,32 @@ type ArchivedChart = {
 export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleRestore = async () => {
     setIsLoading(true);
     try {
       await restoreChart(chart.id);
-      toast.success("チャートを復元しました");
+      toast.success("チャートを復元しました", { duration: 3000 });
       router.refresh();
     } catch (error) {
       console.error("Failed to restore chart:", error);
-      toast.error("復元に失敗しました");
+      toast.error("復元に失敗しました", { duration: 5000 });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm("このチャートを完全に削除しますか？\nこの操作は取り消せません。")) {
-      return;
-    }
+    setDeleteDialogOpen(false);
     setIsLoading(true);
     try {
       await deleteChart(chart.id);
-      toast.success("チャートを削除しました");
+      toast.success("チャートを削除しました", { duration: 3000 });
       router.refresh();
     } catch (error) {
       console.error("Failed to delete chart:", error);
-      toast.error("削除に失敗しました");
+      toast.error("削除に失敗しました", { duration: 5000 });
     } finally {
       setIsLoading(false);
     }
@@ -67,15 +77,39 @@ export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
           <RotateCcw className="w-4 h-4 mr-1" />
           復元
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
-          disabled={isLoading}
-          className="text-red-500 hover:text-red-600 hover:bg-red-50"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isLoading}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
+                このチャートを完全に削除しますか？
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm text-gray-500">
+                この操作は取り消せません。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
+                キャンセル
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="rounded-lg px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600"
+                onClick={handleDelete}
+              >
+                削除する
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

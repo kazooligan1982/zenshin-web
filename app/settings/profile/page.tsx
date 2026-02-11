@@ -49,9 +49,9 @@ export default function ProfilePage() {
     });
 
     if (error) {
-      toast.error("保存に失敗しました: " + error.message);
+      toast.error("保存に失敗しました: " + error.message, { duration: 5000 });
     } else {
-      toast.success("プロフィールを更新しました");
+      toast.success("プロフィールを更新しました", { duration: 3000 });
     }
 
     setIsLoading(false);

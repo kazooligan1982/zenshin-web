@@ -79,12 +79,15 @@ export interface Tension {
   actionPlans: ActionPlan[];
 }
 
+export type ChartStatus = "active" | "completed";
+
 export interface Chart {
   id: string;
   title: string;
   description?: string | null;
   due_date?: string | null;
   workspace_id?: string | null;
+  status?: ChartStatus;
   visions: VisionItem[];
   realities: RealityItem[];
   tensions: Tension[];

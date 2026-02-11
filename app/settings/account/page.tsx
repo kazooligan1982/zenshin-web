@@ -31,12 +31,12 @@ export default function AccountPage() {
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("パスワードが一致しません");
+      toast.error("パスワードが一致しません", { duration: 5000 });
       return;
     }
 
     if (newPassword.length < 6) {
-      toast.error("パスワードは6文字以上で入力してください");
+      toast.error("パスワードは6文字以上で入力してください", { duration: 5000 });
       return;
     }
 
@@ -48,9 +48,9 @@ export default function AccountPage() {
     });
 
     if (error) {
-      toast.error("パスワードの変更に失敗しました: " + error.message);
+      toast.error("パスワードの変更に失敗しました: " + error.message, { duration: 5000 });
     } else {
-      toast.success("パスワードを変更しました");
+      toast.success("パスワードを変更しました", { duration: 3000 });
       setNewPassword("");
       setConfirmPassword("");
     }

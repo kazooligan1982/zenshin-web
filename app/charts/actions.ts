@@ -14,6 +14,7 @@ export type ChartWithMeta = {
   updated_at: string;
   parent_action_id: string | null;
   depth: number;
+  status?: "active" | "completed";
 };
 
 export type ProjectGroup = {
@@ -59,6 +60,7 @@ export async function createChart(
 export async function getChartsHierarchy(): Promise<{
   projectGroups: ProjectGroup[];
   recentCharts: ChartWithMeta[];
+  completedCharts: ChartWithMeta[];
 }> {
 
   const supabase = await createClient();
@@ -66,7 +68,7 @@ export async function getChartsHierarchy(): Promise<{
 
   const { data: charts, error } = await supabase
     .from("charts")
-    .select("id, title, description, due_date, created_at, updated_at, parent_action_id")
+    .select("id, title, description, due_date, created_at, updated_at, parent_action_id, status")
     .is("archived_at", null)
     .eq("workspace_id", workspaceId)
     .order("updated_at", { ascending: false });
@@ -98,10 +100,13 @@ export async function getChartsHierarchy(): Promise<{
   const chartsWithDepth: ChartWithMeta[] = (charts || []).map((chart) => ({
     ...chart,
     depth: getChartDepth(chart.id),
+    status: (chart as { status?: string }).status === "completed" ? "completed" : "active",
   }));
 
-  const masterCharts = chartsWithDepth.filter((chart) => chart.depth === 1);
-  const subCharts = chartsWithDepth.filter((chart) => chart.depth > 1);
+  const activeCharts = chartsWithDepth.filter((chart) => chart.status !== "completed");
+  const completedCharts = chartsWithDepth.filter((chart) => chart.status === "completed");
+  const masterCharts = activeCharts.filter((chart) => chart.depth === 1);
+  const subCharts = activeCharts.filter((chart) => chart.depth > 1);
 
   const projectGroups: ProjectGroup[] = masterCharts.map((master) => {
     const findDescendants = (parentId: string): ChartWithMeta[] => {
@@ -128,10 +133,9 @@ export async function getChartsHierarchy(): Promise<{
     return { master, layers };
   });
 
-  const recentCharts = chartsWithDepth.slice(0, 4);
+  const recentCharts = activeCharts.slice(0, 4);
 
-
-  return { projectGroups, recentCharts };
+  return { projectGroups, recentCharts, completedCharts };
 }
 
 export async function deleteChart(chartId: string) {

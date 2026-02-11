@@ -236,7 +236,7 @@ export function ActionEditModal({
           await updateActionPlanItem(action.id, action.tension_id || null, "description", descriptionValue || "", projectId);
         }
 
-        toast.success("アクションを更新しました");
+        toast.success("アクションを更新しました", { duration: 3000 });
         onSave({
           id: action.id,
           title,
@@ -249,7 +249,7 @@ export function ActionEditModal({
         onClose();
       } catch (error) {
         console.error("Error updating action:", error);
-        toast.error("更新に失敗しました");
+        toast.error("更新に失敗しました", { duration: 5000 });
       } finally {
         setIsSaving(false);
       }
