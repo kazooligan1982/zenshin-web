@@ -1,18 +1,9 @@
-import Link from "next/link";
-import { format } from "date-fns";
-import { ja } from "date-fns/locale";
 import {
-  Calendar,
-  RefreshCcw,
   FolderOpen,
   Sparkles,
-  ArrowUpRight,
-  ChevronRight,
-  ChevronDown,
-  CheckCircle2,
 } from "lucide-react";
-import { DeleteChartButton } from "./delete-chart-button";
 import { NewChartButton } from "./new-chart-button";
+import { ChartCard } from "./chart-card";
 import { CompletedChartsSection } from "./completed-charts-section";
 import { getChartsHierarchy, type ChartWithMeta, type ProjectGroup } from "./actions";
 
@@ -84,10 +75,7 @@ export default async function ChartsPage() {
 
           {/* 完了済みチャート */}
           {completedCharts.length > 0 && (
-            <CompletedChartsSection
-              completedCharts={completedCharts}
-              renderChart={(chart) => <ChartCard chart={chart} />}
-            />
+            <CompletedChartsSection completedCharts={completedCharts} />
           )}
         </section>
       </div>
@@ -139,122 +127,5 @@ function ProjectGroupSection({ group }: { group: ProjectGroup }) {
         </p>
       )}
     </div>
-  );
-}
-
-function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; isMaster?: boolean }) {
-  const depthLabel =
-    chart.depth === 1
-      ? "Master"
-      : chart.depth === 2
-        ? "2nd"
-        : chart.depth === 3
-          ? "3rd"
-          : `${chart.depth}th`;
-
-  // TODO: Replace with real action status data from backend
-  const mockStatus = {
-    total: 0,
-    done: 0,
-    inProgress: 0,
-    onHold: 0,
-    notStarted: 0,
-    cancelled: 0,
-  };
-
-  const bgClass = isMaster
-    ? "bg-zenshin-cream/60 border-zenshin-navy/12 hover:bg-white"
-    : "bg-zenshin-cream/50 border-zenshin-navy/6 hover:bg-white";
-
-  return (
-    <Link href={`/charts/${chart.id}`}>
-      <div className={`group relative rounded-xl border p-4 h-full hover:shadow-md hover:border-zenshin-orange/30 hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col ${bgClass}`}>
-        {/* Row 1: Badge + Status Bar */}
-        <div className="flex items-start justify-between mb-1">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <DepthBadge depth={chart.depth} label={depthLabel} />
-            <StatusBar status={mockStatus} />
-          </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
-            <DeleteChartButton chartId={chart.id} />
-          </div>
-        </div>
-
-        {/* Row 2: Title */}
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <h4 className={`font-bold text-zenshin-navy leading-snug line-clamp-2 group-hover:text-zenshin-orange transition-colors flex-1 min-w-0 ${isMaster ? "text-base" : "text-sm"}`}>
-            {chart.title}
-          </h4>
-          {chart.status === "completed" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full shrink-0">
-              <CheckCircle2 className="w-3 h-3" />
-              完了
-            </span>
-          )}
-        </div>
-
-        {/* Row 3: Footer - pinned to bottom */}
-        <div className="flex items-center justify-between mt-auto pt-3 border-t border-zenshin-navy/5">
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-zenshin-navy/70">
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {chart.due_date ? (
-                <span>期限: {format(new Date(chart.due_date), "MM/dd", { locale: ja })}</span>
-              ) : (
-                <span className="text-zenshin-orange/60">期限: 未設定</span>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <RefreshCcw className="w-3 h-3" />
-              <span>更新: {format(new Date(chart.updated_at), "MM/dd", { locale: ja })}</span>
-            </div>
-          </div>
-          {/* Member avatars placeholder */}
-          <div className="flex -space-x-1.5 shrink-0">
-            <div className="w-5 h-5 rounded-full bg-zenshin-teal/20 border-2 border-white" />
-            <div className="w-5 h-5 rounded-full bg-zenshin-orange/20 border-2 border-white" />
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function StatusBar({ status }: { status: { total: number; done: number; inProgress: number; onHold: number; notStarted: number; cancelled: number } }) {
-  const { total, done, inProgress, onHold, notStarted, cancelled } = status;
-  if (total === 0) return null;
-
-  const pct = (n: number) => `${(n / total) * 100}%`;
-
-  return (
-    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-      {/* Mini progress bar */}
-      <div className="flex h-1.5 flex-1 rounded-full overflow-hidden bg-zenshin-navy/5 max-w-[80px]">
-        {done > 0 && <div className="bg-emerald-400" style={{ width: pct(done) }} />}
-        {inProgress > 0 && <div className="bg-blue-400" style={{ width: pct(inProgress) }} />}
-        {onHold > 0 && <div className="bg-amber-400" style={{ width: pct(onHold) }} />}
-        {cancelled > 0 && <div className="bg-red-300" style={{ width: pct(cancelled) }} />}
-        {notStarted > 0 && <div className="bg-zenshin-navy/10" style={{ width: pct(notStarted) }} />}
-      </div>
-      {/* Fraction */}
-      <span className="text-[10px] text-zenshin-navy/40 whitespace-nowrap">
-        {done}/{total}
-      </span>
-    </div>
-  );
-}
-
-function DepthBadge({ depth, label }: { depth: number; label: string }) {
-  const colorClass =
-    depth === 1
-      ? "bg-zenshin-navy text-white"
-      : depth === 2
-        ? "bg-zenshin-teal/15 text-zenshin-teal"
-        : "bg-zenshin-orange/15 text-zenshin-orange";
-
-  return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${colorClass}`}>
-      {label}
-    </span>
   );
 }
