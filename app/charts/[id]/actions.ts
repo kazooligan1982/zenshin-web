@@ -1173,6 +1173,78 @@ export async function updateChartStatusAction(
   const result = await updateChartStatus(chartId, status);
   if (!result.error) {
     revalidatePath(`/charts/${chartId}`);
+
+    // 子チャートが完了/中止になったら、親Actionのステータスも同期する
+    if (status === "completed") {
+      try {
+        const supabase = await createClient();
+        // このチャートの parent_action_id を取得
+        const { data: chart } = await supabase
+          .from("charts")
+          .select("parent_action_id")
+          .eq("id", chartId)
+          .single();
+
+        if (chart?.parent_action_id) {
+          // 親Actionを完了にする
+          await supabase
+            .from("actions")
+            .update({
+              status: "done",
+              is_completed: true,
+            })
+            .eq("id", chart.parent_action_id);
+
+          // 親Actionが属するチャートのパスもrevalidate
+          const { data: parentAction } = await supabase
+            .from("actions")
+            .select("chart_id")
+            .eq("id", chart.parent_action_id)
+            .single();
+
+          if (parentAction?.chart_id) {
+            revalidatePath(`/charts/${parentAction.chart_id}`);
+          }
+        }
+      } catch (error) {
+        console.error("[updateChartStatusAction] 親Action更新エラー:", error);
+        // 親Action更新失敗はチャートステータス更新自体には影響させない
+      }
+    }
+
+    // チャートが未完了に戻された場合、親Actionも未完了に戻す
+    if (status === "active") {
+      try {
+        const supabase = await createClient();
+        const { data: chart } = await supabase
+          .from("charts")
+          .select("parent_action_id")
+          .eq("id", chartId)
+          .single();
+
+        if (chart?.parent_action_id) {
+          await supabase
+            .from("actions")
+            .update({
+              status: "in_progress",
+              is_completed: false,
+            })
+            .eq("id", chart.parent_action_id);
+
+          const { data: parentAction } = await supabase
+            .from("actions")
+            .select("chart_id")
+            .eq("id", chart.parent_action_id)
+            .single();
+
+          if (parentAction?.chart_id) {
+            revalidatePath(`/charts/${parentAction.chart_id}`);
+          }
+        }
+      } catch (error) {
+        console.error("[updateChartStatusAction] 親Action復元エラー:", error);
+      }
+    }
   }
   return result;
 }
