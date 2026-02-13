@@ -63,13 +63,12 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto p-0 fixed"
-        align="start"
+        className="w-auto p-0"
+        align="end"
         side="bottom"
         sideOffset={4}
-        collisionPadding={20}
+        collisionPadding={16}
         avoidCollisions={true}
-        style={{ zIndex: 9999 }}
       >
         <Calendar
           mode="single"
