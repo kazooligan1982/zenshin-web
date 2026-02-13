@@ -24,7 +24,6 @@ export async function searchWorkspaceItems(
       .select("id, title")
       .eq("workspace_id", workspaceId);
 
-    console.log("[Search] workspaceId:", workspaceId, "charts found:", chartsInWorkspace?.length, "error:", chartsError);
 
     if (chartsError || !chartsInWorkspace?.length) {
       return [];
@@ -99,14 +98,6 @@ export async function searchWorkspaceItems(
       tensionsQuery,
       actionsQuery,
     ]);
-
-    console.log("[Search] query results:", {
-      charts: chartsData?.length ?? "err:" + chartsErr?.message,
-      visions: visionsData?.length ?? "err:" + visionsErr?.message,
-      realities: realitiesData?.length ?? "err:" + realitiesErr?.message,
-      tensions: tensionsData?.length ?? "err:" + tensionsErr?.message,
-      actions: actionsData?.length ?? "err:" + actionsErr?.message,
-    });
 
     if (chartsErr || visionsErr || realitiesErr || tensionsErr || actionsErr) {
       return [];

@@ -26,10 +26,8 @@ function createMentionSuggestion(workspaceId: string) {
   return {
     char: "@",
     items: async ({ query }: { query: string }) => {
-      console.log("[Mention] workspaceId:", workspaceId, "query:", query);
       if (!workspaceId) return [];
       const results = await searchWorkspaceItems(workspaceId, query);
-      console.log("[Mention] results:", results);
       return results.slice(0, 10).map((item) => ({
         id: `${item.type}:${item.chartId}:${item.id}`,
         label: item.title,
@@ -42,20 +40,22 @@ function createMentionSuggestion(workspaceId: string) {
     render: () => {
       let component: HTMLDivElement | null = null;
       let selectedIndex = 0;
-      let isLoading = false;
+      let noResultTimer: ReturnType<typeof setTimeout> | null = null;
+      let confirmedEmpty = false;
+
       let items: { id: string; label: string; type: string; title: string; chartTitle: string }[] = [];
       let command: (item: { id: string; label: string }) => void = () => {};
 
       function updateDropdown() {
         if (!component) return;
-        if (isLoading) {
-          component.innerHTML = '<div class="px-3 py-2 text-sm text-gray-400">検索中...</div>';
-          return;
-        }
         if (items.length === 0) {
-          component.innerHTML = '<div class="px-3 py-2 text-sm text-gray-400">見つかりません</div>';
+          component.innerHTML = confirmedEmpty
+            ? '<div class="px-3 py-2 text-sm text-gray-400">見つかりません</div>'
+            : '<div class="px-3 py-2 text-sm text-gray-400">検索中...</div>';
           return;
         }
+        confirmedEmpty = false;
+        if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
         const typeLabels: Record<string, string> = {
           chart: "📊",
           vision: "🎯",
@@ -90,7 +90,8 @@ function createMentionSuggestion(workspaceId: string) {
           command = props.command;
           items = props.items;
           selectedIndex = 0;
-          isLoading = !props.items.length;
+          confirmedEmpty = false;
+          if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
 
           component = document.createElement("div");
           component.className =
@@ -105,10 +106,17 @@ function createMentionSuggestion(workspaceId: string) {
           document.body.appendChild(component);
         },
         onUpdate: (props: any) => {
-          items = props.items;
           command = props.command;
           selectedIndex = 0;
-          isLoading = false;
+          items = props.items;
+          confirmedEmpty = false;
+          if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
+          if (items.length === 0) {
+            noResultTimer = setTimeout(() => {
+              confirmedEmpty = true;
+              updateDropdown();
+            }, 1000);
+          }
           updateDropdown();
         },
         onKeyDown: (props: { event: KeyboardEvent }) => {
@@ -131,6 +139,7 @@ function createMentionSuggestion(workspaceId: string) {
           return false;
         },
         onExit: () => {
+          if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
           component?.remove();
           component = null;
         },
