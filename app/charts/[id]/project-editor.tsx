@@ -56,6 +56,7 @@ import {
   XCircle,
   Archive,
   ArrowUpDown,
+  ArrowRightLeft,
   Eye,
   EyeOff,
   RotateCcw,
@@ -962,6 +963,8 @@ function SortableActionItem({
   chartId,
   onOpenDetailPanel,
   disabled = false,
+  allTensions = [],
+  handleOptimisticMove,
 }: {
   actionPlan: ActionPlan;
   actionIndex: number;
@@ -969,6 +972,7 @@ function SortableActionItem({
   parentTensionAreaId?: string | null;
   hideAreaBadge?: boolean;
   availableTensions?: Tension[];
+  allTensions?: Tension[];
   isCompleted: boolean;
   handleUpdateActionPlan: (
     tensionId: string | null,
@@ -996,6 +1000,7 @@ function SortableActionItem({
   chartId: string;
   onOpenDetailPanel: (itemType: "action", itemId: string, itemContent: string) => void;
   disabled?: boolean;
+  handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
 }) {
   const actionInput = useItemInput({
     initialValue: actionPlan.title || "",
@@ -1058,13 +1063,23 @@ function SortableActionItem({
 
   const handleMoveToTension = async (targetTensionId: string) => {
     setIsMovingToTension(true);
+
+    // 楽観的UI更新: ソースから削除、ターゲットに追加
+    const movedAction = { ...actionPlan };
+    if (tensionId) {
+      handleOptimisticMove?.(tensionId, targetTensionId, movedAction);
+    }
+
+    // 即座にトースト表示
+    const targetTension = allTensions.find((t) => t.id === targetTensionId);
+    toast.success(`「${targetTension?.title || "Tension"}」に移動しました`, { duration: 3000 });
+
+    // バックグラウンドでサーバー更新
     const result = await moveActionToTension(actionPlan.id, targetTensionId, chartId);
     if (!result.success) {
-      toast.error("Tensionへの追加に失敗しました", { duration: 5000 });
-      setIsMovingToTension(false);
-      return;
+      toast.error("移動に失敗しました。元に戻します", { duration: 5000 });
+      router.refresh();
     }
-    router.refresh();
     setIsMovingToTension(false);
   };
 
@@ -1421,7 +1436,7 @@ function SortableActionItem({
           )}
           <div
             className={cn(
-              "flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1",
+              "flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-0.5",
               actionPlan.childChartId || actionPlan.hasSubChart
                 ? "bg-zenshin-navy/10 ring-1 ring-zenshin-navy/30"
                 : "hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200 opacity-0 group-hover:opacity-100"
@@ -1432,7 +1447,7 @@ function SortableActionItem({
               variant="ghost"
               size="icon"
               className={cn(
-                "h-8 w-8 shrink-0 transition-opacity hover:bg-transparent rounded-full p-0",
+                "h-7 w-7 shrink-0 transition-opacity hover:bg-transparent rounded-full p-0",
                 actionPlan.childChartId || actionPlan.hasSubChart
                   ? "text-zenshin-navy opacity-100"
                   : "text-zenshin-navy/40 hover:text-gray-600"
@@ -1451,10 +1466,55 @@ function SortableActionItem({
               )}
             </Button>
           </div>
+          {/* Tension間移動メニュー */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity opacity-0 group-hover:opacity-100"
+                onClick={(e) => e.stopPropagation()}
+                title="別のTensionに移動"
+              >
+                <ArrowRightLeft size={14} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2" onClick={(e) => e.stopPropagation()}>
+              <div className="text-xs font-semibold text-zenshin-navy/50 mb-2 px-2">移動先のTensionを選択</div>
+              <div className="space-y-0.5 max-h-60 overflow-y-auto">
+                {allTensions
+                  .filter((t) => t.id !== tensionId && t.status !== "resolved")
+                  .map((t) => {
+                    const tArea = areas.find((a) => a.id === t.area_id);
+                    return (
+                      <Button
+                        key={t.id}
+                        variant="ghost"
+                        className="w-full justify-start text-xs h-auto py-2 px-2"
+                        onClick={() => handleMoveToTension(t.id)}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {tArea && (
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: tArea.color }}
+                            />
+                          )}
+                          <span className="truncate">{t.title || "無題のTension"}</span>
+                        </div>
+                      </Button>
+                    );
+                  })}
+                {allTensions.filter((t) => t.id !== tensionId && t.status !== "resolved").length === 0 && (
+                  <div className="text-xs text-zenshin-navy/40 px-2 py-2">他にTensionがありません</div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity opacity-0 group-hover:opacity-100"
+            className="h-7 w-7 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity opacity-0 group-hover:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
               handleDeleteActionPlan(tensionId, actionPlan.id);
@@ -1538,6 +1598,8 @@ function TensionGroup({
   tension,
   tensionIndex,
   areaId,
+  allTensions = [],
+  handleOptimisticMove,
   handleUpdateTension,
   handleDeleteTension,
   handleUpdateActionPlan,
@@ -1560,6 +1622,8 @@ function TensionGroup({
   tension: Tension;
   tensionIndex: number;
   areaId: string | null;
+  allTensions?: Tension[];
+  handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
   handleUpdateTension: (tensionId: string, field: "title" | "description" | "status", value: string | TensionStatus) => void;
   handleDeleteTension: (tensionId: string) => void;
   handleUpdateActionPlan: (
@@ -1864,6 +1928,8 @@ function TensionGroup({
                       chartId={chartId}
                       onOpenDetailPanel={onOpenDetailPanel}
                       disabled={key === "done"}
+                      allTensions={allTensions}
+                      handleOptimisticMove={handleOptimisticMove}
                     />
                   ))}
                 </SortableContext>
@@ -1895,6 +1961,8 @@ function TensionGroup({
                     chartId={chartId}
                     onOpenDetailPanel={onOpenDetailPanel}
                     disabled
+                    allTensions={allTensions}
+                    handleOptimisticMove={handleOptimisticMove}
                   />
                 ))}
               </SortableContext>
@@ -1938,6 +2006,8 @@ function TensionGroup({
                         areas={areas}
                         chartId={chartId}
                         onOpenDetailPanel={onOpenDetailPanel}
+                        allTensions={allTensions}
+                        handleOptimisticMove={handleOptimisticMove}
                       />
                     ))
                   )}
@@ -1998,6 +2068,7 @@ function ActionSection({
   tensionsInSection,
   looseActions,
   allTensions,
+  handleOptimisticMove,
   handleUpdateActionPlan,
   handleDeleteActionPlan,
   handleTelescopeClick,
@@ -2028,6 +2099,7 @@ function ActionSection({
   tensionsInSection: Tension[];
   looseActions: ActionPlan[];
   allTensions: Tension[];
+  handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
   handleUpdateActionPlan: (
     tensionId: string | null,
     actionId: string,
@@ -2138,6 +2210,8 @@ function ActionSection({
               tension={tension}
               tensionIndex={tensionIndex}
               areaId={areaId}
+              allTensions={allTensions}
+              handleOptimisticMove={handleOptimisticMove}
               handleUpdateTension={handleUpdateTension}
               handleDeleteTension={handleDeleteTension}
               handleUpdateActionPlan={handleUpdateActionPlan}
@@ -2251,6 +2325,8 @@ function ActionSection({
                           chartId={chartId}
                           onOpenDetailPanel={onOpenDetailPanel}
                           disabled={key === "done"}
+                          allTensions={allTensions}
+                          handleOptimisticMove={handleOptimisticMove}
                         />
                       ))}
                     </SortableContext>
@@ -2282,6 +2358,8 @@ function ActionSection({
                     chartId={chartId}
                     onOpenDetailPanel={onOpenDetailPanel}
                     disabled
+                    allTensions={allTensions}
+                    handleOptimisticMove={handleOptimisticMove}
                   />
                 ))}
               </SortableContext>
@@ -2324,6 +2402,8 @@ function ActionSection({
                       areas={areas}
                       chartId={chartId}
                       onOpenDetailPanel={onOpenDetailPanel}
+                      allTensions={allTensions}
+                      handleOptimisticMove={handleOptimisticMove}
                     />
                   ))}
                 </SortableContext>
@@ -3655,6 +3735,20 @@ export function ProjectEditor({
     }
   };
 
+  const handleOptimisticMove = (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => {
+    setTensions((prev) =>
+      prev.map((tension) => {
+        if (tension.id === sourceTensionId) {
+          return { ...tension, actionPlans: tension.actionPlans.filter((a) => a.id !== action.id) };
+        }
+        if (tension.id === targetTensionId) {
+          return { ...tension, actionPlans: [...tension.actionPlans, action] };
+        }
+        return tension;
+      })
+    );
+  };
+
   const handleAddActionPlan = async (
     tensionId: string | null,
     title: string,
@@ -3826,6 +3920,15 @@ export function ProjectEditor({
         dueDate: value as string | undefined,
       }));
     }
+
+    // titleも楽観的にローカル状態を更新（D&D時のstate再構築で古い値に戻るのを防ぐ）
+    if (field === "title") {
+      updateActionInState((action) => ({
+        ...action,
+        title: value as string,
+      }));
+    }
+
     const success = await updateActionPlanItem(actionId, tensionId, field, value, chartId);
     if (!success) {
       console.error("[handleUpdateActionPlan] 更新失敗");
@@ -5145,6 +5248,7 @@ export function ProjectEditor({
                                     tensionsInSection={activeTensions}
                                     looseActions={looseActionsInSection}
                                     allTensions={tensions}
+                                    handleOptimisticMove={handleOptimisticMove}
                                     handleUpdateActionPlan={handleUpdateActionPlan}
                                     handleDeleteActionPlan={handleDeleteActionPlan}
                                     handleTelescopeClick={handleTelescopeClick}
@@ -5204,6 +5308,8 @@ export function ProjectEditor({
                                           tension={tension}
                                           tensionIndex={0}
                                           areaId={tension.area_id ?? null}
+                                          allTensions={tensions}
+                                          handleOptimisticMove={handleOptimisticMove}
                                           handleUpdateTension={handleUpdateTension}
                                           handleDeleteTension={handleDeleteTension}
                                           handleUpdateActionPlan={
@@ -5315,6 +5421,7 @@ export function ProjectEditor({
             isTensionCompleted={isTensionCompleted}
             expandedCompletedTensions={expandedCompletedTensions}
             toggleCompletedTensionExpand={toggleCompletedTensionExpand}
+            handleOptimisticMove={handleOptimisticMove}
           />
         ) : (
           <div className="h-full flex gap-4 overflow-hidden">
@@ -5587,6 +5694,7 @@ export function ProjectEditor({
                                   tensionsInSection={activeTensions}
                                   looseActions={looseActionsInSection}
                                   allTensions={tensions}
+                                  handleOptimisticMove={handleOptimisticMove}
                                   handleUpdateActionPlan={handleUpdateActionPlan}
                                   handleDeleteActionPlan={handleDeleteActionPlan}
                                   handleTelescopeClick={handleTelescopeClick}
@@ -5644,6 +5752,8 @@ export function ProjectEditor({
                                         tension={tension}
                                         tensionIndex={0}
                                         areaId={tension.area_id ?? null}
+                                        allTensions={tensions}
+                                        handleOptimisticMove={handleOptimisticMove}
                                         handleUpdateTension={handleUpdateTension}
                                         handleDeleteTension={handleDeleteTension}
                                         handleUpdateActionPlan={
@@ -5770,6 +5880,7 @@ function ComparisonView({
   isTensionCompleted,
   expandedCompletedTensions = new Set(),
   toggleCompletedTensionExpand,
+  handleOptimisticMove,
 }: {
   visions: VisionItem[];
   realities: RealityItem[];
@@ -5823,6 +5934,7 @@ function ComparisonView({
   isTensionCompleted: (tension: Tension) => boolean;
   expandedCompletedTensions?: Set<string>;
   toggleCompletedTensionExpand?: (tensionId: string) => void;
+  handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
 }) {
   const [visionInputByArea, setVisionInputByArea] = useState<Record<string, string>>({});
   const [realityInputByArea, setRealityInputByArea] = useState<Record<string, string>>({});
@@ -6138,6 +6250,7 @@ function ComparisonView({
                               tensionsInSection={activeTensions}
                               looseActions={looseActionsInSection}
                               allTensions={tensions}
+                              handleOptimisticMove={handleOptimisticMove}
                               handleUpdateActionPlan={handleUpdateActionPlan}
                               handleDeleteActionPlan={handleDeleteActionPlan}
                               handleTelescopeClick={handleTelescopeClick}
@@ -6188,6 +6301,8 @@ function ComparisonView({
                                     tension={tension}
                                     tensionIndex={0}
                                     areaId={tension.area_id ?? null}
+                                    allTensions={tensions}
+                                    handleOptimisticMove={handleOptimisticMove}
                                     handleUpdateTension={handleUpdateTension}
                                     handleDeleteTension={handleDeleteTension}
                                     handleUpdateActionPlan={handleUpdateActionPlan}
