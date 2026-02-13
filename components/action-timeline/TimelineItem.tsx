@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { ja } from "date-fns/locale"
 import { MoreVertical, Edit2, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,36 +87,57 @@ export function TimelineItem({
     } else {
       onUpdated?.(comment.id, comment.content)
       setEditContent(comment.content)
-      alert("更新に失敗しました")
+      toast.error("更新に失敗しました", { duration: 5000 })
     }
   }
 
   const handleDelete = async () => {
-    if (!confirm("このコメントを削除しますか？")) return
+    // 即座にUIから非表示（楽観的削除）
     setIsDeleted(true)
     onDelete?.(comment.id)
-    setIsLoading(true)
-    let result
-    switch (type) {
-      case "vision":
-        result = await deleteVisionComment(comment.id, chartId)
-        break
-      case "reality":
-        result = await deleteRealityComment(comment.id, chartId)
-        break
-      case "action":
-      default:
-        result = await deleteComment(comment.id, chartId)
-    }
-    setIsLoading(false)
-    if (!result.success) {
-      setIsDeleted(false)
-      onRestore?.(comment)
-      alert("削除に失敗しました")
-      return
-    }
-    onDeleted?.(comment.id)
-    router.refresh()
+
+    // 15秒Undoトースト表示
+    let undone = false
+    toast("コメントを削除しました", {
+      duration: 15000,
+      action: {
+        label: "元に戻す",
+        onClick: () => {
+          undone = true
+          setIsDeleted(false)
+          onRestore?.(comment)
+        },
+      },
+    })
+
+    // 15秒後に実際にDB削除（Undoされなかった場合）
+    setTimeout(async () => {
+      if (undone) return
+
+      setIsLoading(true)
+      let result
+      switch (type) {
+        case "vision":
+          result = await deleteVisionComment(comment.id, chartId)
+          break
+        case "reality":
+          result = await deleteRealityComment(comment.id, chartId)
+          break
+        case "action":
+        default:
+          result = await deleteComment(comment.id, chartId)
+      }
+      setIsLoading(false)
+
+      if (!result.success) {
+        setIsDeleted(false)
+        onRestore?.(comment)
+        toast.error("削除に失敗しました", { duration: 5000 })
+        return
+      }
+      onDeleted?.(comment.id)
+      router.refresh()
+    }, 15000)
   }
 
   if (isDeleted) return null

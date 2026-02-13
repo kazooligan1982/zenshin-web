@@ -29,6 +29,16 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Snapshot {
   id: string;
@@ -72,6 +82,7 @@ export default function SnapshotsPage() {
   const [comparisonTitle, setComparisonTitle] = useState("");
   const [comparisonDescription, setComparisonDescription] = useState("");
   const [activeTab, setActiveTab] = useState<"snapshots" | "comparisons">("snapshots");
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!projectId) return;
@@ -145,11 +156,11 @@ export default function SnapshotsPage() {
   };
 
   const deleteSnapshot = async (snapshotId: string) => {
-    if (!confirm("このSnapshotを削除しますか？")) return;
     const { error } = await supabase.from("snapshots").delete().eq("id", snapshotId);
     if (!error) {
       setSnapshots((prev) => prev.filter((s) => s.id !== snapshotId));
     }
+    setDeleteTargetId(null);
   };
 
   const saveComparison = async () => {
@@ -538,7 +549,7 @@ export default function SnapshotsPage() {
                                 className="h-8 w-8"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  deleteSnapshot(snapshot.id);
+                                  setDeleteTargetId(snapshot.id);
                                 }}
                               >
                                 <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
@@ -645,6 +656,30 @@ export default function SnapshotsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
+              このSnapshotを削除しますか？
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-gray-500">
+              この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
+              キャンセル
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-lg px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600"
+              onClick={() => deleteTargetId && deleteSnapshot(deleteTargetId)}
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

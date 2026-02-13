@@ -1051,20 +1051,9 @@ function SortableActionItem({
     actionPlan.status || (isCompleted ? "done" : "todo");
   const router = useRouter();
   const handleChangeArea = async (newAreaId: string | null) => {
-    if (tensionId) {
-      const shouldRemove = window.confirm(
-        "このActionを別のカテゴリーに変更すると、親Tensionと異なるカテゴリーになります。\n\n" +
-          "【OK】: Tensionから切り離して未割り当てに移動\n" +
-          "【キャンセル】: カテゴリーのみ変更(Tension内に残す)"
-      );
-      await handleUpdateActionPlan(tensionId, actionPlan.id, "areaId", newAreaId, {
-        removeFromTension: shouldRemove,
-      });
-    } else {
-      await handleUpdateActionPlan(null, actionPlan.id, "areaId", newAreaId, {
-        removeFromTension: false,
-      });
-    }
+    await handleUpdateActionPlan(tensionId, actionPlan.id, "areaId", newAreaId, {
+      removeFromTension: false,
+    });
   };
 
   const handleMoveToTension = async (targetTensionId: string) => {
@@ -1392,42 +1381,44 @@ function SortableActionItem({
               </span>
             )}
           </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className={`${ICON_BTN_CLASS} opacity-0 group-hover:opacity-100 transition-opacity`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                title="タグを変更"
-              >
-                <Tag size={16} />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-2" onClick={(e) => e.stopPropagation()}>
-              <div className="space-y-1">
-                {areas.map((area) => (
-                  <Button
-                    key={area.id}
-                    variant={actionPlan.area_id === area.id ? "secondary" : "ghost"}
-                    className="w-full justify-start text-xs h-7"
-                    onClick={() => handleChangeArea(area.id)}
-                  >
-                    {area.name}
-                  </Button>
-                ))}
+          {!tensionId && (
+            <Popover>
+              <PopoverTrigger asChild>
                 <Button
-                  variant={actionPlan.area_id ? "ghost" : "secondary"}
-                  className="w-full justify-start text-xs h-7 text-muted-foreground"
-                  onClick={() => handleChangeArea(null)}
+                  size="icon"
+                  variant="ghost"
+                  className={`${ICON_BTN_CLASS} opacity-0 group-hover:opacity-100 transition-opacity`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  title="タグを変更"
                 >
-                  未分類
+                  <Tag size={16} />
                 </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2" onClick={(e) => e.stopPropagation()}>
+                <div className="space-y-1">
+                  {areas.map((area) => (
+                    <Button
+                      key={area.id}
+                      variant={actionPlan.area_id === area.id ? "secondary" : "ghost"}
+                      className="w-full justify-start text-xs h-7"
+                      onClick={() => handleChangeArea(area.id)}
+                    >
+                      {area.name}
+                    </Button>
+                  ))}
+                  <Button
+                    variant={actionPlan.area_id ? "ghost" : "secondary"}
+                    className="w-full justify-start text-xs h-7 text-muted-foreground"
+                    onClick={() => handleChangeArea(null)}
+                  >
+                    未分類
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
           <div
             className={cn(
               "flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1",
