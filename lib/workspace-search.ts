@@ -99,13 +99,6 @@ export async function searchWorkspaceItems(
       actionsQuery,
     ]);
 
-      charts: chartsData?.length ?? "err:" + chartsErr?.message,
-      visions: visionsData?.length ?? "err:" + visionsErr?.message,
-      realities: realitiesData?.length ?? "err:" + realitiesErr?.message,
-      tensions: tensionsData?.length ?? "err:" + tensionsErr?.message,
-      actions: actionsData?.length ?? "err:" + actionsErr?.message,
-    });
-
     if (chartsErr || visionsErr || realitiesErr || tensionsErr || actionsErr) {
       return [];
     }
