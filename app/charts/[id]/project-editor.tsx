@@ -1759,7 +1759,6 @@ function TensionGroup({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log("Tension complete clicked (collapsed):", tension.id, tension.status);
               handleUpdateTension(tension.id, "status", "active");
             }}
             title="未完了に戻す"
@@ -1800,7 +1799,6 @@ function TensionGroup({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log("Tension complete clicked:", tension.id, tension.status);
               handleUpdateTension(
                 tension.id,
                 "status",
@@ -3625,7 +3623,6 @@ export function ProjectEditor({
     field: "title" | "description" | "status",
     value: string | TensionStatus
   ) => {
-    console.log("[handleUpdateTension] called:", tensionId, field, value);
     // Server updateのみ（Optimistic UIなし）
     const success = await updateTensionItem(tensionId, chartId, field, value);
     if (success) {

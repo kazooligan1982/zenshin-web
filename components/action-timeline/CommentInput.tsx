@@ -26,10 +26,8 @@ function createMentionSuggestion(workspaceId: string) {
   return {
     char: "@",
     items: async ({ query }: { query: string }) => {
-      console.log("[Mention] workspaceId:", workspaceId, "query:", query);
       if (!workspaceId) return [];
       const results = await searchWorkspaceItems(workspaceId, query);
-      console.log("[Mention] results:", results);
       return results.slice(0, 10).map((item) => ({
         id: `${item.type}:${item.chartId}:${item.id}`,
         label: item.title,
