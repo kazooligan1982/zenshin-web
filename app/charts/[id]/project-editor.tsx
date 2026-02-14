@@ -133,7 +133,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { fetchItemHistory, addItemHistoryEntry } from "./actions";
 import { archiveChart, restoreChart, deleteChart } from "@/app/charts/actions";
 import { updateChartStatusAction } from "./actions";
 import type { HistoryItem } from "@/types/chart";
@@ -167,6 +166,7 @@ import { useVisionHandlers } from "./hooks/useVisionHandlers";
 import { useRealityHandlers } from "./hooks/useRealityHandlers";
 import { useTensionHandlers } from "./hooks/useTensionHandlers";
 import { useActionHandlers, _pendingScrollRestore } from "./hooks/useActionHandlers";
+import { useDetailPanel } from "./hooks/useDetailPanel";
 
 const DatePicker = dynamic(
   () => import("@/components/ui/date-picker").then((mod) => mod.DatePicker),
@@ -284,13 +284,6 @@ export function ProjectEditor({
     };
   }>({});
   
-  // サイドパネルの状態
-  const [detailPanel, setDetailPanel] = useState<{
-    isOpen: boolean;
-    itemType: "vision" | "reality" | "action";
-    itemId: string;
-    itemContent: string;
-  } | null>(null);
   const [focusMode, setFocusMode] = useState<{
     isOpen: boolean;
     sectionType: "vision" | "reality" | "tension";
@@ -298,8 +291,6 @@ export function ProjectEditor({
     title: string;
     content: string;
   } | null>(null);
-  const [itemHistory, setItemHistory] = useState<HistoryItem[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [looseActions, setLooseActions] = useState<ActionPlan[]>([]);
   const [telescopingActionId, setTelescopingActionId] = useState<string | null>(null);
   const [actionProgress, setActionProgress] = useState<
@@ -376,6 +367,15 @@ export function ProjectEditor({
     pendingDeletions,
     setPendingDeletions,
     setTelescopingActionId,
+    router,
+  });
+
+  const { detailPanel, itemHistory, isLoadingHistory, handleOpenDetailPanel, handleCloseDetailPanel, handleAddHistory, handleCommentCountChange } = useDetailPanel({
+    chartId,
+    setVisions,
+    setRealities,
+    setTensions,
+    setLooseActions,
     router,
   });
 
@@ -1146,121 +1146,6 @@ export function ProjectEditor({
     if (success) {
       router.refresh();
     }
-  };
-
-  // サイドパネルを開く
-  const handleOpenDetailPanel = async (
-    itemType: "vision" | "reality" | "action",
-    itemId: string,
-    itemContent: string
-  ) => {
-    setDetailPanel({
-      isOpen: true,
-      itemType,
-      itemId,
-      itemContent,
-    });
-    if (itemType !== "action") {
-      setIsLoadingHistory(true);
-      try {
-        const history = await fetchItemHistory(itemType, itemId);
-        setItemHistory(history);
-      } catch (error) {
-        console.error("履歴の取得に失敗しました:", error);
-        setItemHistory([]);
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    } else {
-      setItemHistory([]);
-      setIsLoadingHistory(false);
-    }
-  };
-
-  // サイドパネルを閉じる
-  const handleCloseDetailPanel = () => {
-    setDetailPanel(null);
-    setItemHistory([]);
-  };
-
-  // 履歴を追加
-  const handleAddHistory = async (
-    itemType: "vision" | "reality" | "action",
-    itemId: string,
-    content: string,
-    type: "update" | "comment",
-    updateMainContent: boolean
-  ) => {
-    await addItemHistoryEntry(itemType, itemId, content, type, updateMainContent, chartId);
-    // 履歴を再取得
-    const history = await fetchItemHistory(itemType, itemId);
-    setItemHistory(history);
-    // メインコンテンツを更新した場合はページをリフレッシュ
-    if (updateMainContent) {
-      router.refresh();
-    }
-  };
-
-  const handleCommentCountChange = (
-    itemType: "vision" | "reality" | "action",
-    itemId: string,
-    delta: number
-  ) => {
-    if (itemType === "vision") {
-      setVisions((prev) =>
-        prev.map((vision) =>
-          vision.id === itemId
-            ? {
-                ...vision,
-                comment_count: Math.max(0, (vision.comment_count ?? 0) + delta),
-              }
-            : vision
-        )
-      );
-      return;
-    }
-    if (itemType === "reality") {
-      setRealities((prev) =>
-        prev.map((reality) =>
-          reality.id === itemId
-            ? {
-                ...reality,
-                comment_count: Math.max(0, (reality.comment_count ?? 0) + delta),
-              }
-            : reality
-        )
-      );
-      return;
-    }
-    setTensions((prev) =>
-      prev.map((tension) => ({
-        ...tension,
-        actionPlans: tension.actionPlans.map((actionPlan) =>
-          actionPlan.id === itemId
-            ? {
-                ...actionPlan,
-                comment_count: Math.max(
-                  0,
-                  (actionPlan.comment_count ?? 0) + delta
-                ),
-              }
-            : actionPlan
-        ),
-      }))
-    );
-    setLooseActions((prev) =>
-      prev.map((actionPlan) =>
-        actionPlan.id === itemId
-          ? {
-              ...actionPlan,
-              comment_count: Math.max(
-                0,
-                (actionPlan.comment_count ?? 0) + delta
-              ),
-            }
-          : actionPlan
-      )
-    );
   };
 
   // ドラッグ＆ドロップハンドラ
