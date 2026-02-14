@@ -152,6 +152,26 @@ import { archiveChart, restoreChart, deleteChart } from "@/app/charts/actions";
 import { updateChartStatusAction } from "./actions";
 import type { HistoryItem } from "@/types/chart";
 import { useItemInput } from "@/hooks/use-item-input";
+import {
+  StructuredTension,
+  AreaGroup,
+  UncategorizedGroup,
+  StructuredData,
+  TEXT_CLASSES,
+  TEXT_FIXED_STYLE,
+  TEXTAREA_CLASSES,
+  VIEW_CLASSES,
+  iconButtonClass,
+  ICON_BTN_CLASS,
+  ICON_CONTAINER_CLASS,
+  navigateFocus,
+  handleKeyboardNavigation,
+  handleTextKeyboardNavigation,
+  customCollisionDetection,
+  splitItemsByDate,
+  getActionStatusIcon,
+  getActionStatusLabel,
+} from "./editor-utils";
 
 const DatePicker = dynamic(
   () => import("@/components/ui/date-picker").then((mod) => mod.DatePicker),
@@ -182,207 +202,6 @@ const FocusModeModal = dynamic(
 
 // モジュールレベル変数（コンポーネント再マウントでもリセットされない）
 let _pendingScrollRestore: number | null = null;
-
-type StructuredTension = Tension & {
-  actions: ActionPlan[];
-};
-
-type AreaGroup = {
-  area: Area;
-  tensions: StructuredTension[];
-  orphanedActions: ActionPlan[];
-};
-
-type UncategorizedGroup = {
-  tensions: StructuredTension[];
-  orphanedActions: ActionPlan[];
-};
-
-type StructuredData = {
-  categorized: AreaGroup[];
-  uncategorized: UncategorizedGroup;
-};
-
-const TEXT_CLASSES = cn(
-  "w-full",
-  "text-sm",
-  "text-zenshin-navy",
-  "font-normal",
-  "antialiased",
-  "bg-transparent",
-  "border-0",
-  "outline-none",
-  "appearance-none",
-  "focus:ring-0",
-  "focus:outline-none"
-);
-
-const TEXT_FIXED_STYLE: CSSProperties = {
-  lineHeight: "1.5rem",
-  padding: 0,
-  margin: 0,
-  boxSizing: "border-box",
-};
-
-const TEXTAREA_CLASSES = cn(TEXT_CLASSES, "resize-none");
-
-const VIEW_CLASSES = cn(
-  TEXT_CLASSES,
-  "cursor-text",
-  "truncate",
-  "whitespace-nowrap"
-);
-
-const iconButtonClass =
-  "p-1 rounded-md text-zenshin-navy/40 hover:text-zenshin-navy hover:bg-zenshin-navy/8 transition-colors";
-const ICON_BTN_CLASS =
-  "h-8 w-8 flex items-center justify-center rounded-full text-zenshin-navy/40 hover:text-zenshin-navy hover:bg-zenshin-navy/8 transition-colors p-0";
-const ICON_CONTAINER_CLASS = "flex items-center gap-1 shrink-0 h-8 ml-2";
-
-const navigateFocus = (
-  currentElement: HTMLInputElement | HTMLTextAreaElement,
-  direction: "prev" | "next"
-) => {
-  const scope = currentElement.closest("[data-nav-scope]");
-  if (!scope) return false;
-
-  const inputs = Array.from(
-    scope.querySelectorAll(".keyboard-focusable")
-  ) as Array<HTMLInputElement | HTMLTextAreaElement>;
-  const currentIndex = inputs.indexOf(currentElement);
-  if (currentIndex === -1) return false;
-
-  if (direction === "prev" && currentIndex > 0) {
-    const target = inputs[currentIndex - 1];
-    target.focus();
-    setTimeout(() => {
-      target.setSelectionRange(target.value.length, target.value.length);
-    }, 0);
-    return true;
-  }
-
-  if (direction === "next" && currentIndex < inputs.length - 1) {
-    const target = inputs[currentIndex + 1];
-    target.focus();
-    setTimeout(() => {
-      target.setSelectionRange(0, 0);
-    }, 0);
-    return true;
-  }
-
-  return false;
-};
-
-const handleKeyboardNavigation = (e: React.KeyboardEvent) => {
-  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
-  if (e.nativeEvent.isComposing) return;
-
-  const element = e.currentTarget as HTMLTextAreaElement | HTMLInputElement;
-  const scope = element.closest("[data-nav-scope]");
-
-  if (!scope) {
-    return;
-  }
-
-  const inputs = Array.from(scope.querySelectorAll(".keyboard-focusable"));
-  const currentIndex = inputs.indexOf(element);
-  const selectionStart = element.selectionStart ?? 0;
-  const valueLength = element.value?.length ?? 0;
-
-  if (e.key === "ArrowUp") {
-    if (selectionStart === 0 && currentIndex > 0) {
-      e.preventDefault();
-      (inputs[currentIndex - 1] as HTMLElement).focus();
-    } else {
-    }
-  }
-
-  if (e.key === "ArrowDown") {
-    if (selectionStart === valueLength && currentIndex < inputs.length - 1) {
-      e.preventDefault();
-      (inputs[currentIndex + 1] as HTMLElement).focus();
-    } else {
-    }
-  }
-};
-
-const handleTextKeyboardNavigation = (e: React.KeyboardEvent) => {
-  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
-  if (e.nativeEvent.isComposing) return;
-
-  const element = e.currentTarget as HTMLTextAreaElement | HTMLInputElement;
-  const scope = element.closest("[data-nav-scope]");
-  if (!scope) return;
-
-  const inputs = Array.from(
-    scope.querySelectorAll(".keyboard-focusable")
-  ) as Array<HTMLInputElement | HTMLTextAreaElement>;
-  const currentIndex = inputs.indexOf(element);
-  const selectionStart = element.selectionStart ?? 0;
-  const valueLength = element.value?.length ?? 0;
-
-  if (e.key === "ArrowDown") {
-    if (selectionStart < valueLength) {
-      e.preventDefault();
-      element.setSelectionRange(valueLength, valueLength);
-    } else if (currentIndex < inputs.length - 1) {
-      e.preventDefault();
-      const nextInput = inputs[currentIndex + 1];
-      nextInput.focus();
-      setTimeout(() => {
-        nextInput.setSelectionRange(0, 0);
-      }, 0);
-    }
-  }
-
-  if (e.key === "ArrowUp") {
-    if (selectionStart > 0) {
-      e.preventDefault();
-      element.setSelectionRange(0, 0);
-    } else if (currentIndex > 0) {
-      e.preventDefault();
-      const prevInput = inputs[currentIndex - 1];
-      prevInput.focus();
-      setTimeout(() => {
-        const len = prevInput.value?.length ?? 0;
-        prevInput.setSelectionRange(len, len);
-      }, 0);
-    }
-  }
-};
-
-const customCollisionDetection = (args: Parameters<typeof closestCenter>[0]) => {
-  const pointerCollisions = pointerWithin(args);
-  if (pointerCollisions.length > 0) return pointerCollisions;
-
-  const rectCollisions = rectIntersection(args);
-  if (rectCollisions.length > 0) return rectCollisions;
-
-  return closestCenter(args);
-};
-
-const splitItemsByDate = <T extends { id: string }>(
-  items: T[],
-  getDate: (item: T) => string | null | undefined
-) => {
-  const datedItems = items
-    .filter((item) => !!getDate(item))
-    .sort(
-      (a, b) =>
-        new Date(getDate(b)!).getTime() - new Date(getDate(a)!).getTime()
-    );
-  const undatedItems = items
-    .filter((item) => !getDate(item))
-    .sort(
-      (a, b) =>
-        ((a as any).sort_order ?? 0) - ((b as any).sort_order ?? 0)
-    );
-  const indexById = new Map(
-    [...datedItems, ...undatedItems].map((item, index) => [item.id, index])
-  );
-  return { datedItems, undatedItems, indexById };
-};
- 
 
 interface ProjectEditorProps {
   initialChart: Chart;
@@ -908,43 +727,6 @@ function SortableRealityItem({
     </div>
   );
 }
-
-// SortableItemコンポーネント（Action用）
-const getActionStatusIcon = (
-  status: ActionPlan["status"],
-  isCompleted?: boolean
-) => {
-  if (isCompleted || status === "done") {
-    return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-  }
-  switch (status) {
-    case "in_progress":
-      return <Clock className="w-4 h-4 text-blue-500" />;
-    case "pending":
-      return <Pause className="w-4 h-4 text-yellow-500" />;
-    case "canceled":
-      return <XCircle className="w-4 h-4 text-zenshin-navy/40" />;
-    default:
-      return <Circle className="w-4 h-4 text-zenshin-navy/40" />;
-  }
-};
-
-const getActionStatusLabel = (
-  status: ActionPlan["status"],
-  isCompleted?: boolean
-) => {
-  if (isCompleted || status === "done") return "完了";
-  switch (status) {
-    case "in_progress":
-      return "進行中";
-    case "pending":
-      return "保留";
-    case "canceled":
-      return "中止";
-    default:
-      return "未着手";
-  }
-};
 
 function SortableActionItem({
   actionPlan,
