@@ -1,70 +1,46 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import type { CSSProperties } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   DndContext,
-  pointerWithin,
-  rectIntersection,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  useDroppable,
-  useDndContext,
   DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import {
   Home,
   Target,
   AlertCircle,
-  AlertTriangle,
-  Telescope,
   Plus,
   ChevronRight,
   ChevronDown,
   Trash2,
-  X,
-  Check,
   Zap,
   Maximize2,
   Minimize2,
   Calendar as CalendarIcon,
-  UserPlus,
-  User,
-  GripVertical,
   Camera,
   Settings,
   MoreVertical,
-  FileText,
-  Tag,
-  Circle,
-  Clock,
   CheckCircle2,
-  Pause,
-  XCircle,
   Archive,
   ArrowUpDown,
-  ArrowRightLeft,
   Eye,
   EyeOff,
   RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -73,7 +49,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Popover,
@@ -84,7 +59,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -99,43 +73,17 @@ import type {
   Area,
 } from "@/types/chart";
 import {
-  addVision,
-  updateVisionItem,
-  removeVision,
-  addReality,
-  updateRealityItem,
-  removeReality,
-  addTension,
-  updateTensionItem,
-  removeTension,
-  toggleVisionRealityLinkAction,
-  addActionPlan,
-  updateActionPlanItem,
-  removeActionPlan,
-  telescopeActionPlan,
   getActionProgress,
-  fetchChart,
-  updateListOrder,
-  updateVisionArea,
-  updateRealityArea,
-  updateTensionArea,
-  updateActionArea,
-  moveActionToTension,
   createSnapshot,
   updateChartData,
   addArea,
   updateAreaItem,
   removeArea,
-  checkIncompleteTelescopeActions,
 } from "./actions";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { AreaDropZone } from "./components/AreaDropZone";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { ja } from "date-fns/locale";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -145,49 +93,28 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { fetchItemHistory, addItemHistoryEntry } from "./actions";
 import { archiveChart, restoreChart, deleteChart } from "@/app/charts/actions";
 import { updateChartStatusAction } from "./actions";
-import type { HistoryItem } from "@/types/chart";
 import { useItemInput } from "@/hooks/use-item-input";
 import {
-  StructuredTension,
-  AreaGroup,
-  UncategorizedGroup,
   StructuredData,
-  TEXT_CLASSES,
-  TEXT_FIXED_STYLE,
-  TEXTAREA_CLASSES,
-  VIEW_CLASSES,
-  iconButtonClass,
-  ICON_BTN_CLASS,
-  ICON_CONTAINER_CLASS,
-  navigateFocus,
-  handleKeyboardNavigation,
-  handleTextKeyboardNavigation,
   customCollisionDetection,
   splitItemsByDate,
-  getActionStatusIcon,
-  getActionStatusLabel,
 } from "./editor-utils";
 import { SortableVisionItem } from "./components/SortableVisionItem";
 import { SortableRealityItem } from "./components/SortableRealityItem";
-import { SortableActionItem } from "./components/SortableActionItem";
 import { TensionGroup } from "./components/TensionGroup";
 import { ActionSection } from "./components/ActionSection";
+import { useVisionHandlers } from "./hooks/useVisionHandlers";
+import { useRealityHandlers } from "./hooks/useRealityHandlers";
+import { useTensionHandlers } from "./hooks/useTensionHandlers";
+import { useActionHandlers, _pendingScrollRestore } from "./hooks/useActionHandlers";
+import { useDetailPanel } from "./hooks/useDetailPanel";
+import { useDndHandlers } from "./hooks/useDndHandlers";
 
-const DatePicker = dynamic(
-  () => import("@/components/ui/date-picker").then((mod) => mod.DatePicker),
-  { loading: () => null, ssr: false }
-);
 const CalendarComponent = dynamic(
   () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
-  { loading: () => null, ssr: false }
-);
-const AreaTagEditor = dynamic(
-  () => import("@/components/area-tag-editor").then((mod) => mod.AreaTagEditor),
   { loading: () => null, ssr: false }
 );
 const TagManager = dynamic(
@@ -204,9 +131,6 @@ const FocusModeModal = dynamic(
     import("@/components/focus-mode-modal").then((mod) => mod.FocusModeModal),
   { loading: () => null, ssr: false }
 );
-
-// モジュールレベル変数（コンポーネント再マウントでもリセットされない）
-let _pendingScrollRestore: number | null = null;
 
 interface ProjectEditorProps {
   initialChart: Chart;
@@ -297,13 +221,6 @@ export function ProjectEditor({
     };
   }>({});
   
-  // サイドパネルの状態
-  const [detailPanel, setDetailPanel] = useState<{
-    isOpen: boolean;
-    itemType: "vision" | "reality" | "action";
-    itemId: string;
-    itemContent: string;
-  } | null>(null);
   const [focusMode, setFocusMode] = useState<{
     isOpen: boolean;
     sectionType: "vision" | "reality" | "tension";
@@ -311,8 +228,6 @@ export function ProjectEditor({
     title: string;
     content: string;
   } | null>(null);
-  const [itemHistory, setItemHistory] = useState<HistoryItem[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [looseActions, setLooseActions] = useState<ActionPlan[]>([]);
   const [telescopingActionId, setTelescopingActionId] = useState<string | null>(null);
   const [actionProgress, setActionProgress] = useState<
@@ -336,6 +251,70 @@ export function ProjectEditor({
   const [hideCompleted, setHideCompleted] = useState(false);
   const [showCompletedTensions, setShowCompletedTensions] = useState(false);
   const [expandedCompletedTensions, setExpandedCompletedTensions] = useState<Set<string>>(new Set());
+
+  const { handleAddVision, handleUpdateVision, handleDeleteVision } = useVisionHandlers({
+    chartId,
+    visions,
+    setVisions,
+    selectedAreaId,
+    isSubmittingVision,
+    setIsSubmittingVision,
+    pendingDeletions,
+    setPendingDeletions,
+    newVisionInput,
+    chart,
+    router,
+  });
+
+  const { handleAddReality, handleUpdateReality, handleDeleteReality } = useRealityHandlers({
+    chartId,
+    realities,
+    setRealities,
+    selectedAreaId,
+    isSubmittingReality,
+    setIsSubmittingReality,
+    pendingDeletions,
+    setPendingDeletions,
+    newRealityInput,
+    chart,
+    router,
+  });
+
+  const { handleAddTension, handleUpdateTension, handleDeleteTension, toggleVisionRealityLink, handleOptimisticMove } = useTensionHandlers({
+    chartId,
+    tensions,
+    setTensions,
+    visions,
+    realities,
+    looseActions,
+    setLooseActions,
+    pendingDeletions,
+    setPendingDeletions,
+    router,
+  });
+
+  const { handleAddActionPlan, handleUpdateActionPlan, handleDeleteActionPlan, handleTelescopeClick } = useActionHandlers({
+    chartId,
+    tensions,
+    setTensions,
+    looseActions,
+    setLooseActions,
+    isSubmittingAction,
+    setIsSubmittingAction,
+    pendingDeletions,
+    setPendingDeletions,
+    setTelescopingActionId,
+    router,
+  });
+
+  const { detailPanel, itemHistory, isLoadingHistory, handleOpenDetailPanel, handleCloseDetailPanel, handleAddHistory, handleCommentCountChange } = useDetailPanel({
+    chartId,
+    setVisions,
+    setRealities,
+    setTensions,
+    setLooseActions,
+    router,
+  });
 
   const toggleCompletedTensionExpand = (tensionId: string) => {
     setExpandedCompletedTensions((prev) => {
@@ -662,6 +641,23 @@ export function ProjectEditor({
 
   const getVisionDate = (vision: VisionItem) => vision.dueDate || null;
 
+  const { handleDragEnd, handleTensionDragEnd, handleActionSectionDragEnd } = useDndHandlers({
+    chartId,
+    chart,
+    visions,
+    setVisions,
+    realities,
+    setRealities,
+    tensions,
+    setTensions,
+    looseActions,
+    setLooseActions,
+    actionMetaById,
+    resolveTensionAreaId,
+    getVisionDate,
+    router,
+  });
+
   const groupedVisions = useMemo(() => {
     const areas = chart.areas ?? [];
     const result: Record<string, { dated: VisionItem[]; undated: VisionItem[] }> = {};
@@ -798,15 +794,6 @@ export function ProjectEditor({
 
     console.groupEnd();
   }, [structuredData]);
-
-  const handleTensionDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) {
-      return;
-    }
-
-    await handleActionSectionDragEnd(event);
-  };
 
   const renderVisionItem = (vision: VisionItem, index: number) => (
     <SortableVisionItem
@@ -1078,282 +1065,6 @@ export function ProjectEditor({
     );
   };
 
-  // Vision追加: 楽観的UI（ローカルState即時更新）
-  // areaIdOverride: ComparisonView などからエリアを指定して追加する場合に渡す（"uncategorized" は null にマップ）
-  const handleAddVision = async (content: string, areaIdOverride?: string | null) => {
-    if (!content.trim() || isSubmittingVision) return;
-
-    setIsSubmittingVision(true);
-    const contentToAdd = content.trim();
-    const areaId =
-      areaIdOverride !== undefined
-        ? (areaIdOverride === "uncategorized" ? null : areaIdOverride)
-        : selectedAreaId === "all"
-          ? null
-          : selectedAreaId;
-
-    // 楽観的にローカルStateを即時更新
-    const tempId = `temp-${Date.now()}`;
-    const optimisticVision: VisionItem = {
-      id: tempId,
-      content: contentToAdd,
-      createdAt: new Date().toISOString(),
-      area_id: areaId,
-    };
-    setVisions((prev) => [...prev, optimisticVision]);
-    if (areaIdOverride === undefined) newVisionInput.setValue("");
-
-    try {
-      const newVision = await addVision(chartId, contentToAdd, areaId);
-      if (newVision) {
-        // 成功: tempIdを実際のIDに置換
-        setVisions((prev) =>
-          prev.map((v) => (v.id === tempId ? newVision : v))
-        );
-      } else {
-        // 失敗: 楽観的に追加したものを削除
-        setVisions((prev) => prev.filter((v) => v.id !== tempId));
-        newVisionInput.setValue(contentToAdd);
-        console.error("[handleAddVision] 保存失敗 - ロールバック");
-      }
-    } catch (error) {
-      console.error("[handleAddVision] エラー:", error);
-      setVisions((prev) => prev.filter((v) => v.id !== tempId));
-      newVisionInput.setValue(contentToAdd);
-    } finally {
-      setIsSubmittingVision(false);
-    }
-  };
-
-  const handleUpdateVision = async (
-    id: string,
-    field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId",
-    value: string | boolean | null
-  ) => {
-    // 楽観的にローカル状態を即座に更新
-    if (field === "assignee" || field === "dueDate" || field === "targetDate") {
-      setVisions((prev) =>
-        prev.map((vision) =>
-          vision.id === id ? { ...vision, [field]: value } : vision
-        )
-      );
-    }
-    const success = await updateVisionItem(id, chartId, field, value);
-    if (success) {
-      if (field === "areaId") {
-        const areaName = value
-          ? chart.areas.find((area: Area) => area.id === value)?.name
-          : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
-      }
-      // isLocked、areaIdが変更された場合のみrefresh（コンテンツ構造に影響するため）
-      if (field === "isLocked" || field === "areaId") {
-        router.refresh();
-      }
-    } else {
-      console.error("[handleUpdateVision] 更新失敗");
-      // 失敗時はロールバック
-      if (field === "assignee" || field === "dueDate" || field === "targetDate") {
-        router.refresh();
-      }
-    }
-  };
-
-  const handleDeleteVision = async (id: string) => {
-    const vision = visions.find((v) => v.id === id);
-    if (!vision) return;
-
-    // 既存の削除予約があればキャンセル
-    const existingKey = `vision-${id}`;
-    if (pendingDeletions[existingKey]) {
-      clearTimeout(pendingDeletions[existingKey].timeoutId);
-    }
-
-    // 楽観的UI更新（一時的に非表示）
-    const originalVisions = [...visions];
-    setVisions(visions.filter((v) => v.id !== id));
-
-    // 15秒後に実際に削除
-    const timeoutId = setTimeout(async () => {
-      const success = await removeVision(id, chartId);
-      if (success) {
-        router.refresh();
-      } else {
-        // 削除失敗時は元に戻す
-        setVisions(originalVisions);
-        toast.error("削除に失敗しました", { duration: 5000 });
-      }
-      setPendingDeletions((prev) => {
-        const next = { ...prev };
-        delete next[existingKey];
-        return next;
-      });
-    }, 15000);
-
-    // 削除予約を保存
-    setPendingDeletions((prev) => ({
-      ...prev,
-      [existingKey]: {
-        type: "vision",
-        item: vision,
-        timeoutId,
-      },
-    }));
-
-    toast.success("Visionを削除しました", {
-      duration: 15000,
-      action: {
-        label: "元に戻す",
-        onClick: () => {
-          clearTimeout(timeoutId);
-          setVisions(originalVisions);
-          setPendingDeletions((prev) => {
-            const next = { ...prev };
-            delete next[existingKey];
-            return next;
-          });
-        },
-      },
-    });
-  };
-
-  // Reality追加: 楽観的UI（ローカルState即時更新）
-  // areaIdOverride: ComparisonView などからエリアを指定して追加する場合に渡す（"uncategorized" は null にマップ）
-  const handleAddReality = async (content: string, areaIdOverride?: string | null) => {
-    if (!content.trim() || isSubmittingReality) return;
-
-    setIsSubmittingReality(true);
-    const contentToAdd = content.trim();
-    const areaId =
-      areaIdOverride !== undefined
-        ? (areaIdOverride === "uncategorized" ? null : areaIdOverride)
-        : selectedAreaId === "all"
-          ? null
-          : selectedAreaId;
-
-    // 楽観的にローカルStateを即時更新
-    const tempId = `temp-${Date.now()}`;
-    const optimisticReality: RealityItem = {
-      id: tempId,
-      content: contentToAdd,
-      createdAt: new Date().toISOString(),
-      area_id: areaId,
-    };
-    setRealities((prev) => [...prev, optimisticReality]);
-    if (areaIdOverride === undefined) newRealityInput.setValue("");
-
-    try {
-      const newReality = await addReality(chartId, contentToAdd, areaId);
-      if (newReality) {
-        // 成功: tempIdを実際のIDに置換
-        setRealities((prev) =>
-          prev.map((r) => (r.id === tempId ? newReality : r))
-        );
-      } else {
-        // 失敗: 楽観的に追加したものを削除
-        setRealities((prev) => prev.filter((r) => r.id !== tempId));
-        newRealityInput.setValue(contentToAdd);
-        console.error("[handleAddReality] 保存失敗 - ロールバック");
-      }
-    } catch (error) {
-      console.error("[handleAddReality] エラー:", error);
-      setRealities((prev) => prev.filter((r) => r.id !== tempId));
-      newRealityInput.setValue(contentToAdd);
-    } finally {
-      setIsSubmittingReality(false);
-    }
-  };
-
-  const handleUpdateReality = async (
-    id: string,
-    field: "content" | "isLocked" | "areaId" | "dueDate",
-    value: string | boolean | null
-  ) => {
-    // 楽観的にローカルStateを即時更新
-    const originalRealities = [...realities];
-    setRealities((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
-        if (field === "content") return { ...r, content: value as string };
-        if (field === "isLocked") return { ...r, isLocked: value as boolean };
-        if (field === "areaId") return { ...r, area_id: value as string | null };
-        if (field === "dueDate") return { ...r, dueDate: (value as string) || undefined };
-        return r;
-      })
-    );
-    if (field === "areaId") {
-      const areaName = value
-        ? chart.areas.find((area: Area) => area.id === value)?.name
-        : "未分類";
-      toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
-    }
-
-    const success = await updateRealityItem(id, chartId, field, value);
-    if (!success) {
-      // 失敗: ロールバック
-      setRealities(originalRealities);
-      console.error("[handleUpdateReality] 更新失敗 - ロールバック");
-    }
-  };
-
-  const handleDeleteReality = async (id: string) => {
-    const reality = realities.find((r) => r.id === id);
-    if (!reality) return;
-
-    // 既存の削除予約があればキャンセル
-    const existingKey = `reality-${id}`;
-    if (pendingDeletions[existingKey]) {
-      clearTimeout(pendingDeletions[existingKey].timeoutId);
-    }
-
-    // 楽観的UI更新（一時的に非表示）
-    const originalRealities = [...realities];
-    setRealities(realities.filter((r) => r.id !== id));
-
-    // 15秒後に実際に削除
-    const timeoutId = setTimeout(async () => {
-      const success = await removeReality(id, chartId);
-      if (success) {
-        router.refresh();
-      } else {
-        // 削除失敗時は元に戻す
-        setRealities(originalRealities);
-        toast.error("削除に失敗しました", { duration: 5000 });
-      }
-      setPendingDeletions((prev) => {
-        const next = { ...prev };
-        delete next[existingKey];
-        return next;
-      });
-    }, 15000);
-
-    // 削除予約を保存
-    setPendingDeletions((prev) => ({
-      ...prev,
-      [existingKey]: {
-        type: "reality",
-        item: reality,
-        timeoutId,
-      },
-    }));
-
-    toast.success("Realityを削除しました", {
-      duration: 15000,
-      action: {
-        label: "元に戻す",
-        onClick: () => {
-          clearTimeout(timeoutId);
-          setRealities(originalRealities);
-          setPendingDeletions((prev) => {
-            const next = { ...prev };
-            delete next[existingKey];
-            return next;
-          });
-        },
-      },
-    });
-  };
-
   // エリア作成ハンドラ
   const handleCreateArea = async (name: string, color: string): Promise<Area | null> => {
     const newArea = await addArea(chartId, name, color);
@@ -1379,985 +1090,6 @@ export function ProjectEditor({
     const success = await removeArea(areaId, chartId);
     if (success) {
       router.refresh();
-    }
-  };
-
-  const handleAddTension = async (title: string, areaId?: string | null) => {
-    if (!title.trim()) return;
-    const titleToAdd = title.trim();
-
-    // 楽観的にローカルStateを即時更新
-    const tempId = `temp-${Date.now()}`;
-    const optimisticTension: Tension = {
-      id: tempId,
-      title: titleToAdd,
-      status: "active" as TensionStatus,
-      area_id: areaId ?? null,
-      visionIds: [],
-      realityIds: [],
-      actionPlans: [],
-    };
-    setTensions((prev) => [...prev, optimisticTension]);
-
-    try {
-      const newTension = await addTension(chartId, titleToAdd, areaId);
-      if (newTension) {
-        // 成功: tempIdを実際のデータに置換
-        setTensions((prev) =>
-          prev.map((t) => (t.id === tempId ? newTension : t))
-        );
-      } else {
-        // 失敗: ロールバック
-        setTensions((prev) => prev.filter((t) => t.id !== tempId));
-        console.error("[handleAddTension] 保存失敗 - ロールバック");
-      }
-    } catch (error) {
-      console.error("[handleAddTension] エラー:", error);
-      setTensions((prev) => prev.filter((t) => t.id !== tempId));
-    }
-  };
-
-  const handleUpdateTension = async (
-    tensionId: string,
-    field: "title" | "description" | "status",
-    value: string | TensionStatus
-  ) => {
-    // Server updateのみ（Optimistic UIなし）
-    const success = await updateTensionItem(tensionId, chartId, field, value);
-    if (success) {
-      // statusの場合はローカルstateを即座に更新してUIをリアルタイム反映
-      if (field === "status") {
-        setTensions((prev) =>
-          prev.map((t) =>
-            t.id === tensionId ? { ...t, status: value as TensionStatus } : t
-          )
-        );
-        if (value === "resolved") {
-          toast.success("Tensionを完了にしました", { duration: 3000 });
-        } else if (value === "active") {
-          toast.success("Tensionを再開しました", { duration: 3000 });
-        }
-        router.refresh();
-      }
-    } else {
-      console.error("[handleUpdateTension] 更新失敗");
-    }
-  };
-
-  const handleDeleteTension = async (tensionId: string) => {
-    const tension = tensions.find((t) => t.id === tensionId);
-    if (!tension) return;
-
-    // 既存の削除予約があればキャンセル
-    const existingKey = `tension-${tensionId}`;
-    if (pendingDeletions[existingKey]) {
-      clearTimeout(pendingDeletions[existingKey].timeoutId);
-    }
-
-    // 楽観的UI更新（一時的に非表示）
-    const originalTensions = [...tensions];
-    setTensions(tensions.filter((t) => t.id !== tensionId));
-
-    // 15秒後に実際に削除
-    const timeoutId = setTimeout(async () => {
-      const success = await removeTension(tensionId, chartId);
-      if (success) {
-        router.refresh();
-      } else {
-        // 削除失敗時は元に戻す
-        setTensions(originalTensions);
-        toast.error("削除に失敗しました", { duration: 5000 });
-      }
-      setPendingDeletions((prev) => {
-        const next = { ...prev };
-        delete next[existingKey];
-        return next;
-      });
-    }, 15000);
-
-    // 削除予約を保存
-    setPendingDeletions((prev) => ({
-      ...prev,
-      [existingKey]: {
-        type: "tension",
-        item: tension,
-        timeoutId,
-      },
-    }));
-
-    toast.success("Tensionを削除しました", {
-      duration: 15000,
-      action: {
-        label: "元に戻す",
-        onClick: () => {
-          clearTimeout(timeoutId);
-          setTensions(originalTensions);
-          setPendingDeletions((prev) => {
-            const next = { ...prev };
-            delete next[existingKey];
-            return next;
-          });
-        },
-      },
-    });
-  };
-
-  const toggleVisionRealityLink = async (
-    tensionId: string,
-    type: "vision" | "reality",
-    itemId: string
-  ) => {
-    const tension = tensions.find((t) => t.id === tensionId);
-    if (!tension) return;
-
-    const isCurrentlyLinked =
-      type === "vision"
-        ? tension.visionIds.includes(itemId)
-        : tension.realityIds.includes(itemId);
-
-    // Server updateのみ（Optimistic UIなし）
-    const success = await toggleVisionRealityLinkAction(
-      tensionId,
-      type,
-      itemId,
-      chartId,
-      isCurrentlyLinked
-    );
-    if (success) {
-      // 成功時はページを再取得
-      router.refresh();
-    } else {
-      console.error("[toggleVisionRealityLink] 更新失敗");
-    }
-  };
-
-  const handleOptimisticMove = (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => {
-    setTensions((prev) =>
-      prev.map((tension) => {
-        if (tension.id === sourceTensionId) {
-          return { ...tension, actionPlans: tension.actionPlans.filter((a) => a.id !== action.id) };
-        }
-        if (tension.id === targetTensionId) {
-          return { ...tension, actionPlans: [...tension.actionPlans, action] };
-        }
-        return tension;
-      })
-    );
-  };
-
-  const handleAddActionPlan = async (
-    tensionId: string | null,
-    title: string,
-    areaId?: string | null
-  ) => {
-    const submitKey = tensionId ?? "loose";
-    if (!title.trim() || isSubmittingAction[submitKey]) return;
-
-    // スクロール位置をユーザー操作時点で保存
-    const scrollViewport = document.querySelector('[data-nav-scope="tension-action"]')
-      ?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-    if (scrollViewport) {
-      _pendingScrollRestore = scrollViewport.scrollTop;
-      setTimeout(() => { _pendingScrollRestore = null; }, 10000);
-    }
-
-    setIsSubmittingAction({ ...isSubmittingAction, [submitKey]: true });
-    const titleToAdd = title.trim();
-
-    try {
-      const newAction = await addActionPlan(tensionId, titleToAdd, areaId, chartId);
-
-      if (newAction) {
-        // ローカルState直接更新（router.refresh() を避けてスクロール維持 + 即時反映）
-        if (tensionId) {
-          setTensions((prev) =>
-            prev.map((tension) =>
-              tension.id === tensionId
-                ? { ...tension, actionPlans: [...tension.actionPlans, newAction] }
-                : tension
-            )
-          );
-        } else {
-          setLooseActions((prev) => [...prev, newAction]);
-        }
-      } else {
-        console.error("[handleAddActionPlan] 保存失敗");
-      }
-    } catch (error) {
-      console.error("[handleAddActionPlan] エラー:", error);
-    } finally {
-      setIsSubmittingAction({ ...isSubmittingAction, [submitKey]: false });
-    }
-  };
-
-  const handleUpdateActionPlan = async (
-    tensionId: string | null,
-    actionId: string,
-    field:
-      | "title"
-      | "dueDate"
-      | "assignee"
-      | "status"
-      | "hasSubChart"
-      | "subChartId"
-      | "childChartId"
-      | "isCompleted"
-      | "description"
-      | "areaId",
-    value: string | boolean | null,
-    options?: { removeFromTension?: boolean }
-  ) => {
-    const updateActionInState = (
-      updater: (action: ActionPlan) => ActionPlan
-    ) => {
-      setTensions((prev) =>
-        prev.map((tension) => ({
-          ...tension,
-          actionPlans: tension.actionPlans.map((action) =>
-            action.id === actionId ? updater(action) : action
-          ),
-        }))
-      );
-      setLooseActions((prev) =>
-        prev.map((action) => (action.id === actionId ? updater(action) : action))
-      );
-    };
-
-    if (field === "assignee") {
-      updateActionInState((action) => ({
-        ...action,
-        assignee: value as string,
-      }));
-      const success = await updateActionPlanItem(
-        actionId,
-        tensionId,
-        field,
-        value,
-        chartId
-      );
-      if (!success) {
-        console.error("[handleUpdateActionPlan] 更新失敗");
-      }
-      return;
-    }
-
-    if (field === "areaId") {
-      const removeFromTension = options?.removeFromTension ?? false;
-      if (tensionId && removeFromTension) {
-        let movedAction: ActionPlan | null = null;
-        setTensions((prev) =>
-          prev.map((tension) => {
-            if (tension.id !== tensionId) return tension;
-            const remainingActions = tension.actionPlans.filter((action) => {
-              if (action.id === actionId) {
-                movedAction = { ...action, area_id: value as string | null, tension_id: null };
-                return false;
-              }
-              return true;
-            });
-            return { ...tension, actionPlans: remainingActions };
-          })
-        );
-        if (movedAction) {
-          setLooseActions((prev) => (movedAction ? [movedAction, ...prev] : prev));
-        }
-      } else if (tensionId) {
-        setTensions((prev) =>
-          prev.map((tension) =>
-            tension.id === tensionId
-              ? {
-                  ...tension,
-                  actionPlans: tension.actionPlans.map((action) =>
-                    action.id === actionId ? { ...action, area_id: value as string | null } : action
-                  ),
-                }
-              : tension
-          )
-        );
-      } else {
-        setLooseActions((prev) =>
-          prev.map((action) =>
-            action.id === actionId ? { ...action, area_id: value as string | null } : action
-          )
-        );
-      }
-      const result = await updateActionArea(
-        actionId,
-        value as string | null,
-        chartId,
-        removeFromTension
-      );
-      if (!result.success) {
-        toast.error("移動に失敗しました", { duration: 5000 });
-      }
-      return;
-    }
-
-    if (field === "status") {
-      const nextStatus = value as ActionPlan["status"];
-      updateActionInState((action) => ({
-        ...action,
-        status: nextStatus,
-        isCompleted: nextStatus === "done",
-      }));
-    } else if (field === "isCompleted") {
-      const nextIsCompleted = Boolean(value);
-      updateActionInState((action) => ({
-        ...action,
-        isCompleted: nextIsCompleted,
-        status: nextIsCompleted ? "done" : action.status,
-      }));
-    }
-
-    // dueDateは楽観的にローカル状態を更新
-    if (field === "dueDate") {
-      updateActionInState((action) => ({
-        ...action,
-        dueDate: value as string | undefined,
-      }));
-    }
-
-    // titleも楽観的にローカル状態を更新（D&D時のstate再構築で古い値に戻るのを防ぐ）
-    if (field === "title") {
-      updateActionInState((action) => ({
-        ...action,
-        title: value as string,
-      }));
-    }
-
-    const success = await updateActionPlanItem(actionId, tensionId, field, value, chartId);
-    if (!success) {
-      console.error("[handleUpdateActionPlan] 更新失敗");
-      // 失敗時はロールバック
-      if (field === "dueDate" || field === "status" || field === "isCompleted") {
-        router.refresh();
-      }
-    }
-  };
-
-  const handleDeleteActionPlan = async (tensionId: string | null, actionId: string) => {
-    // スクロール位置をユーザー操作時点で保存
-    const scrollViewport = document.querySelector('[data-nav-scope="tension-action"]')
-      ?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-    if (scrollViewport) {
-      _pendingScrollRestore = scrollViewport.scrollTop;
-      setTimeout(() => { _pendingScrollRestore = null; }, 10000);
-    }
-    const action = tensionId
-      ? tensions.find((t) => t.id === tensionId)?.actionPlans.find((a) => a.id === actionId)
-      : looseActions.find((a) => a.id === actionId);
-    if (!action) return;
-
-    // 既存の削除予約があればキャンセル
-    const existingKey = `action-${actionId}`;
-    if (pendingDeletions[existingKey]) {
-      clearTimeout(pendingDeletions[existingKey].timeoutId);
-    }
-
-    // 楽観的UI更新（一時的に非表示）
-    const originalTensions = [...tensions];
-    const originalLooseActions = [...looseActions];
-    if (tensionId) {
-      const updatedTensions = tensions.map((t) =>
-        t.id === tensionId
-          ? { ...t, actionPlans: t.actionPlans.filter((a) => a.id !== actionId) }
-          : t
-      );
-      setTensions(updatedTensions);
-    } else {
-      setLooseActions(looseActions.filter((a) => a.id !== actionId));
-    }
-
-    // 15秒後に実際に削除
-    const timeoutId = setTimeout(async () => {
-      const success = await removeActionPlan(actionId, tensionId, chartId);
-      if (success) {
-        router.refresh();
-      } else {
-        // 削除失敗時は元に戻す
-        setTensions(originalTensions);
-        setLooseActions(originalLooseActions);
-        toast.error("削除に失敗しました", { duration: 5000 });
-      }
-      setPendingDeletions((prev) => {
-        const next = { ...prev };
-        delete next[existingKey];
-        return next;
-      });
-    }, 15000);
-
-    // 削除予約を保存
-    setPendingDeletions((prev) => ({
-      ...prev,
-      [existingKey]: {
-        type: "action",
-        item: action,
-        tensionId,
-        timeoutId,
-      },
-    }));
-
-    toast.success("Actionを削除しました", {
-      duration: 15000,
-      action: {
-        label: "元に戻す",
-        onClick: () => {
-          clearTimeout(timeoutId);
-          setTensions(originalTensions);
-          setLooseActions(originalLooseActions);
-          setPendingDeletions((prev) => {
-            const next = { ...prev };
-            delete next[existingKey];
-            return next;
-          });
-        },
-      },
-    });
-  };
-
-  // サイドパネルを開く
-  const handleOpenDetailPanel = async (
-    itemType: "vision" | "reality" | "action",
-    itemId: string,
-    itemContent: string
-  ) => {
-    setDetailPanel({
-      isOpen: true,
-      itemType,
-      itemId,
-      itemContent,
-    });
-    if (itemType !== "action") {
-      setIsLoadingHistory(true);
-      try {
-        const history = await fetchItemHistory(itemType, itemId);
-        setItemHistory(history);
-      } catch (error) {
-        console.error("履歴の取得に失敗しました:", error);
-        setItemHistory([]);
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    } else {
-      setItemHistory([]);
-      setIsLoadingHistory(false);
-    }
-  };
-
-  // サイドパネルを閉じる
-  const handleCloseDetailPanel = () => {
-    setDetailPanel(null);
-    setItemHistory([]);
-  };
-
-  // 履歴を追加
-  const handleAddHistory = async (
-    itemType: "vision" | "reality" | "action",
-    itemId: string,
-    content: string,
-    type: "update" | "comment",
-    updateMainContent: boolean
-  ) => {
-    await addItemHistoryEntry(itemType, itemId, content, type, updateMainContent, chartId);
-    // 履歴を再取得
-    const history = await fetchItemHistory(itemType, itemId);
-    setItemHistory(history);
-    // メインコンテンツを更新した場合はページをリフレッシュ
-    if (updateMainContent) {
-      router.refresh();
-    }
-  };
-
-  const handleCommentCountChange = (
-    itemType: "vision" | "reality" | "action",
-    itemId: string,
-    delta: number
-  ) => {
-    if (itemType === "vision") {
-      setVisions((prev) =>
-        prev.map((vision) =>
-          vision.id === itemId
-            ? {
-                ...vision,
-                comment_count: Math.max(0, (vision.comment_count ?? 0) + delta),
-              }
-            : vision
-        )
-      );
-      return;
-    }
-    if (itemType === "reality") {
-      setRealities((prev) =>
-        prev.map((reality) =>
-          reality.id === itemId
-            ? {
-                ...reality,
-                comment_count: Math.max(0, (reality.comment_count ?? 0) + delta),
-              }
-            : reality
-        )
-      );
-      return;
-    }
-    setTensions((prev) =>
-      prev.map((tension) => ({
-        ...tension,
-        actionPlans: tension.actionPlans.map((actionPlan) =>
-          actionPlan.id === itemId
-            ? {
-                ...actionPlan,
-                comment_count: Math.max(
-                  0,
-                  (actionPlan.comment_count ?? 0) + delta
-                ),
-              }
-            : actionPlan
-        ),
-      }))
-    );
-    setLooseActions((prev) =>
-      prev.map((actionPlan) =>
-        actionPlan.id === itemId
-          ? {
-              ...actionPlan,
-              comment_count: Math.max(
-                0,
-                (actionPlan.comment_count ?? 0) + delta
-              ),
-            }
-          : actionPlan
-      )
-    );
-  };
-
-  // ドラッグ＆ドロップハンドラ
-  const handleDragEnd = async (event: DragEndEvent, type: "visions" | "realities" | "actions", tensionId?: string) => {
-    const { active, over } = event;
-    if (active.id === over?.id) return;
-
-    if (type === "visions") {
-      // ========== デバッグログ開始 ==========
-      const activeVision = visions.find((v) => v.id === active.id);
-      // ========== デバッグログ終了 ==========
-      if (!over) {
-        return;
-      }
-
-      const draggedItem = activeVision;
-      if (!draggedItem) return;
-
-      if (getVisionDate(draggedItem)) return;
-
-      const overData = over.data?.current as { areaId?: string | null; type?: string } | undefined;
-      const targetAreaId = overData?.areaId;
-      const targetType = overData?.type;
-
-      if (targetType === "vision-area" && targetAreaId !== draggedItem.area_id) {
-          const previousState = visions;
-          const targetAreaItems = visions.filter(
-          (v) => !getVisionDate(v) && v.area_id === targetAreaId
-          );
-          const newSortOrder =
-            Math.max(...targetAreaItems.map((v) => v.sort_order ?? 0), 0) + 1;
-
-          setVisions((prev) =>
-            prev.map((v) =>
-              v.id === draggedItem.id
-              ? { ...v, area_id: targetAreaId ?? null, sort_order: newSortOrder }
-                : v
-            )
-          );
-
-        try {
-          const result = await updateVisionArea(draggedItem.id, targetAreaId ?? null, chartId);
-          if (result.success) {
-            const areaName =
-              targetAreaId !== null
-                ? chart.areas.find((a) => a.id === targetAreaId)?.name
-                : "未分類";
-            toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
-          } else {
-            throw new Error("Update failed");
-          }
-        } catch (error) {
-          console.error("❌ Server update failed:", error);
-          setVisions(previousState);
-          toast.error("移動に失敗しました", { duration: 5000 });
-        }
-        return;
-      }
-
-      const undatedVisions = visions.filter((v) => !getVisionDate(v));
-
-      const oldIndex = undatedVisions.findIndex((v) => v.id === active.id);
-      const newIndex = undatedVisions.findIndex((v) => v.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const previousState = visions;
-      const reordered = arrayMove(undatedVisions, oldIndex, newIndex).map(
-        (vision, index) => ({
-          ...vision,
-          sort_order: index,
-        })
-      );
-
-      const datedVisions = visions
-        .filter((v) => !!getVisionDate(v))
-        .sort(
-          (a, b) =>
-            new Date(getVisionDate(a)!).getTime() -
-            new Date(getVisionDate(b)!).getTime()
-        );
-
-      setVisions([...datedVisions, ...reordered]);
-      const items = reordered.map((v, index) => ({ id: v.id, sort_order: index }));
-      try {
-        await updateListOrder(items, "visions", chartId);
-      } catch (error) {
-        console.error("Sort order update failed:", error);
-        setVisions(previousState);
-        toast.error("並び順の更新に失敗しました", { duration: 5000 });
-      }
-    } else if (type === "realities") {
-      if (!over) return;
-      const draggedItem = realities.find((r) => r.id === active.id);
-      if (!draggedItem) return;
-
-      const overData = over.data?.current as { areaId?: string | null; type?: string } | undefined;
-      const targetAreaId = overData?.areaId;
-      const targetType = overData?.type;
-      const currentAreaId = draggedItem.area_id ?? null;
-      const isAreaMove =
-        targetAreaId !== undefined &&
-        targetAreaId !== currentAreaId &&
-        (targetType === "reality-area" || targetType === "reality-item");
-
-      if (isAreaMove) {
-        const previousState = realities;
-        const targetAreaItems = realities.filter(
-          (r) => (r.area_id ?? null) === (targetAreaId ?? null)
-        );
-        const newSortOrder =
-          Math.max(...targetAreaItems.map((r) => r.sort_order ?? 0), 0) + 1;
-
-        setRealities((prev) =>
-          prev.map((r) =>
-            r.id === draggedItem.id
-              ? { ...r, area_id: targetAreaId ?? null, sort_order: newSortOrder }
-              : r
-          )
-        );
-
-        const result = await updateRealityArea(draggedItem.id, targetAreaId ?? null, chartId);
-        if (result.success) {
-          const areaName =
-            targetAreaId !== null
-              ? chart.areas.find((a) => a.id === targetAreaId)?.name
-              : "未分類";
-          toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
-        } else {
-          setRealities(previousState);
-          toast.error("移動に失敗しました", { duration: 5000 });
-        }
-        return;
-      }
-
-      const undatedRealities = realities;
-      const oldIndex = undatedRealities.findIndex((r) => r.id === active.id);
-      const newIndex = undatedRealities.findIndex((r) => r.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const previousState = realities;
-      const reordered = arrayMove(undatedRealities, oldIndex, newIndex).map(
-        (reality, index) => ({
-          ...reality,
-          sort_order: index,
-        })
-      );
-      setRealities(reordered);
-
-      const items = reordered.map((r, index) => ({ id: r.id, sort_order: index }));
-      try {
-        await updateListOrder(items, "realities", chartId);
-      } catch (error) {
-        console.error("Sort order update failed:", error);
-        setRealities(previousState);
-        toast.error("並び順の更新に失敗しました", { duration: 5000 });
-      }
-    } else if (type === "actions" && tensionId) {
-      if (!over) return;
-      const tension = tensions.find((t) => t.id === tensionId);
-      if (!tension) return;
-
-      const undatedActions = tension.actionPlans.filter((a) => !a.dueDate);
-      const oldIndex = undatedActions.findIndex((a) => a.id === active.id);
-      const newIndex = undatedActions.findIndex((a) => a.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const previousState = tensions;
-      const reordered = arrayMove(undatedActions, oldIndex, newIndex).map(
-        (action, index) => ({
-          ...action,
-          sort_order: index,
-        })
-      );
-      const datedActions = tension.actionPlans
-        .filter((a) => !!a.dueDate)
-        .sort(
-          (a, b) =>
-            new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()
-        );
-
-      const updatedTensions = tensions.map((t) =>
-        t.id === tensionId
-          ? { ...t, actionPlans: [...datedActions, ...reordered] }
-          : t
-      );
-      setTensions(updatedTensions);
-
-      const items = reordered.map((a, index) => ({ id: a.id, sort_order: index }));
-      try {
-        await updateListOrder(items, "actions", chartId, tensionId);
-      } catch (error) {
-        console.error("Sort order update failed:", error);
-        setTensions(previousState);
-        toast.error("並び順の更新に失敗しました", { duration: 5000 });
-      }
-    }
-  };
-
-  const handleActionSectionDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    if (activeId === overId) return;
-
-    const activeData = active.data?.current as { type?: string; areaId?: string | null } | undefined;
-    const overData = over.data?.current as { type?: string; areaId?: string | null } | undefined;
-    if (activeData?.type === "tension") {
-      const activeTensionId = activeId.replace(/^tension-/, "");
-      const overTensionId = overId.replace(/^tension-/, "");
-      const activeTension = tensions.find((tension) => tension.id === activeTensionId);
-      if (!activeTension) return;
-
-      const currentAreaId = resolveTensionAreaId(activeTension);
-      const targetAreaId = overData?.areaId;
-      const targetType = overData?.type;
-
-      const isAreaMove =
-        targetAreaId !== undefined &&
-        targetAreaId !== currentAreaId &&
-        (targetType === "tension-area" || targetType === "tension" || targetType === "action-area");
-
-      if (isAreaMove) {
-        const previousState = tensions;
-        const targetAreaTensions = tensions.filter(
-          (tension) => (resolveTensionAreaId(tension) || null) === (targetAreaId ?? null)
-        );
-        const newSortOrder =
-          Math.max(...targetAreaTensions.map((tension) => tension.sort_order ?? 0), 0) + 1;
-
-        setTensions((prev) =>
-          prev.map((tension) =>
-            tension.id === activeTensionId
-              ? { ...tension, area_id: targetAreaId ?? null, sort_order: newSortOrder }
-              : tension
-          )
-        );
-
-        const result = await updateTensionArea(
-          activeTensionId,
-          targetAreaId ?? null,
-          chartId,
-          true
-        );
-        if (result.success) {
-          const areaName =
-            targetAreaId !== null ? chart.areas.find((a) => a.id === targetAreaId)?.name : "未分類";
-          toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
-        } else {
-          setTensions(previousState);
-          toast.error("移動に失敗しました", { duration: 5000 });
-        }
-        return;
-      }
-
-      const overTension = tensions.find((tension) => tension.id === overTensionId);
-      const overAreaId = overTension ? resolveTensionAreaId(overTension) : null;
-      const isSameAreaSort =
-        activeTensionId !== overTensionId &&
-        !!overTension &&
-        (overAreaId ?? null) === (currentAreaId ?? null);
-      if (!isSameAreaSort) return;
-
-      const sameAreaTensions = tensions
-        .filter((tension) => (resolveTensionAreaId(tension) || null) === (currentAreaId ?? null))
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-      const oldIndex = sameAreaTensions.findIndex((tension) => tension.id === activeTensionId);
-      const newIndex = sameAreaTensions.findIndex((tension) => tension.id === overTensionId);
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const previousState = tensions;
-      const reordered = arrayMove(sameAreaTensions, oldIndex, newIndex).map((tension, index) => ({
-        ...tension,
-        sort_order: index + 1,
-      }));
-      const sortMap = new Map(reordered.map((tension) => [tension.id, tension.sort_order]));
-
-      setTensions((prev) =>
-        prev.map((tension) =>
-          sortMap.has(tension.id)
-            ? { ...tension, sort_order: sortMap.get(tension.id) }
-            : tension
-        )
-      );
-
-      const items = reordered.map((tension, index) => ({ id: tension.id, sort_order: index + 1 }));
-      try {
-        await updateListOrder(items, "tensions", chartId);
-      } catch (error) {
-        console.error("Sort order update failed:", error);
-        setTensions(previousState);
-        toast.error("並び順の更新に失敗しました", { duration: 5000 });
-      }
-      return;
-    }
-
-    const activeMeta = actionMetaById.get(activeId);
-    if (!activeMeta) return;
-
-    const allActions = [
-      ...looseActions,
-      ...tensions.flatMap((tension) => tension.actionPlans),
-    ];
-    const activeAction = allActions.find((action) => action.id === activeId);
-    if (!activeAction || activeAction.dueDate) return;
-    const overAction = allActions.find((action) => action.id === overId);
-    if (overAction?.dueDate) return;
-
-    const overAreaId = overData?.areaId;
-    let targetAreaId = overAreaId ?? null;
-    let targetTensionId = activeMeta.tensionId;
-
-    if (overAreaId === undefined) {
-      const overMeta = actionMetaById.get(overId);
-      targetAreaId = overMeta?.areaId ?? null;
-      if (overMeta) {
-        targetTensionId = overMeta.tensionId;
-      }
-    }
-
-    const currentAreaId = activeMeta.areaId ?? null;
-    if (targetAreaId !== currentAreaId) {
-      const previousTensions = tensions;
-      const previousLooseActions = looseActions;
-      const targetAreaActions = allActions.filter(
-        (action) => !action.dueDate && (action.area_id ?? null) === (targetAreaId ?? null)
-      );
-      const newSortOrder =
-        Math.max(...targetAreaActions.map((action) => action.sort_order ?? 0), 0) + 1;
-
-      if (activeMeta.tensionId) {
-        setTensions((prev) =>
-          prev.map((tension) =>
-            tension.id === activeMeta.tensionId
-              ? {
-                  ...tension,
-                  actionPlans: tension.actionPlans.map((action) =>
-                    action.id === activeId
-                      ? { ...action, area_id: targetAreaId, sort_order: newSortOrder }
-                      : action
-                  ),
-                }
-              : tension
-          )
-        );
-      } else {
-        setLooseActions((prev) =>
-          prev.map((action) =>
-            action.id === activeId
-              ? { ...action, area_id: targetAreaId, sort_order: newSortOrder }
-              : action
-          )
-        );
-      }
-      const result = await updateActionArea(activeId, targetAreaId ?? null, chartId, false);
-      if (result.success) {
-        const areaName =
-          targetAreaId !== null ? chart.areas.find((a) => a.id === targetAreaId)?.name : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
-      } else {
-        setTensions(previousTensions);
-        setLooseActions(previousLooseActions);
-        toast.error("移動に失敗しました", { duration: 5000 });
-      }
-      return;
-    }
-
-    if (targetTensionId === activeMeta.tensionId && actionMetaById.has(overId)) {
-      if (activeMeta.tensionId) {
-        await handleDragEnd(event, "actions", activeMeta.tensionId);
-      } else {
-        const undatedActions = looseActions.filter((a) => !a.dueDate);
-        const oldIndex = undatedActions.findIndex((a) => a.id === activeId);
-        const newIndex = undatedActions.findIndex((a) => a.id === overId);
-        if (oldIndex === -1 || newIndex === -1) return;
-
-        const previousState = looseActions;
-        const reordered = arrayMove(undatedActions, oldIndex, newIndex).map(
-          (action, index) => ({
-            ...action,
-            sort_order: index,
-          })
-        );
-        const datedActions = looseActions
-          .filter((a) => !!a.dueDate)
-          .sort(
-            (a, b) =>
-              new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()
-          );
-        setLooseActions([...datedActions, ...reordered]);
-        const items = reordered.map((a, index) => ({ id: a.id, sort_order: index }));
-        try {
-          await updateListOrder(items, "actions", chartId);
-        } catch (error) {
-          console.error("Sort order update failed:", error);
-          setLooseActions(previousState);
-          toast.error("並び順の更新に失敗しました", { duration: 5000 });
-        }
-      }
-    }
-  };
-
-  const handleTelescopeClick = async (actionPlan: ActionPlan, tensionId: string | null) => {
-    // 既に子チャートが存在する場合は遷移
-    if (actionPlan.childChartId) {
-      router.push(`/charts/${actionPlan.childChartId}`);
-      return;
-    }
-
-    // ローディング状態を設定
-    setTelescopingActionId(actionPlan.id);
-
-    try {
-      // テレスコーピング: 新しいチャートを作成
-      const newChartId = await telescopeActionPlan(actionPlan.id, tensionId, chartId);
-
-      if (newChartId) {
-        // 成功: 新しいチャートに遷移
-        router.push(`/charts/${newChartId}`);
-      } else {
-        // エラー: ローディング状態を解除
-        setTelescopingActionId(null);
-        console.error("4. Failed - result:", newChartId);
-        console.error("Failed to create child chart");
-      }
-    } catch (error) {
-      setTelescopingActionId(null);
-      console.error("5. Exception caught:", error);
-      console.error("Error in telescope:", error);
     }
   };
 
