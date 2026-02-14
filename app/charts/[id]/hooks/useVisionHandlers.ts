@@ -131,7 +131,7 @@ export function useVisionHandlers({
         setVisions(originalVisions);
         toast.error("削除に失敗しました", { duration: 5000 });
       }
-      setPendingDeletions((prev) => {
+      setPendingDeletions((prev: Record<string, any>) => {
         const next = { ...prev };
         delete next[existingKey];
         return next;
@@ -139,7 +139,7 @@ export function useVisionHandlers({
     }, 15000);
 
     // 削除予約を保存
-    setPendingDeletions((prev) => ({
+    setPendingDeletions((prev: Record<string, any>) => ({
       ...prev,
       [existingKey]: {
         type: "vision",
@@ -155,7 +155,7 @@ export function useVisionHandlers({
         onClick: () => {
           clearTimeout(timeoutId);
           setVisions(originalVisions);
-          setPendingDeletions((prev) => {
+          setPendingDeletions((prev: Record<string, any>) => {
             const next = { ...prev };
             delete next[existingKey];
             return next;

@@ -129,7 +129,7 @@ export function useRealityHandlers({
         setRealities(originalRealities);
         toast.error("削除に失敗しました", { duration: 5000 });
       }
-      setPendingDeletions((prev) => {
+      setPendingDeletions((prev: Record<string, any>) => {
         const next = { ...prev };
         delete next[existingKey];
         return next;
@@ -137,7 +137,7 @@ export function useRealityHandlers({
     }, 15000);
 
     // 削除予約を保存
-    setPendingDeletions((prev) => ({
+    setPendingDeletions((prev: Record<string, any>) => ({
       ...prev,
       [existingKey]: {
         type: "reality",
@@ -153,7 +153,7 @@ export function useRealityHandlers({
         onClick: () => {
           clearTimeout(timeoutId);
           setRealities(originalRealities);
-          setPendingDeletions((prev) => {
+          setPendingDeletions((prev: Record<string, any>) => {
             const next = { ...prev };
             delete next[existingKey];
             return next;

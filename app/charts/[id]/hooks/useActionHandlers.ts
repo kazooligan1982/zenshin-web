@@ -270,7 +270,7 @@ export function useActionHandlers({
         setLooseActions(originalLooseActions);
         toast.error("削除に失敗しました", { duration: 5000 });
       }
-      setPendingDeletions((prev: typeof pendingDeletions) => {
+      setPendingDeletions((prev: Record<string, any>) => {
         const next = { ...prev };
         delete next[existingKey];
         return next;
@@ -278,7 +278,7 @@ export function useActionHandlers({
     }, 15000);
 
     // 削除予約を保存
-    setPendingDeletions((prev: typeof pendingDeletions) => ({
+    setPendingDeletions((prev: Record<string, any>) => ({
       ...prev,
       [existingKey]: {
         type: "action",
@@ -296,7 +296,7 @@ export function useActionHandlers({
           clearTimeout(timeoutId);
           setTensions(originalTensions);
           setLooseActions(originalLooseActions);
-          setPendingDeletions((prev: typeof pendingDeletions) => {
+          setPendingDeletions((prev: Record<string, any>) => {
             const next = { ...prev };
             delete next[existingKey];
             return next;
