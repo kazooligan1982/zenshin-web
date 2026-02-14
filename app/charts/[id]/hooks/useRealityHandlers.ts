@@ -1,5 +1,5 @@
 import type { RealityItem, Area } from "@/types/chart";
-import type { AppRouterInstance } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { addReality, updateRealityItem, removeReality } from "../actions";
 
@@ -26,7 +26,7 @@ export function useRealityHandlers({
   setPendingDeletions: React.Dispatch<React.SetStateAction<any>>;
   newRealityInput: { setValue: (val: string) => void };
   chart: { areas: Area[] };
-  router: AppRouterInstance;
+  router: ReturnType<typeof useRouter>;
 }) {
   const handleAddReality = async (content: string, areaIdOverride?: string | null) => {
     if (!content.trim() || isSubmittingReality) return;

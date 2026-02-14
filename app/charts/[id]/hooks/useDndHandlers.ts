@@ -1,5 +1,5 @@
 import type { VisionItem, RealityItem, Tension, ActionPlan, Area } from "@/types/chart";
-import type { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";

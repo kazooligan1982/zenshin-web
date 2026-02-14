@@ -1,5 +1,5 @@
 import type { Tension, TensionStatus, ActionPlan, VisionItem, RealityItem } from "@/types/chart";
-import type { AppRouterInstance } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   addTension,
@@ -29,7 +29,7 @@ export function useTensionHandlers({
   setLooseActions: React.Dispatch<React.SetStateAction<ActionPlan[]>>;
   pendingDeletions: Record<string, { type: string; item: any; tensionId?: string | null; timeoutId: NodeJS.Timeout }>;
   setPendingDeletions: React.Dispatch<React.SetStateAction<any>>;
-  router: AppRouterInstance;
+  router: ReturnType<typeof useRouter>;
 }) {
   const handleAddTension = async (title: string, areaId?: string | null) => {
     if (!title.trim()) return;

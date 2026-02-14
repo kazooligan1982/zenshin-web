@@ -1,5 +1,5 @@
 import type { Tension, ActionPlan } from "@/types/chart";
-import type { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   addActionPlan,

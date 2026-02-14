@@ -1,5 +1,5 @@
 import type { VisionItem, Area } from "@/types/chart";
-import type { AppRouterInstance } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { addVision, updateVisionItem, removeVision } from "../actions";
 
@@ -26,7 +26,7 @@ export function useVisionHandlers({
   setPendingDeletions: React.Dispatch<React.SetStateAction<any>>;
   newVisionInput: { setValue: (val: string) => void };
   chart: { areas: Area[] };
-  router: AppRouterInstance;
+  router: ReturnType<typeof useRouter>;
 }) {
   const handleAddVision = async (content: string, areaIdOverride?: string | null) => {
     if (!content.trim() || isSubmittingVision) return;

@@ -1,70 +1,46 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import type { CSSProperties } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   DndContext,
-  pointerWithin,
-  rectIntersection,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  useDroppable,
-  useDndContext,
   DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import {
   Home,
   Target,
   AlertCircle,
-  AlertTriangle,
-  Telescope,
   Plus,
   ChevronRight,
   ChevronDown,
   Trash2,
-  X,
-  Check,
   Zap,
   Maximize2,
   Minimize2,
   Calendar as CalendarIcon,
-  UserPlus,
-  User,
-  GripVertical,
   Camera,
   Settings,
   MoreVertical,
-  FileText,
-  Tag,
-  Circle,
-  Clock,
   CheckCircle2,
-  Pause,
-  XCircle,
   Archive,
   ArrowUpDown,
-  ArrowRightLeft,
   Eye,
   EyeOff,
   RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -73,7 +49,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Popover,
@@ -84,7 +59,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -100,28 +74,16 @@ import type {
 } from "@/types/chart";
 import {
   getActionProgress,
-  fetchChart,
-  updateListOrder,
-  updateVisionArea,
-  updateRealityArea,
-  updateTensionArea,
-  updateActionArea,
-  moveActionToTension,
   createSnapshot,
   updateChartData,
   addArea,
   updateAreaItem,
   removeArea,
-  checkIncompleteTelescopeActions,
 } from "./actions";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { AreaDropZone } from "./components/AreaDropZone";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { ja } from "date-fns/locale";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -131,35 +93,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { archiveChart, restoreChart, deleteChart } from "@/app/charts/actions";
 import { updateChartStatusAction } from "./actions";
-import type { HistoryItem } from "@/types/chart";
 import { useItemInput } from "@/hooks/use-item-input";
 import {
-  StructuredTension,
-  AreaGroup,
-  UncategorizedGroup,
   StructuredData,
-  TEXT_CLASSES,
-  TEXT_FIXED_STYLE,
-  TEXTAREA_CLASSES,
-  VIEW_CLASSES,
-  iconButtonClass,
-  ICON_BTN_CLASS,
-  ICON_CONTAINER_CLASS,
-  navigateFocus,
-  handleKeyboardNavigation,
-  handleTextKeyboardNavigation,
   customCollisionDetection,
   splitItemsByDate,
-  getActionStatusIcon,
-  getActionStatusLabel,
 } from "./editor-utils";
 import { SortableVisionItem } from "./components/SortableVisionItem";
 import { SortableRealityItem } from "./components/SortableRealityItem";
-import { SortableActionItem } from "./components/SortableActionItem";
 import { TensionGroup } from "./components/TensionGroup";
 import { ActionSection } from "./components/ActionSection";
 import { useVisionHandlers } from "./hooks/useVisionHandlers";
@@ -169,16 +113,8 @@ import { useActionHandlers, _pendingScrollRestore } from "./hooks/useActionHandl
 import { useDetailPanel } from "./hooks/useDetailPanel";
 import { useDndHandlers } from "./hooks/useDndHandlers";
 
-const DatePicker = dynamic(
-  () => import("@/components/ui/date-picker").then((mod) => mod.DatePicker),
-  { loading: () => null, ssr: false }
-);
 const CalendarComponent = dynamic(
   () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
-  { loading: () => null, ssr: false }
-);
-const AreaTagEditor = dynamic(
-  () => import("@/components/area-tag-editor").then((mod) => mod.AreaTagEditor),
   { loading: () => null, ssr: false }
 );
 const TagManager = dynamic(

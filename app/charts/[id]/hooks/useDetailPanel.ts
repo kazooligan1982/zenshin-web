@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { VisionItem, RealityItem, Tension, ActionPlan, HistoryItem } from "@/types/chart";
-import type { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { fetchItemHistory, addItemHistoryEntry } from "../actions";
 
 export function useDetailPanel({
