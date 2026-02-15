@@ -33,6 +33,7 @@ export function TensionGroup({
   handleOptimisticMove,
   handleUpdateTension,
   handleDeleteTension,
+  onMoveTensionArea,
   handleUpdateActionPlan,
   handleDeleteActionPlan,
   handleTelescopeClick,
@@ -57,6 +58,7 @@ export function TensionGroup({
   handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
   handleUpdateTension: (tensionId: string, field: "title" | "description" | "status", value: string | TensionStatus) => void;
   handleDeleteTension: (tensionId: string) => void;
+  onMoveTensionArea?: (tensionId: string, targetAreaId: string | null) => Promise<void>;
   handleUpdateActionPlan: (
     tensionId: string | null,
     actionId: string,
@@ -157,13 +159,17 @@ export function TensionGroup({
 
   const handleMoveTensionArea = async (targetAreaId: string | null) => {
     setIsMovingArea(true);
-    const result = await updateTensionArea(tension.id, targetAreaId, chartId, true);
-    if (result.success) {
-      const areaName =
-        targetAreaId !== null ? areas.find((area) => area.id === targetAreaId)?.name : "未分類";
-      toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+    if (onMoveTensionArea) {
+      await onMoveTensionArea(tension.id, targetAreaId);
     } else {
-      toast.error("移動に失敗しました", { duration: 5000 });
+      const result = await updateTensionArea(tension.id, targetAreaId, chartId, true);
+      if (result.success) {
+        const areaName =
+          targetAreaId !== null ? areas.find((area) => area.id === targetAreaId)?.name : "未分類";
+        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+      } else {
+        toast.error("移動に失敗しました", { duration: 5000 });
+      }
     }
     setIsMovingArea(false);
   };

@@ -280,7 +280,7 @@ export function ProjectEditor({
     router,
   });
 
-  const { handleAddTension, handleUpdateTension, handleDeleteTension, toggleVisionRealityLink, handleOptimisticMove } = useTensionHandlers({
+  const { handleAddTension, handleUpdateTension, handleDeleteTension, handleMoveTensionArea, toggleVisionRealityLink, handleOptimisticMove } = useTensionHandlers({
     chartId,
     tensions,
     setTensions,
@@ -290,6 +290,7 @@ export function ProjectEditor({
     setLooseActions,
     pendingDeletions,
     setPendingDeletions,
+    areas: chart.areas ?? [],
     router,
   });
 
@@ -1797,6 +1798,7 @@ export function ProjectEditor({
                                     setHighlightedItemId={setHighlightedItemId}
                                     handleUpdateTension={handleUpdateTension}
                                     handleDeleteTension={handleDeleteTension}
+                                    onMoveTensionArea={handleMoveTensionArea}
                                     onOpenFocus={(tension) => {
                                       openFocusMode(
                                         "tension",
@@ -1840,6 +1842,7 @@ export function ProjectEditor({
                                           handleOptimisticMove={handleOptimisticMove}
                                           handleUpdateTension={handleUpdateTension}
                                           handleDeleteTension={handleDeleteTension}
+                                          onMoveTensionArea={handleMoveTensionArea}
                                           handleUpdateActionPlan={
                                             handleUpdateActionPlan
                                           }
@@ -1950,6 +1953,7 @@ export function ProjectEditor({
             expandedCompletedTensions={expandedCompletedTensions}
             toggleCompletedTensionExpand={toggleCompletedTensionExpand}
             handleOptimisticMove={handleOptimisticMove}
+            onMoveTensionArea={handleMoveTensionArea}
           />
         ) : (
           <div className="h-full flex gap-4 overflow-hidden">
@@ -2284,6 +2288,7 @@ export function ProjectEditor({
                                         handleOptimisticMove={handleOptimisticMove}
                                         handleUpdateTension={handleUpdateTension}
                                         handleDeleteTension={handleDeleteTension}
+                                        onMoveTensionArea={handleMoveTensionArea}
                                         handleUpdateActionPlan={
                                           handleUpdateActionPlan
                                         }
@@ -2409,6 +2414,7 @@ function ComparisonView({
   expandedCompletedTensions = new Set(),
   toggleCompletedTensionExpand,
   handleOptimisticMove,
+  onMoveTensionArea,
 }: {
   visions: VisionItem[];
   realities: RealityItem[];
@@ -2463,6 +2469,7 @@ function ComparisonView({
   expandedCompletedTensions?: Set<string>;
   toggleCompletedTensionExpand?: (tensionId: string) => void;
   handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
+  onMoveTensionArea?: (tensionId: string, targetAreaId: string | null) => Promise<void>;
 }) {
   const [visionInputByArea, setVisionInputByArea] = useState<Record<string, string>>({});
   const [realityInputByArea, setRealityInputByArea] = useState<Record<string, string>>({});
@@ -2797,6 +2804,7 @@ function ComparisonView({
                               setHighlightedItemId={setHighlightedItemId}
                               handleUpdateTension={handleUpdateTension}
                               handleDeleteTension={handleDeleteTension}
+                              onMoveTensionArea={onMoveTensionArea}
                               onOpenFocus={onOpenFocusTension}
                               sortByStatus={sortByStatus}
                               hideCompleted={hideCompleted}
@@ -2833,6 +2841,7 @@ function ComparisonView({
                                     handleOptimisticMove={handleOptimisticMove}
                                     handleUpdateTension={handleUpdateTension}
                                     handleDeleteTension={handleDeleteTension}
+                                    onMoveTensionArea={onMoveTensionArea}
                                     handleUpdateActionPlan={handleUpdateActionPlan}
                                     handleDeleteActionPlan={handleDeleteActionPlan}
                                     handleTelescopeClick={handleTelescopeClick}
