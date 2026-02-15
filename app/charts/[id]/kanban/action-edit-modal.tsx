@@ -37,6 +37,8 @@ import {
   MessageSquare,
   Target,
   Calendar as CalendarIcon,
+  Check,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -70,6 +72,98 @@ interface Action {
   description?: string | null;
 }
 
+function AssigneePopover({
+  assignee,
+  onAssigneeChange,
+  workspaceMembers,
+  currentUser,
+}: {
+  assignee: string | null;
+  onAssigneeChange: (email: string | null) => void;
+  workspaceMembers: { id: string; email: string; name?: string; avatar_url?: string }[];
+  currentUser: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
+}) {
+  const assigneeMember =
+    workspaceMembers.find((m) => m.email === assignee) ??
+    (currentUser && assignee === currentUser.email ? currentUser : null);
+  const members: { id?: string; email: string; name?: string; avatar_url?: string | null }[] =
+    workspaceMembers.length > 0 ? workspaceMembers : currentUser ? [currentUser] : [];
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            "w-full h-10 justify-start text-left font-normal bg-background gap-2",
+            !assignee && "text-zenshin-navy/40"
+          )}
+        >
+          {assignee ? (
+            assigneeMember?.avatar_url ? (
+              <img
+                src={assigneeMember.avatar_url}
+                alt={assigneeMember.name || ""}
+                className="h-6 w-6 rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <div className="h-6 w-6 rounded-full bg-zenshin-navy text-white text-xs flex items-center justify-center font-medium shrink-0">
+                {(assigneeMember?.name || assigneeMember?.email || assignee).charAt(0).toUpperCase()}
+              </div>
+            )
+          ) : (
+            <UserPlus className="h-4 w-4 shrink-0 text-zenshin-navy/40" />
+          )}
+          <span className="truncate">
+            {assignee ? (assigneeMember?.name || assigneeMember?.email || assignee) : "担当者なし"}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 max-h-[280px] overflow-y-auto p-2 z-50" align="start">
+        <div className="space-y-0.5">
+          <Button
+            variant={!assignee ? "secondary" : "ghost"}
+            className="w-full justify-start text-sm h-9 gap-2"
+            onClick={() => onAssigneeChange(null)}
+          >
+            {!assignee ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+            担当者なし
+          </Button>
+          {members.map((member) => (
+            <Button
+              key={member.email}
+              variant={assignee === member.email ? "secondary" : "ghost"}
+              className="w-full justify-start text-sm h-9 gap-2"
+              onClick={() => onAssigneeChange(member.email)}
+            >
+              {assignee === member.email ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+              {member.avatar_url ? (
+                <img
+                  src={member.avatar_url}
+                  alt={member.name || ""}
+                  className="h-6 w-6 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="h-6 w-6 rounded-full bg-zenshin-navy text-white text-xs flex items-center justify-center font-medium flex-shrink-0">
+                  {(member.name || member.email || "?").charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="truncate">{member.name || member.email}</span>
+            </Button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+interface WorkspaceMember {
+  id: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
+}
+
 interface ActionEditModalProps {
   action: Action | null;
   isOpen: boolean;
@@ -83,6 +177,9 @@ interface ActionEditModalProps {
     is_completed?: boolean | null;
   }) => void;
   projectId: string;
+  currentUserId?: string;
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
+  workspaceMembers?: WorkspaceMember[];
 }
 
 export function ActionEditModal({
@@ -91,23 +188,19 @@ export function ActionEditModal({
   onClose,
   onSave,
   projectId,
+  currentUserId = "",
+  currentUser = null,
+  workspaceMembers = [],
 }: ActionEditModalProps) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<"todo" | "in_progress" | "done" | "pending" | "canceled">("todo");
-  const [assignee, setAssignee] = useState<string>("unassigned");
+  const [assignee, setAssignee] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<string | null>(null);
   const [description, setDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [actionComments, setActionComments] = useState<any[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState("");
-  const [currentUser, setCurrentUser] = useState<{
-    id?: string;
-    email: string;
-    name?: string;
-    avatar_url?: string | null;
-  } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     actionTitle: string;
@@ -130,33 +223,11 @@ export function ActionEditModal({
         (action.status as "todo" | "in_progress" | "done" | "pending" | "canceled") ||
         (action.is_completed ? "done" : "todo")
       );
-      setAssignee(action.assignee || "unassigned");
+      setAssignee(action.assignee || null);
       setDueDate(action.due_date || null);
       setDescription(action.description || "");
     }
   }, [action]);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      if (!supabase) return;
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id || "";
-      setCurrentUserId(userId);
-      if (userId) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id, email, name, avatar_url")
-          .eq("id", userId)
-          .single();
-        if (profile) {
-          setCurrentUser(profile);
-        }
-      }
-    };
-    if (isOpen) {
-      void loadUser();
-    }
-  }, [isOpen]);
 
   const loadActionComments = useCallback(async () => {
     if (!action?.id) return;
@@ -214,7 +285,7 @@ export function ActionEditModal({
         if (title !== action.title) {
           await updateActionPlanItem(action.id, action.tension_id || null, "title", title, projectId);
         }
-        const assigneeValue = assignee === "unassigned" ? null : assignee;
+        const assigneeValue = assignee || null;
         const currentAssignee = action.assignee || null;
         if (assigneeValue !== currentAssignee) {
           await updateActionPlanItem(action.id, action.tension_id || null, "assignee", assigneeValue || "", projectId);
@@ -362,11 +433,11 @@ export function ActionEditModal({
 
               <div className="space-y-2">
                 <Label className="text-sm text-zenshin-navy/50">担当者</Label>
-                <Input
-                  value={assignee}
-                  onChange={(e) => setAssignee(e.target.value)}
-                  placeholder="担当者名を入力"
-                  className="w-full h-10 bg-background"
+                <AssigneePopover
+                  assignee={assignee}
+                  onAssigneeChange={setAssignee}
+                  workspaceMembers={workspaceMembers}
+                  currentUser={currentUser}
                 />
               </div>
             </div>

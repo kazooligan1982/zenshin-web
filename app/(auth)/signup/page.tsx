@@ -7,7 +7,12 @@ export default function SignupPage() {
     <div className="space-y-6">
       <div className="text-center">
         <img src="/zenshin-icon.svg" alt="ZENSHIN CHART" className="w-12 h-12 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
+        <div className="flex items-start justify-center gap-1.5">
+          <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
+          <span className="text-[10px] font-light tracking-wider uppercase text-amber-400/70 pt-1">
+            beta
+          </span>
+        </div>
         <p className="text-muted-foreground mt-2">アカウント作成</p>
       </div>
 
@@ -26,7 +31,7 @@ export default function SignupPage() {
 
       <p className="text-center text-sm text-muted-foreground">
         すでにアカウントをお持ちの方は{" "}
-        <Link href="/login" className="text-primary hover:underline font-medium">
+        <Link href="/login" className="text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium">
           ログイン
         </Link>
       </p>

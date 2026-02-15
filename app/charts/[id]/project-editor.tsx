@@ -132,6 +132,14 @@ const FocusModeModal = dynamic(
   { loading: () => null, ssr: false }
 );
 
+type WorkspaceMember = {
+  id: string;
+  email: string;
+  name?: string;
+  role: string;
+  avatar_url?: string;
+};
+
 interface ProjectEditorProps {
   initialChart: Chart;
   chartId: string;
@@ -143,6 +151,7 @@ interface ProjectEditorProps {
     name?: string;
     avatar_url?: string | null;
   } | null;
+  workspaceMembers?: WorkspaceMember[];
 }
 
 export function ProjectEditor({
@@ -151,6 +160,7 @@ export function ProjectEditor({
   workspaceId,
   currentUserId,
   currentUser: initialCurrentUser,
+  workspaceMembers = [],
 }: ProjectEditorProps) {
   const router = useRouter();
   // areasがundefinedの場合に空配列を設定
@@ -815,6 +825,7 @@ export function ProjectEditor({
       }
       onOpenAreaSettings={() => setTagManagerOpen(true)}
       currentUser={currentUser}
+      workspaceMembers={workspaceMembers}
     />
   );
 
@@ -866,6 +877,7 @@ export function ProjectEditor({
                         }
                         onOpenAreaSettings={() => setTagManagerOpen(true)}
                         currentUser={currentUser}
+                        workspaceMembers={workspaceMembers}
                       />
                     ))
                   )}
@@ -918,6 +930,7 @@ export function ProjectEditor({
                         }
                         onOpenAreaSettings={() => setTagManagerOpen(true)}
                         currentUser={currentUser}
+                        workspaceMembers={workspaceMembers}
                       />
                     ))
                   )}
@@ -1810,6 +1823,7 @@ export function ProjectEditor({
                                     hideCompleted={hideCompleted}
                                     expandedCompletedTensions={expandedCompletedTensions}
                                     toggleCompletedTensionExpand={toggleCompletedTensionExpand}
+                                    workspaceMembers={workspaceMembers}
                                   />
                                 );
                               })}
@@ -1870,6 +1884,7 @@ export function ProjectEditor({
                                           hideCompleted={hideCompleted}
                                           expandedCompletedTensions={expandedCompletedTensions}
                                           toggleCompletedTensionExpand={toggleCompletedTensionExpand}
+                                          workspaceMembers={workspaceMembers}
                                         />
                                       ))}
                                     </div>
@@ -1942,6 +1957,7 @@ export function ProjectEditor({
             onOpenFocusTension={(t) =>
               openFocusMode("tension", t.id, t.title || "Tension", t.title || "")
             }
+            workspaceMembers={workspaceMembers}
             sortByStatus={sortByStatus}
             setSortByStatus={setSortByStatus}
             hideCompleted={hideCompleted}
@@ -2256,6 +2272,7 @@ export function ProjectEditor({
                                   hideCompleted={hideCompleted}
                                   expandedCompletedTensions={expandedCompletedTensions}
                                   toggleCompletedTensionExpand={toggleCompletedTensionExpand}
+                                  workspaceMembers={workspaceMembers}
                                 />
                               );
                             })}
@@ -2414,6 +2431,7 @@ function ComparisonView({
   toggleCompletedTensionExpand,
   handleOptimisticMove,
   onMoveTensionArea,
+  workspaceMembers = [],
 }: {
   visions: VisionItem[];
   realities: RealityItem[];
@@ -2469,6 +2487,7 @@ function ComparisonView({
   toggleCompletedTensionExpand?: (tensionId: string) => void;
   handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
   onMoveTensionArea?: (tensionId: string, targetAreaId: string | null) => Promise<void>;
+  workspaceMembers?: WorkspaceMember[];
 }) {
   const [visionInputByArea, setVisionInputByArea] = useState<Record<string, string>>({});
   const [realityInputByArea, setRealityInputByArea] = useState<Record<string, string>>({});
@@ -2577,6 +2596,7 @@ function ComparisonView({
                                 }
                                 onOpenAreaSettings={onOpenAreaSettings}
                                 currentUser={currentUser as any}
+                                workspaceMembers={workspaceMembers}
                               />
                             ))
                           )}
@@ -2809,6 +2829,7 @@ function ComparisonView({
                               hideCompleted={hideCompleted}
                               expandedCompletedTensions={expandedCompletedTensions}
                               toggleCompletedTensionExpand={toggleCompletedTensionExpand}
+                              workspaceMembers={workspaceMembers}
                             />
                           );
                         })}
@@ -2854,6 +2875,7 @@ function ComparisonView({
                                     onOpenFocus={onOpenFocusTension}
                                     sortByStatus={sortByStatus}
                                     hideCompleted={hideCompleted}
+                                    workspaceMembers={workspaceMembers}
                                   />
                                 ))}
                               </div>
