@@ -46,7 +46,6 @@ import { ja } from "date-fns/locale";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Timeline } from "@/components/action-timeline/Timeline";
-import { supabase } from "@/lib/supabase";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import {
   AlertDialog,
