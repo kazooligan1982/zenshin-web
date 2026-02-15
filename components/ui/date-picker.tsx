@@ -43,6 +43,12 @@ export function DatePicker({
     setOpen(false);
   };
 
+  const handleClear = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onChange(null);
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen} modal={modal}>
       <PopoverTrigger asChild>
@@ -50,13 +56,23 @@ export function DatePicker({
           variant="ghost"
           disabled={disabled}
           className={cn(
-            "w-[110px] justify-start text-left font-normal h-6 text-xs flex items-center",
+            "group/datepicker relative w-auto min-w-[100px] justify-start text-left font-normal h-6 text-xs flex items-center",
             !date && "text-gray-300 hover:text-gray-500",
             className
           )}
         >
           {date ? (
-            <span className="flex items-center justify-center w-full">{format(date, "yyyy/MM/dd")}</span>
+            <>
+              <span>{format(date, "yyyy/MM/dd")}</span>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="absolute -top-1 -right-1 opacity-0 group-hover/datepicker:opacity-100 h-4 w-4 flex items-center justify-center rounded-full bg-gray-500 text-white text-[10px] hover:bg-gray-600 transition-all z-10"
+                title="日付をクリア"
+              >
+                ×
+              </button>
+            </>
           ) : (
             <span className="flex items-center justify-center w-full"><CalendarPlus className="w-4 h-4" /></span>
           )}

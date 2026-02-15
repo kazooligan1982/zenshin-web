@@ -4,7 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, FileText, Tag, Plus, Trash2, UserPlus } from "lucide-react";
+import { GripVertical, FileText, Tag, Plus, Trash2, UserPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,6 +41,7 @@ export function SortableVisionItem({
   onOpenFocus,
   onOpenAreaSettings,
   currentUser,
+  workspaceMembers = [],
 }: {
   vision: VisionItem;
   index: number;
@@ -61,9 +62,11 @@ export function SortableVisionItem({
     name?: string;
     avatar_url?: string | null;
   } | null;
+  workspaceMembers?: { id: string; email: string; name?: string; avatar_url?: string }[];
 }) {
   const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const area = areas.find((a) => a.id === vision.area_id);
+  const assigneeMember = workspaceMembers.find((m) => m.email === vision.assignee);
   const visionInput = useItemInput({
     initialValue: vision.content || "",
     onSave: (val) => {
@@ -146,16 +149,15 @@ export function SortableVisionItem({
                   title={vision.assignee || "担当者を選択"}
                 >
                   {vision.assignee ? (
-                    currentUser?.avatar_url &&
-                    vision.assignee === currentUser.email ? (
+                    assigneeMember?.avatar_url ? (
                       <img
-                        src={currentUser.avatar_url}
-                        alt={currentUser.name || ""}
+                        src={assigneeMember.avatar_url}
+                        alt={assigneeMember.name || ""}
                         className="h-5 w-5 rounded-full object-cover"
                       />
                     ) : (
                       <div className="h-5 w-5 rounded-full bg-zenshin-navy text-white text-[10px] flex items-center justify-center font-medium">
-                        {vision.assignee.charAt(0).toUpperCase()}
+                        {(assigneeMember?.name || assigneeMember?.email || vision.assignee).charAt(0).toUpperCase()}
                       </div>
                     )
                   ) : (
@@ -178,48 +180,74 @@ export function SortableVisionItem({
               </div>
             </PopoverTrigger>
             <PopoverContent
-              className="w-40 p-2 z-50"
+              className="w-48 max-h-[240px] overflow-y-auto p-2 z-50"
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="space-y-1">
-                {currentUser && (
-                  <Button
-                    variant={vision.assignee === currentUser.email ? "secondary" : "ghost"}
-                    className="w-full justify-start text-xs h-7 gap-2"
-                    onClick={() => {
-                      onUpdate(vision.id, "assignee", currentUser.email);
-                      setAssigneePopoverOpen(false);
-                    }}
-                  >
-                    {currentUser.avatar_url ? (
-                      <img
-                        src={currentUser.avatar_url}
-                        alt={currentUser.name || ""}
-                        className="h-4 w-4 rounded-full object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
-                        {(currentUser.name || currentUser.email || "?")
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
-                    )}
-                    {currentUser.name || currentUser.email}
-                  </Button>
-                )}
-                {vision.assignee && (
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-xs h-7 text-muted-foreground"
-                    onClick={() => {
-                      onUpdate(vision.id, "assignee", "");
-                      setAssigneePopoverOpen(false);
-                    }}
-                  >
-                    クリア
-                  </Button>
+              <div className="space-y-0.5">
+                <Button
+                  variant={!vision.assignee ? "secondary" : "ghost"}
+                  className="w-full justify-start text-xs h-7 gap-2"
+                  onClick={() => {
+                    onUpdate(vision.id, "assignee", "");
+                    setAssigneePopoverOpen(false);
+                  }}
+                >
+                  {!vision.assignee ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+                  担当者なし
+                </Button>
+                {workspaceMembers.length > 0 ? (
+                  workspaceMembers.map((member) => (
+                    <Button
+                      key={member.id}
+                      variant={vision.assignee === member.email ? "secondary" : "ghost"}
+                      className="w-full justify-start text-xs h-7 gap-2"
+                      onClick={() => {
+                        onUpdate(vision.id, "assignee", member.email);
+                        setAssigneePopoverOpen(false);
+                      }}
+                    >
+                      {vision.assignee === member.email ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+                      {member.avatar_url ? (
+                        <img
+                          src={member.avatar_url}
+                          alt={member.name || ""}
+                          className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
+                          {(member.name || member.email || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {member.name || member.email}
+                    </Button>
+                  ))
+                ) : (
+                  currentUser && (
+                    <Button
+                      variant={vision.assignee === currentUser.email ? "secondary" : "ghost"}
+                      className="w-full justify-start text-xs h-7 gap-2"
+                      onClick={() => {
+                        onUpdate(vision.id, "assignee", currentUser.email);
+                        setAssigneePopoverOpen(false);
+                      }}
+                    >
+                      {vision.assignee === currentUser.email ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+                      {currentUser.avatar_url ? (
+                        <img
+                          src={currentUser.avatar_url}
+                          alt={currentUser.name || ""}
+                          className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
+                          {(currentUser.name || currentUser.email || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {currentUser.name || currentUser.email}
+                    </Button>
+                  )
                 )}
               </div>
             </PopoverContent>

@@ -47,6 +47,7 @@ export function ActionSection({
   hideCompleted = false,
   expandedCompletedTensions,
   toggleCompletedTensionExpand,
+  workspaceMembers = [],
 }: {
   areaId: string | null;
   areaName: string;
@@ -84,6 +85,7 @@ export function ActionSection({
   hideCompleted?: boolean;
   expandedCompletedTensions?: Set<string>;
   toggleCompletedTensionExpand?: (tensionId: string) => void;
+  workspaceMembers?: { id: string; email: string; name?: string; avatar_url?: string }[];
 }) {
   const sectionKey = areaId || "uncategorized";
   const sectionId = `action-section-${sectionKey}`;
@@ -186,6 +188,7 @@ export function ActionSection({
               hideCompleted={hideCompleted}
               expandedCompletedTensions={expandedCompletedTensions}
               toggleCompletedTensionExpand={toggleCompletedTensionExpand}
+              workspaceMembers={workspaceMembers}
             />
           ))}
         </div>
@@ -317,6 +320,7 @@ export function ActionSection({
                     disabled
                     allTensions={allTensions}
                     handleOptimisticMove={handleOptimisticMove}
+                    workspaceMembers={workspaceMembers}
                   />
                 ))}
               </SortableContext>
@@ -361,6 +365,7 @@ export function ActionSection({
                       onOpenDetailPanel={onOpenDetailPanel}
                       allTensions={allTensions}
                       handleOptimisticMove={handleOptimisticMove}
+                      workspaceMembers={workspaceMembers}
                     />
                   ))}
                 </SortableContext>

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -59,8 +60,14 @@ export function LoginForm({ redirectTo = "/charts" }: LoginFormProps) {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+        <Link
+          href="/forgot-password"
+          className="text-sm text-muted-foreground hover:underline block"
+        >
+          パスワードをお忘れですか？
+        </Link>
       </div>
-      <Button type="submit" className="w-full bg-[#282A2E] hover:bg-[#3a3c40] text-white" disabled={isLoading}>
+      <Button type="submit" className="w-full bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm" disabled={isLoading}>
         {isLoading ? "ログイン中..." : "ログイン"}
       </Button>
     </form>

@@ -110,7 +110,7 @@ export function SignupForm() {
           required
         />
       </div>
-      <Button type="submit" className="w-full bg-[#282A2E] hover:bg-[#3a3c40] text-white" disabled={isLoading}>
+      <Button type="submit" className="w-full bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm" disabled={isLoading}>
         {isLoading ? "作成中..." : "アカウント作成"}
       </Button>
     </form>

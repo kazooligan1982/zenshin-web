@@ -1,0 +1,214 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+
+const MIN_PASSWORD_LENGTH = 8;
+
+export default function ResetPasswordPage() {
+  const router = useRouter();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [authStatus, setAuthStatus] = useState<"checking" | "authenticated" | "invalid_link" | "direct_access">("checking");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const supabase = createClient();
+
+      // token_hash + type がクエリにある場合（Supabase のリダイレクト）: verifyOtp でセッション確立
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const tokenHash = params.get("token_hash");
+        const type = params.get("type");
+
+        if (tokenHash && type === "recovery") {
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "recovery",
+          });
+          if (verifyError) {
+            console.error("verifyOtp error:", verifyError);
+            setAuthStatus("invalid_link");
+            return;
+          }
+          // 検証成功後、URL からパラメータを削除（クリーンなURLに）
+          window.history.replaceState({}, "", "/reset-password");
+        }
+      }
+
+      // ハッシュがある場合（別のリダイレクト形式）、Supabase クライアントがセッションを確立するまで待つ
+      const hasHash = typeof window !== "undefined" && window.location.hash.length > 0;
+      if (hasHash) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session) {
+        setAuthStatus("authenticated");
+      } else if (hasHash) {
+        setAuthStatus("invalid_link");
+      } else {
+        setAuthStatus("direct_access");
+      }
+    };
+
+    void checkSession();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError("パスワードは8文字以上で入力してください");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("パスワードが一致しません");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+
+      if (updateError) {
+        console.error("Password update error:", updateError);
+        toast.error("パスワードの変更に失敗しました: " + updateError.message, { duration: 5000 });
+        setError(updateError.message);
+        return;
+      }
+
+      toast.success("パスワードを変更しました", { duration: 3000 });
+      router.push("/login");
+      router.refresh();
+    } catch (err) {
+      console.error("Password update error:", err);
+      const message = err instanceof Error ? err.message : "パスワードの変更に失敗しました";
+      toast.error(message, { duration: 5000 });
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (authStatus === "checking") {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <img src="/zenshin-icon.svg" alt="ZENSHIN CHART" className="w-12 h-12 mx-auto mb-4" />
+          <div className="flex items-start justify-center gap-1.5">
+            <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
+            <span className="text-[10px] font-light tracking-wider uppercase text-amber-400/70 pt-1">
+              beta
+            </span>
+          </div>
+        </div>
+        <p className="text-center text-sm text-muted-foreground">確認中...</p>
+      </div>
+    );
+  }
+
+  if (authStatus === "invalid_link" || authStatus === "direct_access") {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <img src="/zenshin-icon.svg" alt="ZENSHIN CHART" className="w-12 h-12 mx-auto mb-4" />
+          <div className="flex items-start justify-center gap-1.5">
+            <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
+            <span className="text-[10px] font-light tracking-wider uppercase text-amber-400/70 pt-1">
+              beta
+            </span>
+          </div>
+        </div>
+        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-center">
+          <p className="text-sm text-destructive font-medium">
+            {authStatus === "invalid_link"
+              ? "無効または期限切れのリセットリンクです。再度パスワードリセットをリクエストしてください。"
+              : "このページに直接アクセスすることはできません。パスワードリセットのメールを送信してください。"}
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 text-center">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium"
+          >
+            パスワードリセットをリクエスト
+          </Link>
+          <Link
+            href="/login"
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            ログインに戻る
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <img src="/zenshin-icon.svg" alt="ZENSHIN CHART" className="w-12 h-12 mx-auto mb-4" />
+        <div className="flex items-start justify-center gap-1.5">
+          <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
+          <span className="text-[10px] font-light tracking-wider uppercase text-amber-400/70 pt-1">
+            beta
+          </span>
+        </div>
+        <p className="text-muted-foreground mt-2">新しいパスワードを設定</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="password">新しいパスワード</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="8文字以上"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={MIN_PASSWORD_LENGTH}
+            className={error ? "border-destructive" : ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">パスワード（確認）</Label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            placeholder="もう一度入力"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            minLength={MIN_PASSWORD_LENGTH}
+            className={error ? "border-destructive" : ""}
+          />
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+        <Button
+          type="submit"
+          className="w-full bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm"
+          disabled={isLoading}
+        >
+          {isLoading ? "変更中..." : "パスワードを変更"}
+        </Button>
+      </form>
+
+      <p className="text-center text-sm text-muted-foreground">
+        <Link href="/login" className="text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium">
+          ログインに戻る
+        </Link>
+      </p>
+    </div>
+  );
+}

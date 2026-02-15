@@ -50,6 +50,7 @@ export function TensionGroup({
   hideCompleted,
   expandedCompletedTensions = new Set(),
   toggleCompletedTensionExpand,
+  workspaceMembers = [],
 }: {
   tension: Tension;
   tensionIndex: number;
@@ -81,6 +82,7 @@ export function TensionGroup({
   hideCompleted?: boolean;
   expandedCompletedTensions?: Set<string>;
   toggleCompletedTensionExpand?: (tensionId: string) => void;
+  workspaceMembers?: { id: string; email: string; name?: string; avatar_url?: string }[];
 }) {
   const [isMovingArea, setIsMovingArea] = useState(false);
   const sortByStatusFlag = sortByStatus ?? false;
@@ -365,6 +367,7 @@ export function TensionGroup({
                       disabled={key === "done"}
                       allTensions={allTensions}
                       handleOptimisticMove={handleOptimisticMove}
+                      workspaceMembers={workspaceMembers}
                     />
                   ))}
                 </SortableContext>
@@ -398,6 +401,7 @@ export function TensionGroup({
                     disabled
                     allTensions={allTensions}
                     handleOptimisticMove={handleOptimisticMove}
+                    workspaceMembers={workspaceMembers}
                   />
                 ))}
               </SortableContext>
@@ -443,6 +447,7 @@ export function TensionGroup({
                         onOpenDetailPanel={onOpenDetailPanel}
                         allTensions={allTensions}
                         handleOptimisticMove={handleOptimisticMove}
+                        workspaceMembers={workspaceMembers}
                       />
                     ))
                   )}

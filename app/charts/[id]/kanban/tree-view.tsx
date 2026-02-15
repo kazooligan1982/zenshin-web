@@ -65,12 +65,22 @@ interface TreeData {
   tree: TreeNode[];
 }
 
+interface WorkspaceMember {
+  id: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
+}
+
 interface TreeViewProps {
   projectId: string;
   statusFilter: string;
   assigneeFilter: string;
   dueDateFilter: string;
   searchQuery: string;
+  currentUserId?: string;
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
+  workspaceMembers?: WorkspaceMember[];
 }
 
 export function TreeView({
@@ -79,6 +89,9 @@ export function TreeView({
   assigneeFilter,
   dueDateFilter,
   searchQuery,
+  currentUserId = "",
+  currentUser = null,
+  workspaceMembers = [],
 }: TreeViewProps) {
   const [treeData, setTreeData] = useState<TreeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -674,6 +687,9 @@ export function TreeView({
           onClose={handleCloseModal}
           onSave={handleSaveAction}
           projectId={projectId}
+          currentUserId={currentUserId}
+          currentUser={currentUser}
+          workspaceMembers={workspaceMembers}
         />
       )}
 

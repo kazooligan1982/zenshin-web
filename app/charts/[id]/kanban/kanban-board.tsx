@@ -54,11 +54,21 @@ interface TensionGroup {
   actions: Action[];
 }
 
-interface KanbanBoardProps {
-  projectId: string;
+interface WorkspaceMember {
+  id: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
 }
 
-export function KanbanBoard({ projectId }: KanbanBoardProps) {
+interface KanbanBoardProps {
+  projectId: string;
+  currentUserId?: string;
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
+  workspaceMembers?: WorkspaceMember[];
+}
+
+export function KanbanBoard({ projectId, currentUserId = "", currentUser = null, workspaceMembers = [] }: KanbanBoardProps) {
   const [actions, setActions] = useState<Action[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -539,6 +549,9 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
             assigneeFilter={assigneeFilter}
             dueDateFilter={dueDateFilter}
             searchQuery={searchQuery}
+            currentUserId={currentUserId}
+            currentUser={currentUser}
+            workspaceMembers={workspaceMembers}
           />
         </TabsContent>
       </Tabs>
@@ -553,6 +566,9 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
         }}
         onSave={fetchActions}
         projectId={projectId}
+        currentUserId={currentUserId}
+        currentUser={currentUser}
+        workspaceMembers={workspaceMembers}
       />
     </div>
   );

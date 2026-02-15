@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { fetchChart } from "./actions";
 import { createClient } from "@/utils/supabase/server";
+import { getWorkspaceMembers } from "@/lib/workspace";
 import { ProjectEditor } from "./project-editor";
 
 interface PageProps {
@@ -59,6 +60,11 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       notFound();
     }
 
+    let workspaceMembers: { id: string; email: string; name?: string; role: string; avatar_url?: string }[] = [];
+    if (chart.workspace_id) {
+      workspaceMembers = await getWorkspaceMembers(chart.workspace_id);
+    }
+
     return (
       <ProjectEditor
         initialChart={chart}
@@ -66,6 +72,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         workspaceId={chart.workspace_id ?? ""}
         currentUserId={user?.id ?? ""}
         currentUser={currentUser}
+        workspaceMembers={workspaceMembers}
       />
     );
   } catch (error) {

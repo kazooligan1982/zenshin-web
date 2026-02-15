@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Copy, Check, Users, Crown, User, X, Loader2 } from "lucide-react";
+import { Copy, Check, Users, Crown, User, X, Loader2, Shield, Eye } from "lucide-react";
 import {
   createInvitation,
   getWorkspaceMembers,
@@ -93,16 +93,19 @@ export default function MembersPage() {
     setRemovingId(null);
   };
 
-  const canManageMembers = ["owner", "admin"].includes(currentRole);
+  const canManageMembers = ["owner", "editor"].includes(currentRole);
 
   const getRoleIcon = (role: string) => {
     if (role === "owner") return <Crown className="h-4 w-4 text-amber-500" />;
+    if (role === "editor") return <Shield className="h-4 w-4 text-zenshin-teal" />;
+    if (role === "viewer") return <Eye className="h-4 w-4 text-zenshin-navy/30" />;
     return <User className="h-4 w-4 text-zenshin-navy/30" />;
   };
 
   const getRoleLabel = (role: string) => {
     if (role === "owner") return "オーナー";
-    if (role === "admin") return "管理者";
+    if (role === "editor") return "編集者";
+    if (role === "viewer") return "閲覧者";
     return "メンバー";
   };
 
@@ -191,7 +194,7 @@ export default function MembersPage() {
                   {getRoleIcon(member.role)}
                   {getRoleLabel(member.role)}
                 </div>
-                {canManageMembers && member.role !== "owner" && (
+                {["owner"].includes(currentRole) && member.role !== "owner" && (
                   <Button
                     variant="ghost"
                     size="sm"

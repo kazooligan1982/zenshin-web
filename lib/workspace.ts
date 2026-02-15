@@ -304,7 +304,7 @@ export async function removeMember(
     .eq("user_id", user.id)
     .single();
 
-  if (!currentMember || !["owner", "admin"].includes(currentMember.role)) {
+  if (!currentMember || !["owner"].includes(currentMember.role)) {
     return { success: false, error: "権限がありません" };
   }
 

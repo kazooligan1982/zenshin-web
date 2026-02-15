@@ -38,7 +38,7 @@ function OAuthButtonsInner({ redirectTo: propRedirectTo }: OAuthButtonsProps) {
   return (
     <Button
       variant="outline"
-      className="w-full"
+      className="w-full border-zenshin-navy/25 hover:border-zenshin-navy/50 hover:bg-zenshin-navy/5 text-zenshin-navy"
       onClick={handleGoogleLogin}
       disabled={isLoading}
     >
@@ -52,7 +52,7 @@ export function OAuthButtons(props: OAuthButtonsProps) {
   return (
     <Suspense
       fallback={
-        <Button variant="outline" className="w-full" disabled>
+        <Button variant="outline" className="w-full border-zenshin-navy/25 text-zenshin-navy/70" disabled>
           <Chrome className="w-5 h-5 mr-2" />
           読み込み中...
         </Button>

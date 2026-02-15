@@ -135,8 +135,26 @@ export function Sidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 hover:bg-white/5 rounded-lg p-1.5 transition-colors w-full">
-              <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                <img src="/zenshin-icon.svg" alt="Z" className="w-8 h-8" />
+              <div className="flex items-center shrink-0">
+                <div className="relative">
+                  <img src="/zenshin-icon.svg" alt="Z" className="w-8 h-8" />
+                  {!isExpanded && (
+                    <span
+                      className="absolute -bottom-0.5 -right-0.5 text-[8px] font-bold text-amber-400/70"
+                      title="β版"
+                    >
+                      β
+                    </span>
+                  )}
+                </div>
+                {isExpanded && (
+                  <span
+                    className="ml-1.5 self-start pt-0.5 text-[10px] font-light tracking-wider uppercase text-amber-400/70"
+                    title="β版"
+                  >
+                    beta
+                  </span>
+                )}
               </div>
               {isHovered && (
                 <>
@@ -145,7 +163,7 @@ export function Sidebar() {
                       {currentWorkspace?.name || "Workspace"}
                     </p>
                     <p className="text-[11px] text-white/40 truncate">
-                      {currentWorkspace?.role === "owner" ? "Owner" : "Member"}
+                      {currentWorkspace?.role === "owner" ? "オーナー" : currentWorkspace?.role === "editor" ? "編集者" : "閲覧者"}
                     </p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-white/30 shrink-0" />
@@ -166,7 +184,7 @@ export function Sidebar() {
                   {currentWorkspace?.name || "マイワークスペース"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {currentWorkspace?.role === "owner" ? "オーナー" : "メンバー"}
+                  {currentWorkspace?.role === "owner" ? "オーナー" : currentWorkspace?.role === "editor" ? "編集者" : "閲覧者"}
                 </p>
               </div>
             </DropdownMenuItem>
@@ -191,7 +209,7 @@ export function Sidebar() {
                       <div>
                         <p className="font-medium">{ws.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {ws.role === "owner" ? "オーナー" : "メンバー"}
+                          {ws.role === "owner" ? "オーナー" : ws.role === "editor" ? "編集者" : "閲覧者"}
                         </p>
                       </div>
                     </DropdownMenuItem>

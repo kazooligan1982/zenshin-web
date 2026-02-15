@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Pause,
   XCircle,
+  Check,
   AlertTriangle,
   ArrowRightLeft,
   Loader2,
@@ -84,6 +85,7 @@ export function SortableActionItem({
   disabled = false,
   allTensions = [],
   handleOptimisticMove,
+  workspaceMembers = [],
 }: {
   actionPlan: ActionPlan;
   actionIndex: number;
@@ -120,6 +122,7 @@ export function SortableActionItem({
   onOpenDetailPanel: (itemType: "action", itemId: string, itemContent: string) => void;
   disabled?: boolean;
   handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
+  workspaceMembers?: { id: string; email: string; name?: string; avatar_url?: string }[];
 }) {
   const actionInput = useItemInput({
     initialValue: actionPlan.title || "",
@@ -132,6 +135,7 @@ export function SortableActionItem({
     sectionId: `action-${tensionId || "loose"}`,
   });
   const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
+  const assigneeMember = workspaceMembers.find((m) => m.email === actionPlan.assignee);
   const {
     attributes,
     listeners,
@@ -411,16 +415,15 @@ export function SortableActionItem({
                   title={actionPlan.assignee || "担当者を選択"}
                 >
                 {actionPlan.assignee ? (
-                  currentUser?.avatar_url &&
-                  actionPlan.assignee === currentUser.email ? (
+                  assigneeMember?.avatar_url ? (
                     <img
-                      src={currentUser.avatar_url}
-                      alt={currentUser.name || ""}
+                      src={assigneeMember.avatar_url}
+                      alt={assigneeMember.name || ""}
                       className="h-5 w-5 rounded-full object-cover"
                     />
                   ) : (
                     <div className="h-5 w-5 rounded-full bg-zenshin-navy text-white text-[10px] flex items-center justify-center font-medium">
-                      {actionPlan.assignee.charAt(0).toUpperCase()}
+                      {(assigneeMember?.name || assigneeMember?.email || actionPlan.assignee).charAt(0).toUpperCase()}
                     </div>
                   )
                 ) : (
@@ -443,53 +446,74 @@ export function SortableActionItem({
               </div>
             </PopoverTrigger>
             <PopoverContent
-              className="w-40 p-2 z-50"
+              className="w-48 max-h-[240px] overflow-y-auto p-2 z-50"
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="space-y-1">
-                {currentUser && (
-                  <Button
-                    variant={actionPlan.assignee === currentUser.email ? "secondary" : "ghost"}
-                    className="w-full justify-start text-xs h-7 gap-2"
-                    onClick={() => {
-                      handleUpdateActionPlan(
-                        tensionId,
-                        actionPlan.id,
-                        "assignee",
-                        currentUser.email
-                      );
-                      setAssigneePopoverOpen(false);
-                    }}
-                  >
-                    {currentUser.avatar_url ? (
-                      <img
-                        src={currentUser.avatar_url}
-                        alt={currentUser.name || ""}
-                        className="h-4 w-4 rounded-full object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
-                        {(currentUser.name || currentUser.email || "?")
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
-                    )}
-                    {currentUser.name || currentUser.email}
-                  </Button>
-                )}
-                {actionPlan.assignee && (
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-xs h-7 text-muted-foreground"
-                    onClick={() => {
-                      handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", "");
-                      setAssigneePopoverOpen(false);
-                    }}
-                  >
-                    クリア
-                  </Button>
+              <div className="space-y-0.5">
+                <Button
+                  variant={!actionPlan.assignee ? "secondary" : "ghost"}
+                  className="w-full justify-start text-xs h-7 gap-2"
+                  onClick={() => {
+                    handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", "");
+                    setAssigneePopoverOpen(false);
+                  }}
+                >
+                  {!actionPlan.assignee ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+                  担当者なし
+                </Button>
+                {workspaceMembers.length > 0 ? (
+                  workspaceMembers.map((member) => (
+                    <Button
+                      key={member.id}
+                      variant={actionPlan.assignee === member.email ? "secondary" : "ghost"}
+                      className="w-full justify-start text-xs h-7 gap-2"
+                      onClick={() => {
+                        handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", member.email);
+                        setAssigneePopoverOpen(false);
+                      }}
+                    >
+                      {actionPlan.assignee === member.email ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+                      {member.avatar_url ? (
+                        <img
+                          src={member.avatar_url}
+                          alt={member.name || ""}
+                          className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
+                          {(member.name || member.email || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {member.name || member.email}
+                    </Button>
+                  ))
+                ) : (
+                  currentUser && (
+                    <Button
+                      variant={actionPlan.assignee === currentUser.email ? "secondary" : "ghost"}
+                      className="w-full justify-start text-xs h-7 gap-2"
+                      onClick={() => {
+                        handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", currentUser.email);
+                        setAssigneePopoverOpen(false);
+                      }}
+                    >
+                      {actionPlan.assignee === currentUser.email ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+                      {currentUser.avatar_url ? (
+                        <img
+                          src={currentUser.avatar_url}
+                          alt={currentUser.name || ""}
+                          className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
+                          {(currentUser.name || currentUser.email || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {currentUser.name || currentUser.email}
+                    </Button>
+                  )
                 )}
               </div>
             </PopoverContent>
