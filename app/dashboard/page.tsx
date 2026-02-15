@@ -10,16 +10,20 @@ import {
 } from "lucide-react";
 import { getDashboardData } from "./actions";
 import { DashboardChartFilter } from "./dashboard-chart-filter";
+import { DashboardPeriodFilter } from "./dashboard-period-filter";
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ chartId?: string }>;
+  searchParams?: Promise<{ chartId?: string; period?: string; from?: string; to?: string }>;
 }) {
   const resolvedParams = await searchParams;
   const selectedChartId = resolvedParams?.chartId ?? "all";
+  const period = resolvedParams?.period ?? "all";
+  const from = resolvedParams?.from ?? null;
+  const to = resolvedParams?.to ?? null;
   const { stats, staleCharts, upcomingDeadlines, availableCharts } =
-    await getDashboardData(selectedChartId);
+    await getDashboardData(selectedChartId, period, from, to);
 
   return (
     <div className="py-8 px-6 lg:px-10 min-h-screen">
@@ -29,10 +33,13 @@ export default async function DashboardPage({
           <h1 className="text-2xl font-bold text-zenshin-navy">ダッシュボード</h1>
           <p className="text-sm text-zenshin-navy/40 mt-1">チャートの状況を俯瞰する</p>
         </div>
-        <DashboardChartFilter
-          charts={availableCharts}
-          selectedChartId={selectedChartId}
-        />
+        <div className="flex items-center gap-4 flex-wrap">
+          <DashboardPeriodFilter period={period} from={from} to={to} />
+          <DashboardChartFilter
+            charts={availableCharts}
+            selectedChartId={selectedChartId}
+          />
+        </div>
       </div>
 
       {/* サマリーカード */}
