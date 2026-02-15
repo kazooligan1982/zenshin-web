@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -29,16 +31,15 @@ export function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; i
     : "bg-zenshin-cream/50 border-zenshin-navy/6 hover:bg-white";
 
   return (
-    <Link href={`/charts/${chart.id}`}>
-      <div className={`group relative rounded-xl border p-4 h-full hover:shadow-md hover:border-zenshin-orange/30 hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col ${bgClass}`}>
+    <div className={`group relative rounded-xl border p-4 h-full hover:shadow-md hover:border-zenshin-orange/30 hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col ${bgClass}`}>
+      <Link href={`/charts/${chart.id}`} className="flex flex-col flex-1 min-h-0 min-w-0">
         <div className="flex items-start justify-between mb-1">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <DepthBadge depth={chart.depth} label={depthLabel} />
             <StatusBar status={actionStatus} />
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
-            <DeleteChartButton chartId={chart.id} />
-          </div>
+          {/* ゴミ箱ボタン用のスペーサー（レイアウト維持） */}
+          <div className="w-8 h-8 shrink-0 ml-2" />
         </div>
 
         <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -73,8 +74,13 @@ export function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; i
             <div className="w-5 h-5 rounded-full bg-zenshin-orange/20 border-2 border-white" />
           </div>
         </div>
+      </Link>
+
+      {/* Link の外に配置。hover で表示、クリックしても遷移しない */}
+      <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <DeleteChartButton chartId={chart.id} />
       </div>
-    </Link>
+    </div>
   );
 }
 
