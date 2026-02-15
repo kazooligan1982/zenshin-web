@@ -62,7 +62,7 @@ export default async function ChartsPage() {
                 まだチャートがありません
               </p>
               <p className="text-sm mt-2 text-zenshin-navy/40">
-                「New Chart」ボタンから最初のチャートを作成しましょう
+                「チャートを作成」ボタンから最初のチャートを作成しましょう
               </p>
             </div>
           ) : (

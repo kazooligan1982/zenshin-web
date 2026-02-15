@@ -40,7 +40,7 @@ export function NewChartButton() {
       ) : (
         <>
           <Plus className="w-4 h-4" />
-          New Chart
+          チャートを作成
         </>
       )}
     </Button>

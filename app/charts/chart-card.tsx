@@ -69,10 +69,29 @@ export function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; i
               <span>更新: {format(new Date(chart.updated_at), "MM/dd", { locale: ja })}</span>
             </div>
           </div>
-          <div className="flex -space-x-1.5 shrink-0">
-            <div className="w-5 h-5 rounded-full bg-zenshin-teal/20 border-2 border-white" />
-            <div className="w-5 h-5 rounded-full bg-zenshin-orange/20 border-2 border-white" />
-          </div>
+          {chart.assignees && chart.assignees.length > 0 ? (
+            <div className="flex -space-x-1.5 shrink-0">
+              {chart.assignees.slice(0, 4).map((assignee) => (
+                <div
+                  key={assignee.id}
+                  className="w-5 h-5 rounded-full border-2 border-white overflow-hidden bg-zenshin-navy/10 flex items-center justify-center"
+                  title={assignee.name || assignee.email}
+                >
+                  {assignee.avatar_url ? (
+                    <img
+                      src={assignee.avatar_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[9px] font-medium text-zenshin-navy/70">
+                      {(assignee.name || assignee.email || "?").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </Link>
 
