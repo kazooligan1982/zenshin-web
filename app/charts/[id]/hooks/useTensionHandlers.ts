@@ -1,4 +1,4 @@
-import type { Tension, TensionStatus, ActionPlan, VisionItem, RealityItem } from "@/types/chart";
+import type { Tension, TensionStatus, ActionPlan, VisionItem, RealityItem, Area } from "@/types/chart";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -6,6 +6,7 @@ import {
   updateTensionItem,
   removeTension,
   toggleVisionRealityLinkAction,
+  updateTensionArea,
 } from "../actions";
 
 export function useTensionHandlers({
@@ -18,6 +19,7 @@ export function useTensionHandlers({
   setLooseActions,
   pendingDeletions,
   setPendingDeletions,
+  areas,
   router,
 }: {
   chartId: string;
@@ -29,6 +31,7 @@ export function useTensionHandlers({
   setLooseActions: React.Dispatch<React.SetStateAction<ActionPlan[]>>;
   pendingDeletions: Record<string, { type: string; item: any; tensionId?: string | null; timeoutId: NodeJS.Timeout }>;
   setPendingDeletions: React.Dispatch<React.SetStateAction<any>>;
+  areas: Area[];
   router: ReturnType<typeof useRouter>;
 }) {
   const handleAddTension = async (title: string, areaId?: string | null) => {
@@ -71,25 +74,59 @@ export function useTensionHandlers({
     field: "title" | "description" | "status",
     value: string | TensionStatus
   ) => {
-    // Server updateのみ（Optimistic UIなし）
-    const success = await updateTensionItem(tensionId, chartId, field, value);
-    if (success) {
-      // statusの場合はローカルstateを即座に更新してUIをリアルタイム反映
-      if (field === "status") {
-        setTensions((prev) =>
-          prev.map((t) =>
-            t.id === tensionId ? { ...t, status: value as TensionStatus } : t
-          )
-        );
-        if (value === "resolved") {
-          toast.success("Tensionを完了にしました", { duration: 3000 });
-        } else if (value === "active") {
-          toast.success("Tensionを再開しました", { duration: 3000 });
+    const previousState = tensions;
+    // 楽観的にローカル状態を即時更新（title, description, status すべて）
+    setTensions((prev) =>
+      prev.map((t) =>
+        t.id === tensionId ? { ...t, [field]: value } : t
+      )
+    );
+    try {
+      const success = await updateTensionItem(tensionId, chartId, field, value);
+      if (success) {
+        if (field === "status") {
+          if (value === "resolved") {
+            toast.success("Tensionを完了にしました", { duration: 3000 });
+          } else if (value === "active") {
+            toast.success("Tensionを再開しました", { duration: 3000 });
+          }
         }
         router.refresh();
+      } else {
+        setTensions(previousState);
+        console.error("[handleUpdateTension] 更新失敗");
       }
-    } else {
-      console.error("[handleUpdateTension] 更新失敗");
+    } catch (error) {
+      console.error("[handleUpdateTension] エラー:", error);
+      setTensions(previousState);
+    }
+  };
+
+  const handleMoveTensionArea = async (tensionId: string, targetAreaId: string | null) => {
+    const tension = tensions.find((t) => t.id === tensionId);
+    if (!tension) return;
+
+    const previousState = tensions;
+    setTensions((prev) =>
+      prev.map((t) =>
+        t.id === tensionId ? { ...t, area_id: targetAreaId } : t
+      )
+    );
+    try {
+      const result = await updateTensionArea(tensionId, targetAreaId, chartId, true);
+      if (result.success) {
+        const areaName =
+          targetAreaId !== null ? areas.find((a) => a.id === targetAreaId)?.name : "未分類";
+        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+        router.refresh();
+      } else {
+        setTensions(previousState);
+        toast.error("移動に失敗しました", { duration: 5000 });
+      }
+    } catch (error) {
+      console.error("[handleMoveTensionArea] エラー:", error);
+      setTensions(previousState);
+      toast.error("移動に失敗しました", { duration: 5000 });
     }
   };
 
@@ -198,6 +235,7 @@ export function useTensionHandlers({
     handleAddTension,
     handleUpdateTension,
     handleDeleteTension,
+    handleMoveTensionArea,
     toggleVisionRealityLink,
     handleOptimisticMove,
   };

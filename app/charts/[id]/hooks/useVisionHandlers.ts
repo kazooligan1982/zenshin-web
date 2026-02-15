@@ -86,16 +86,35 @@ export function useVisionHandlers({
         )
       );
     }
+    if (field === "areaId") {
+      const previousState = visions;
+      setVisions((prev) =>
+        prev.map((vision) =>
+          vision.id === id ? { ...vision, area_id: value as string | null } : vision
+        )
+      );
+      try {
+        const success = await updateVisionItem(id, chartId, field, value);
+        if (success) {
+          const areaName = value
+            ? chart.areas.find((area: Area) => area.id === value)?.name
+            : "未分類";
+          toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+          router.refresh();
+        } else {
+          setVisions(previousState);
+          console.error("[handleUpdateVision] 更新失敗");
+        }
+      } catch (error) {
+        console.error("[handleUpdateVision] エラー:", error);
+        setVisions(previousState);
+      }
+      return;
+    }
     const success = await updateVisionItem(id, chartId, field, value);
     if (success) {
-      if (field === "areaId") {
-        const areaName = value
-          ? chart.areas.find((area: Area) => area.id === value)?.name
-          : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
-      }
-      // isLocked、areaIdが変更された場合のみrefresh（コンテンツ構造に影響するため）
-      if (field === "isLocked" || field === "areaId") {
+      // isLockedが変更された場合のみrefresh
+      if (field === "isLocked") {
         router.refresh();
       }
     } else {

@@ -41,6 +41,7 @@ export function ActionSection({
   setHighlightedItemId,
   handleUpdateTension,
   handleDeleteTension,
+  onMoveTensionArea,
   onOpenFocus,
   sortByStatus = false,
   hideCompleted = false,
@@ -77,6 +78,7 @@ export function ActionSection({
   setHighlightedItemId: (id: string | null) => void;
   handleUpdateTension: (tensionId: string, field: "title" | "description" | "status", value: string | TensionStatus) => void;
   handleDeleteTension: (tensionId: string) => void;
+  onMoveTensionArea?: (tensionId: string, targetAreaId: string | null) => Promise<void>;
   onOpenFocus: (tension: Tension) => void;
   sortByStatus?: boolean;
   hideCompleted?: boolean;
@@ -168,6 +170,7 @@ export function ActionSection({
               handleOptimisticMove={handleOptimisticMove}
               handleUpdateTension={handleUpdateTension}
               handleDeleteTension={handleDeleteTension}
+              onMoveTensionArea={onMoveTensionArea}
               handleUpdateActionPlan={handleUpdateActionPlan}
               handleDeleteActionPlan={handleDeleteActionPlan}
               handleTelescopeClick={handleTelescopeClick}
