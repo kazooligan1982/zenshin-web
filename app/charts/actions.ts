@@ -14,6 +14,13 @@ export type ActionStatusCounts = {
   cancelled: number;
 };
 
+export type ChartAssignee = {
+  id: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
+};
+
 export type ChartWithMeta = {
   id: string;
   title: string;
@@ -25,6 +32,7 @@ export type ChartWithMeta = {
   depth: number;
   status?: "active" | "completed";
   actionStatusCounts?: ActionStatusCounts;
+  assignees?: ChartAssignee[];
 };
 
 export type ProjectGroup = {
@@ -114,7 +122,10 @@ export async function getChartsHierarchy(): Promise<{
   }));
 
   const chartIds = chartsWithDepth.map((c) => c.id);
-  const actionStatusByChart = await getActionStatusCountsByChart(supabase, chartIds);
+  const [actionStatusByChart, assigneesByChart] = await Promise.all([
+    getActionStatusCountsByChart(supabase, chartIds),
+    getAssigneesByChart(supabase, chartIds),
+  ]);
   for (const chart of chartsWithDepth) {
     chart.actionStatusCounts = actionStatusByChart.get(chart.id) ?? {
       total: 0,
@@ -124,6 +135,7 @@ export async function getChartsHierarchy(): Promise<{
       notStarted: 0,
       cancelled: 0,
     };
+    chart.assignees = assigneesByChart.get(chart.id) ?? [];
   }
 
   const activeCharts = chartsWithDepth.filter((chart) => chart.status !== "completed");
@@ -304,6 +316,76 @@ async function getActionStatusCountsByChart(
         counts.cancelled++;
         break;
     }
+  }
+
+  return result;
+}
+
+async function getAssigneesByChart(
+  supabase: any,
+  chartIds: string[]
+): Promise<Map<string, ChartAssignee[]>> {
+  const result = new Map<string, ChartAssignee[]>();
+  for (const id of chartIds) {
+    result.set(id, []);
+  }
+  if (chartIds.length === 0) return result;
+
+  const [actionsRes, visionsRes] = await Promise.all([
+    supabase.from("actions").select("chart_id, assignee").in("chart_id", chartIds).not("assignee", "is", null),
+    supabase.from("visions").select("chart_id, assignee").in("chart_id", chartIds).not("assignee", "is", null),
+  ]);
+
+  const assigneeEmailsByChart = new Map<string, Set<string>>();
+  for (const chartId of chartIds) {
+    assigneeEmailsByChart.set(chartId, new Set());
+  }
+
+  for (const action of actionsRes.data || []) {
+    if (action.chart_id && action.assignee?.trim()) {
+      assigneeEmailsByChart.get(action.chart_id)?.add(action.assignee.trim());
+    }
+  }
+  for (const vision of visionsRes.data || []) {
+    if (vision.chart_id && vision.assignee?.trim()) {
+      assigneeEmailsByChart.get(vision.chart_id)?.add(vision.assignee.trim());
+    }
+  }
+
+  const allEmails = new Set<string>();
+  for (const emails of assigneeEmailsByChart.values()) {
+    emails.forEach((e) => allEmails.add(e));
+  }
+  if (allEmails.size === 0) return result;
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, email, name, avatar_url")
+    .in("email", Array.from(allEmails));
+
+  const profileByEmail = new Map<string, ChartAssignee>();
+  for (const p of profiles || []) {
+    if (p.email) {
+      profileByEmail.set(p.email, {
+        id: p.id,
+        email: p.email,
+        name: p.name,
+        avatar_url: p.avatar_url,
+      });
+    }
+  }
+
+  for (const [chartId, emails] of assigneeEmailsByChart) {
+    const assignees: ChartAssignee[] = [];
+    for (const email of emails) {
+      const profile = profileByEmail.get(email);
+      if (profile) {
+        assignees.push(profile);
+      } else {
+        assignees.push({ id: email, email, name: undefined, avatar_url: undefined });
+      }
+    }
+    result.set(chartId, assignees);
   }
 
   return result;
