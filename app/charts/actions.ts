@@ -5,6 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { getOrCreateWorkspace } from "@/lib/workspace";
 
+export type ActionStatusCounts = {
+  total: number;
+  done: number;
+  inProgress: number;
+  onHold: number;
+  notStarted: number;
+  cancelled: number;
+};
+
 export type ChartWithMeta = {
   id: string;
   title: string;
@@ -15,6 +24,7 @@ export type ChartWithMeta = {
   parent_action_id: string | null;
   depth: number;
   status?: "active" | "completed";
+  actionStatusCounts?: ActionStatusCounts;
 };
 
 export type ProjectGroup = {
@@ -102,6 +112,19 @@ export async function getChartsHierarchy(): Promise<{
     depth: getChartDepth(chart.id),
     status: (chart as { status?: string }).status === "completed" ? "completed" : "active",
   }));
+
+  const chartIds = chartsWithDepth.map((c) => c.id);
+  const actionStatusByChart = await getActionStatusCountsByChart(supabase, chartIds);
+  for (const chart of chartsWithDepth) {
+    chart.actionStatusCounts = actionStatusByChart.get(chart.id) ?? {
+      total: 0,
+      done: 0,
+      inProgress: 0,
+      onHold: 0,
+      notStarted: 0,
+      cancelled: 0,
+    };
+  }
 
   const activeCharts = chartsWithDepth.filter((chart) => chart.status !== "completed");
   const completedCharts = chartsWithDepth.filter((chart) => chart.status === "completed");
@@ -230,6 +253,60 @@ export async function restoreChart(chartId: string) {
   revalidatePath("/settings/archive");
 
   return { success: true };
+}
+
+async function getActionStatusCountsByChart(
+  supabase: any,
+  chartIds: string[]
+): Promise<Map<string, ActionStatusCounts>> {
+  const result = new Map<string, ActionStatusCounts>();
+  for (const id of chartIds) {
+    result.set(id, {
+      total: 0,
+      done: 0,
+      inProgress: 0,
+      onHold: 0,
+      notStarted: 0,
+      cancelled: 0,
+    });
+  }
+  if (chartIds.length === 0) return result;
+
+  const { data: actions } = await supabase
+    .from("actions")
+    .select("chart_id, status, is_completed")
+    .in("chart_id", chartIds);
+
+  for (const action of actions || []) {
+    const chartId = action.chart_id;
+    if (!chartId || !result.has(chartId)) continue;
+
+    const counts = result.get(chartId)!;
+    counts.total++;
+
+    const status = action.status ?? (action.is_completed ? "done" : "todo");
+    switch (status) {
+      case "done":
+        counts.done++;
+        break;
+      case "in_progress":
+        counts.inProgress++;
+        break;
+      case "pending":
+        counts.onHold++;
+        break;
+      case "todo":
+      case "unset":
+      default:
+        counts.notStarted++;
+        break;
+      case "canceled":
+        counts.cancelled++;
+        break;
+    }
+  }
+
+  return result;
 }
 
 async function getAllDescendantChartIds(
