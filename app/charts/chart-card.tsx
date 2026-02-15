@@ -15,7 +15,7 @@ export function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; i
           ? "3rd"
           : `${chart.depth}th`;
 
-  const mockStatus = {
+  const actionStatus = chart.actionStatusCounts ?? {
     total: 0,
     done: 0,
     inProgress: 0,
@@ -34,7 +34,7 @@ export function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; i
         <div className="flex items-start justify-between mb-1">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <DepthBadge depth={chart.depth} label={depthLabel} />
-            <StatusBar status={mockStatus} />
+            <StatusBar status={actionStatus} />
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
             <DeleteChartButton chartId={chart.id} />
