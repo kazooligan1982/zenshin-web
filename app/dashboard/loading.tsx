@@ -1,13 +1,13 @@
 export default function DashboardLoading() {
   return (
-    <div className="py-8 px-6 lg:px-10 min-h-screen animate-pulse">
+    <div className="py-8 px-6 lg:px-10 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="h-7 w-44 bg-zenshin-navy/10 rounded-lg" />
-          <div className="h-4 w-52 bg-zenshin-navy/8 rounded mt-2" />
+          <div className="h-7 w-44 bg-zenshin-navy/10 rounded-lg animate-pulse" />
+          <div className="h-4 w-52 bg-zenshin-navy/8 rounded mt-2 animate-pulse" />
         </div>
-        <div className="h-9 w-48 bg-zenshin-navy/8 rounded-lg" />
+        <div className="h-9 w-48 bg-zenshin-navy/8 rounded-lg animate-pulse" />
       </div>
 
       {/* Summary Cards */}
@@ -18,18 +18,18 @@ export default function DashboardLoading() {
             className="bg-white rounded-xl border border-zenshin-navy/8 p-5"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="h-4 w-16 bg-zenshin-navy/8 rounded" />
-              <div className="h-4 w-4 bg-zenshin-navy/8 rounded" />
+              <div className="h-4 w-16 bg-zenshin-navy/8 rounded animate-pulse" />
+              <div className="h-4 w-4 bg-zenshin-navy/8 rounded animate-pulse" />
             </div>
-            <div className="h-9 w-16 bg-zenshin-navy/10 rounded-lg" />
+            <div className="h-9 w-16 bg-zenshin-navy/10 rounded-lg animate-pulse" />
           </div>
         ))}
       </div>
 
       {/* Status Distribution */}
       <div className="bg-white rounded-xl border border-zenshin-navy/8 p-5 mb-8">
-        <div className="h-5 w-32 bg-zenshin-navy/8 rounded mb-4" />
-        <div className="h-4 w-full bg-zenshin-navy/6 rounded-full" />
+        <div className="h-5 w-32 bg-zenshin-navy/8 rounded mb-4 animate-pulse" />
+        <div className="h-4 w-full bg-zenshin-navy/6 rounded-full animate-pulse" />
       </div>
 
       {/* Bottom sections */}
@@ -39,10 +39,10 @@ export default function DashboardLoading() {
             key={i}
             className="bg-white rounded-xl border border-zenshin-navy/8 p-5"
           >
-            <div className="h-5 w-36 bg-zenshin-navy/8 rounded mb-4" />
+            <div className="h-5 w-36 bg-zenshin-navy/8 rounded mb-4 animate-pulse" />
             <div className="space-y-3">
               {[1, 2, 3].map((j) => (
-                <div key={j} className="h-12 bg-zenshin-navy/4 rounded-lg" />
+                <div key={j} className="h-12 bg-zenshin-navy/4 rounded-lg animate-pulse" />
               ))}
             </div>
           </div>

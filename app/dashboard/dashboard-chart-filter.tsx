@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -8,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type DashboardChartFilterProps = {
   charts: { id: string; title: string }[];
@@ -21,6 +24,7 @@ export function DashboardChartFilter({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -30,11 +34,20 @@ export function DashboardChartFilter({
       params.set("chartId", value);
     }
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
+    const newUrl = query ? `${pathname}?${query}` : pathname;
+    startTransition(() => {
+      router.push(newUrl, { scroll: false });
+    });
   };
 
   return (
-    <Select value={selectedChartId} onValueChange={handleChange}>
+    <div
+      className={cn(
+        "flex items-center gap-2 transition-opacity",
+        isPending && "opacity-70 pointer-events-none"
+      )}
+    >
+      <Select value={selectedChartId} onValueChange={handleChange}>
       <SelectTrigger className="w-[220px] border-zenshin-navy/15 text-zenshin-navy [&>span]:truncate">
         <SelectValue placeholder="全体" />
       </SelectTrigger>
@@ -47,5 +60,9 @@ export function DashboardChartFilter({
         ))}
       </SelectContent>
     </Select>
+      {isPending && (
+        <Loader2 className="h-4 w-4 animate-spin text-zenshin-navy/50 shrink-0" />
+      )}
+    </div>
   );
 }

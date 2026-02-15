@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getPeriodRange } from "./utils";
 
 export type DashboardStats = {
   totalCharts: number;
@@ -34,7 +35,12 @@ export type UpcomingDeadline = {
   daysUntilDue: number;
 };
 
-export async function getDashboardData(chartId?: string): Promise<{
+export async function getDashboardData(
+  chartId?: string,
+  period?: string | null,
+  from?: string | null,
+  to?: string | null
+): Promise<{
   stats: DashboardStats;
   staleCharts: StaleChart[];
   upcomingDeadlines: UpcomingDeadline[];
@@ -42,6 +48,7 @@ export async function getDashboardData(chartId?: string): Promise<{
 }> {
   const supabase = await createClient();
   const now = new Date();
+  const periodRange = getPeriodRange(period, from, to);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -83,6 +90,8 @@ export async function getDashboardData(chartId?: string): Promise<{
       status,
       is_completed,
       due_date,
+      created_at,
+      updated_at,
       tension_id,
       tensions!inner(chart_id, charts!inner(id, title, archived_at))
     `
@@ -102,6 +111,16 @@ export async function getDashboardData(chartId?: string): Promise<{
   const allActions = actions || [];
   const allCharts = charts || [];
 
+  let actionsForPeriodStats = allActions;
+  if (periodRange) {
+    const startTime = periodRange.start.getTime();
+    const endTime = periodRange.end.getTime();
+    actionsForPeriodStats = allActions.filter((action: any) => {
+      const createdAt = action.created_at ? new Date(action.created_at).getTime() : 0;
+      return createdAt >= startTime && createdAt <= endTime;
+    });
+  }
+
   const statusDistribution = {
     todo: 0,
     in_progress: 0,
@@ -110,7 +129,7 @@ export async function getDashboardData(chartId?: string): Promise<{
     canceled: 0,
   };
 
-  for (const action of allActions) {
+  for (const action of actionsForPeriodStats) {
     const status = action.status || (action.is_completed ? "done" : "todo");
     if (status in statusDistribution) {
       statusDistribution[status as keyof typeof statusDistribution]++;
@@ -119,10 +138,24 @@ export async function getDashboardData(chartId?: string): Promise<{
     }
   }
 
-  const completedActions = statusDistribution.done + statusDistribution.canceled;
-  const totalActions = allActions.length;
+  const totalActions = actionsForPeriodStats.length;
+
+  let completedActions: number;
+  if (periodRange) {
+    const startTime = periodRange.start.getTime();
+    const endTime = periodRange.end.getTime();
+    completedActions = allActions.filter((action: any) => {
+      const status = action.status || (action.is_completed ? "done" : "todo");
+      if (status !== "done") return false;
+      const updatedAt = action.updated_at ? new Date(action.updated_at).getTime() : 0;
+      return updatedAt >= startTime && updatedAt <= endTime;
+    }).length;
+  } else {
+    completedActions = statusDistribution.done + statusDistribution.canceled;
+  }
+
   const completionRate =
-    totalActions > 0 ? Math.round((statusDistribution.done / totalActions) * 100) : 0;
+    totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
 
   const staleCharts: StaleChart[] = allCharts
     .filter((chart) => new Date(chart.updated_at) < sevenDaysAgo)
@@ -171,7 +204,7 @@ export async function getDashboardData(chartId?: string): Promise<{
   const stats: DashboardStats = {
     totalCharts: allCharts.length,
     totalActions,
-    completedActions: statusDistribution.done,
+    completedActions,
     completionRate,
     statusDistribution,
   };
