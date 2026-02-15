@@ -20,7 +20,7 @@ import {
 import {
   Home,
   Target,
-  AlertCircle,
+  Search,
   Plus,
   ChevronRight,
   ChevronDown,
@@ -251,7 +251,6 @@ export function ProjectEditor({
   const [hideCompleted, setHideCompleted] = useState(false);
   const [showCompletedTensions, setShowCompletedTensions] = useState(false);
   const [expandedCompletedTensions, setExpandedCompletedTensions] = useState<Set<string>>(new Set());
-
   const { handleAddVision, handleUpdateVision, handleDeleteVision } = useVisionHandlers({
     chartId,
     visions,
@@ -1597,7 +1596,7 @@ export function ProjectEditor({
                 >
                   <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-zenshin-orange" />
+                      <Search className="w-4 h-4 text-zenshin-orange" />
                       <h2 className="text-base font-bold text-foreground leading-tight">
                         Reality
                       </h2>
@@ -2047,7 +2046,7 @@ export function ProjectEditor({
                 >
                   <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-zenshin-orange" />
+                      <Search className="w-4 h-4 text-zenshin-orange" />
                       <h2 className="text-base font-bold text-zenshin-navy leading-tight">Reality</h2>
                     </div>
                     <Button
@@ -2625,7 +2624,7 @@ function ComparisonView({
                     {/* Reality側 */}
                     <div className="p-0">
                       <div className="px-3 py-1.5 bg-zenshin-orange/8 border-b border-gray-100 flex items-center gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5 text-zenshin-orange" />
+                        <Search className="w-3.5 h-3.5 text-zenshin-orange" />
                         <span className="text-xs font-bold text-zenshin-orange uppercase tracking-wider">Reality</span>
                       </div>
                       <div className="space-y-1 px-2 py-2 min-h-[40px]">
