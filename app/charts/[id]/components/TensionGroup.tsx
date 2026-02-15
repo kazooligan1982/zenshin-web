@@ -460,6 +460,7 @@ export function TensionGroup({
           <div className="flex gap-2">
             <Input
               {...newActionInput.bind}
+              data-tension-new-action={tension.id}
               onKeyDown={(e) => {
                 handleNewActionKeyDown(e);
                 if (e.key === "ArrowUp" || e.key === "ArrowDown") {

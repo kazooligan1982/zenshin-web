@@ -1,3 +1,4 @@
+import type React from "react";
 import type { Tension, ActionPlan } from "@/types/chart";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -11,6 +12,52 @@ import {
 
 export let _pendingScrollRestore: number | null = null;
 
+function showAllActionsCompletedToast(
+  tensionId: string,
+  handleUpdateTension: (tensionId: string, field: "title" | "description" | "status", value: string) => Promise<void>
+) {
+  const toastId = toast(
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xl">🎉</span>
+        <span className="font-medium">すべてのアクションが完了しました！</span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        このTensionは解消されましたか？
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            handleUpdateTension(tensionId, "status", "resolved");
+            toast.dismiss(toastId);
+          }}
+          className="px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+        >
+          完了にする
+        </button>
+        <button
+          onClick={() => {
+            const input = document.querySelector(
+              `[data-tension-new-action="${tensionId}"]`
+            );
+            if (input instanceof HTMLInputElement) {
+              input.focus();
+            }
+            toast.dismiss(toastId);
+          }}
+          className="px-3 py-1.5 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
+        >
+          新しいアクションを追加
+        </button>
+      </div>
+    </div>,
+    {
+      duration: 30000,
+      dismissible: true,
+    }
+  );
+}
+
 export function useActionHandlers({
   chartId,
   tensions,
@@ -23,6 +70,7 @@ export function useActionHandlers({
   setPendingDeletions,
   setTelescopingActionId,
   router,
+  handleUpdateTension,
 }: {
   chartId: string;
   tensions: Tension[];
@@ -35,6 +83,7 @@ export function useActionHandlers({
   setPendingDeletions: React.Dispatch<React.SetStateAction<any>>;
   setTelescopingActionId: React.Dispatch<React.SetStateAction<string | null>>;
   router: ReturnType<typeof useRouter>;
+  handleUpdateTension: (tensionId: string, field: "title" | "description" | "status", value: string) => Promise<void>;
 }) {
   const handleAddActionPlan = async (
     tensionId: string | null,
@@ -191,6 +240,20 @@ export function useActionHandlers({
         status: nextStatus,
         isCompleted: nextStatus === "done",
       }));
+      // 全Action完了検知: 最後のActionをdoneにしたらお祝いトースト
+      if (tensionId && nextStatus === "done") {
+        const tension = tensions.find((t) => t.id === tensionId);
+        if (
+          tension &&
+          tension.status !== "resolved" &&
+          tension.actionPlans.length > 0 &&
+          tension.actionPlans.every((a) =>
+            a.id === actionId ? true : a.status === "done" || a.isCompleted
+          )
+        ) {
+          showAllActionsCompletedToast(tensionId, handleUpdateTension);
+        }
+      }
     } else if (field === "isCompleted") {
       const nextIsCompleted = Boolean(value);
       updateActionInState((action) => ({
@@ -198,6 +261,20 @@ export function useActionHandlers({
         isCompleted: nextIsCompleted,
         status: nextIsCompleted ? "done" : action.status,
       }));
+      // 全Action完了検知: 最後のActionを完了にしたらお祝いトースト
+      if (tensionId && nextIsCompleted) {
+        const tension = tensions.find((t) => t.id === tensionId);
+        if (
+          tension &&
+          tension.status !== "resolved" &&
+          tension.actionPlans.length > 0 &&
+          tension.actionPlans.every((a) =>
+            a.id === actionId ? true : a.status === "done" || a.isCompleted
+          )
+        ) {
+          showAllActionsCompletedToast(tensionId, handleUpdateTension);
+        }
+      }
     }
 
     // dueDateは楽観的にローカル状態を更新

@@ -306,6 +306,7 @@ export function ProjectEditor({
     setPendingDeletions,
     setTelescopingActionId,
     router,
+    handleUpdateTension,
   });
 
   const { detailPanel, itemHistory, isLoadingHistory, handleOpenDetailPanel, handleCloseDetailPanel, handleAddHistory, handleCommentCountChange } = useDetailPanel({
@@ -330,14 +331,7 @@ export function ProjectEditor({
   };
 
   const isTensionCompleted = (tension: Tension) => {
-    if (tension.status === "resolved") return true;
-    if (
-      tension.actionPlans.length > 0 &&
-      tension.actionPlans.every((a) => a.status === "done" || a.isCompleted)
-    ) {
-      return true;
-    }
-    return false;
+    return tension.status === "resolved";
   };
 
   const openFocusMode = (
