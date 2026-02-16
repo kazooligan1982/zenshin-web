@@ -48,6 +48,7 @@ interface PendingInvitation {
 
 interface MembersPageContentProps {
   workspaceId: string;
+  currentUserId: string;
   currentRole: string;
   initialMembers: Member[];
   initialPendingInvitations?: PendingInvitation[];
@@ -55,6 +56,7 @@ interface MembersPageContentProps {
 
 export function MembersPageContent({
   workspaceId,
+  currentUserId,
   currentRole,
   initialMembers,
   initialPendingInvitations = [],
@@ -142,11 +144,11 @@ export function MembersPageContent({
   };
 
   const getRoleIcon = (role: string) => {
-    if (role === "owner") return <Crown className="h-4 w-4 text-amber-500" />;
-    if (role === "consultant") return <Stethoscope className="h-4 w-4 text-violet-500" />;
-    if (role === "editor") return <Shield className="h-4 w-4 text-zenshin-teal" />;
-    if (role === "viewer") return <Eye className="h-4 w-4 text-zenshin-navy/30" />;
-    return <User className="h-4 w-4 text-zenshin-navy/30" />;
+    if (role === "owner") return <Crown className="w-4 h-4 shrink-0 text-amber-500" />;
+    if (role === "consultant") return <Stethoscope className="w-4 h-4 shrink-0 text-violet-500" />;
+    if (role === "editor") return <Shield className="w-4 h-4 shrink-0 text-zenshin-teal" />;
+    if (role === "viewer") return <Eye className="w-4 h-4 shrink-0 text-gray-400" />;
+    return <User className="w-4 h-4 shrink-0 text-gray-400" />;
   };
 
   const getRoleLabel = (role: string) => {
@@ -181,7 +183,7 @@ export function MembersPageContent({
               />
             </div>
             <Select value={inviteRole} onValueChange={setInviteRole}>
-              <SelectTrigger className="w-[140px] border-zenshin-navy/10">
+              <SelectTrigger className="min-w-[160px] border-zenshin-navy/10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -272,54 +274,68 @@ export function MembersPageContent({
           <Users className="h-5 w-5 text-zenshin-navy/40" />
           メンバー一覧（{members.length}人）
         </h2>
-        <div className="divide-y divide-zenshin-navy/8">
-          {members.map((member) => (
-            <div
-              key={member.id}
-              className="py-4 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                {member.avatar_url ? (
-                  <img
-                    src={member.avatar_url}
-                    alt=""
-                    className="h-10 w-10 rounded-full"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-zenshin-navy/8 flex items-center justify-center">
-                    <User className="h-5 w-5 text-zenshin-navy/30" />
-                  </div>
-                )}
-                <div>
-                  <p className="font-medium text-zenshin-navy">{member.name || member.email}</p>
-                  {member.name && (
-                    <p className="text-sm text-zenshin-navy/40">{member.email}</p>
+        <div className="space-y-1">
+          {members.map((member) => {
+            const isOwner = member.role === "owner";
+            const isSelf = member.id === currentUserId;
+            const showDeleteButton = canRemove && !isOwner && !isSelf;
+
+            return (
+              <div
+                key={member.id}
+                className="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {member.avatar_url ? (
+                    <img
+                      src={member.avatar_url}
+                      alt=""
+                      className="h-10 w-10 rounded-full shrink-0"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-zenshin-navy/8 flex items-center justify-center shrink-0">
+                      <User className="h-5 w-5 text-zenshin-navy/30" />
+                    </div>
                   )}
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-sm text-zenshin-navy/50">
-                  {getRoleIcon(member.role)}
-                  {getRoleLabel(member.role)}
-                </div>
-                {canRemove && member.role !== "owner" && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setMemberToRemove(member)}
-                    disabled={removingId === member.id}
-                    className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0"
-                  >
-                    {removingId === member.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <X className="h-4 w-4" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-zenshin-navy truncate">
+                      {member.name || member.email}
+                    </p>
+                    {member.name && (
+                      <p className="text-sm text-zenshin-navy/40 truncate">
+                        {member.email}
+                      </p>
                     )}
-                  </Button>
-                )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 w-[200px] justify-end shrink-0">
+                  <div className="flex items-center gap-2">
+                    {getRoleIcon(member.role)}
+                    <span className="text-sm whitespace-nowrap text-zenshin-navy/60">
+                      {getRoleLabel(member.role)}
+                    </span>
+                  </div>
+                  <div className="w-8 flex items-center justify-end shrink-0">
+                    {showDeleteButton && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setMemberToRemove(member)}
+                        disabled={removingId === member.id}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 p-0 shrink-0"
+                      >
+                        {removingId === member.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <X className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

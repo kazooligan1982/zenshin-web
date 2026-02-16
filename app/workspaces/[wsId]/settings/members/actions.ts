@@ -210,10 +210,10 @@ export async function getPendingInvitations(wsId: string) {
 
   const { data } = await supabase
     .from("workspace_invitation_requests")
-    .select("id, email, role, created_at")
+    .select("id, email, role, created_at, status")
     .eq("workspace_id", wsId)
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
-  return data ?? [];
+  return (data ?? []).filter((inv) => inv.status === "pending");
 }

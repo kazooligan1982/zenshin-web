@@ -34,6 +34,7 @@ export default async function MembersPage({
   return (
     <MembersPageContent
       workspaceId={wsId}
+      currentUserId={user.id}
       currentRole={membership.role}
       initialMembers={members}
       initialPendingInvitations={pendingInvitations}

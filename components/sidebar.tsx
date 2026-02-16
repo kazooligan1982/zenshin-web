@@ -15,23 +15,10 @@ import {
   FolderOpen,
   Clock,
   ChevronDown,
-  Building2,
-  User,
   Plus,
   Check,
-  Crown,
-  Stethoscope,
-  Shield,
-  Eye,
 } from "lucide-react";
-import { ROLE_LABELS, ROLE_ICONS, type WorkspaceRole } from "@/lib/permissions";
-
-const ROLE_ICON_MAP: Record<string, React.ElementType> = {
-  Crown,
-  Stethoscope,
-  Shield,
-  Eye,
-};
+import { ROLE_LABELS } from "@/lib/permissions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,8 +28,36 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserMenu } from "@/components/user-menu";
 import { getCurrentWorkspace, getUserWorkspaces } from "@/lib/workspace";
+import { createClient } from "@/lib/supabase/client";
 
 const RECENT_CHARTS_KEY = "zenshin_recent_charts";
+
+function RoleBadge({ role }: { role?: string }) {
+  if (!role) return null;
+  const config: Record<string, { className: string; label: string }> = {
+    owner: { className: "bg-amber-500/20 text-amber-400", label: "オーナー" },
+    consultant: {
+      className: "bg-violet-500/20 text-violet-400 min-w-[88px]",
+      label: "コンサルタント",
+    },
+    editor: { className: "bg-blue-500/20 text-blue-400", label: "編集者" },
+    viewer: { className: "bg-zenshin-charcoal/30 text-white/60", label: "閲覧者" },
+  };
+  const { className, label } = config[role] ?? {
+    className: "bg-white/10 text-white/60",
+    label: ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? "メンバー",
+  };
+  return (
+    <span
+      className={cn(
+        "text-[10px] px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap",
+        className
+      )}
+    >
+      {label}
+    </span>
+  );
+}
 type RecentChart = {
   id: string;
   title: string;
@@ -79,6 +94,7 @@ export function Sidebar(props?: SidebarProps) {
   const [fetchedAllWorkspaces, setFetchedAllWorkspaces] = useState<
     { id: string; name: string; role: string }[]
   >([]);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentWorkspace = props?.currentWorkspace ?? fetchedWorkspace;
@@ -112,6 +128,15 @@ export function Sidebar(props?: SidebarProps) {
     }
     loadWorkspaces();
   }, [props?.currentWorkspace, props?.workspaces]);
+
+  useEffect(() => {
+    async function loadUser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserEmail(user?.email ?? null);
+    }
+    loadUser();
+  }, []);
 
   const handleMouseEnter = () => {
     if (closeTimeoutRef.current) {
@@ -152,7 +177,7 @@ export function Sidebar(props?: SidebarProps) {
     >
       {/* Workspace Header */}
       <div className="h-14 flex items-center shrink-0 border-b border-white/5 px-2">
-        <DropdownMenu>
+        <DropdownMenu modal={false} onOpenChange={handleDropdownOpenChange}>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 hover:bg-white/5 rounded-lg p-1.5 transition-colors w-full">
               <div className="flex items-center shrink-0">
@@ -179,11 +204,9 @@ export function Sidebar(props?: SidebarProps) {
               {isHovered && (
                 <>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">
+                    <p className="text-sm font-semibold text-white truncate flex items-center gap-2">
                       {currentWorkspace?.name || "Workspace"}
-                    </p>
-                    <p className="text-[11px] text-white/40 truncate">
-                      {ROLE_LABELS[currentWorkspace?.role as keyof typeof ROLE_LABELS] ?? "メンバー"}
+                      <RoleBadge role={currentWorkspace?.role} />
                     </p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-white/30 shrink-0" />
@@ -191,26 +214,29 @@ export function Sidebar(props?: SidebarProps) {
               )}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
+          <DropdownMenuContent
+            align="start"
+            side="bottom"
+            sideOffset={4}
+            className="w-[280px] min-w-[280px]"
+          >
+            {userEmail && (
+              <div className="px-3 py-2 text-xs text-muted-foreground truncate border-b">
+                {userEmail}
+              </div>
+            )}
             <div className="px-2 py-1.5 text-xs text-muted-foreground">
               Current Workspace
             </div>
             <DropdownMenuItem className="gap-3 cursor-default" onSelect={(e) => e.preventDefault()}>
-              <div className="w-8 h-8 bg-zenshin-navy rounded-lg flex items-center justify-center shrink-0">
-                <Building2 className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 bg-zenshin-navy rounded-lg flex items-center justify-center shrink-0 text-white text-sm font-semibold">
+                {(currentWorkspace?.name || "W").charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate flex items-center gap-2">
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <p className="font-medium truncate flex items-center gap-2 flex-wrap">
                   <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  {currentWorkspace?.name || "マイワークスペース"}
-                  {currentWorkspace?.role === "consultant" && (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-violet-500/20 text-violet-400 rounded shrink-0">
-                      コンサルタント
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  （{ROLE_LABELS[currentWorkspace?.role as keyof typeof ROLE_LABELS] ?? "メンバー"}）
+                  <span className="truncate">{currentWorkspace?.name || "マイワークスペース"}</span>
+                  <RoleBadge role={currentWorkspace?.role} />
                 </p>
               </div>
             </DropdownMenuItem>
@@ -222,36 +248,24 @@ export function Sidebar(props?: SidebarProps) {
                 </div>
                 {allWorkspaces
                   .filter((ws) => ws.id !== currentWorkspace?.id)
-                  .map((ws) => {
-                    const RoleIcon = ROLE_ICON_MAP[ROLE_ICONS[ws.role as WorkspaceRole]] ?? User;
-                    const isConsultant = ws.role === "consultant";
-                    return (
-                      <Link key={ws.id} href={`/workspaces/${ws.id}/charts`}>
-                        <DropdownMenuItem
-                          className="gap-3 cursor-pointer"
-                          onSelect={(e) => e.preventDefault()}
-                        >
-                          <div className="w-8 h-8 bg-zenshin-charcoal rounded-lg flex items-center justify-center shrink-0">
-                            <Building2 className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate flex items-center gap-2">
-                              {ws.name}
-                              {isConsultant && (
-                                <span className="text-[10px] px-1.5 py-0.5 bg-violet-500/20 text-violet-400 rounded shrink-0">
-                                  コンサルタント
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <RoleIcon className="w-3 h-3" />
-                              {ROLE_LABELS[ws.role as keyof typeof ROLE_LABELS] ?? "メンバー"}
-                            </p>
-                          </div>
-                        </DropdownMenuItem>
-                      </Link>
-                    );
-                  })}
+                  .map((ws) => (
+                    <Link key={ws.id} href={`/workspaces/${ws.id}/charts`}>
+                      <DropdownMenuItem
+                        className="gap-3 cursor-pointer"
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <div className="w-8 h-8 bg-zenshin-charcoal rounded-lg flex items-center justify-center shrink-0 text-white text-sm font-semibold">
+                          {(ws.name || "W").charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <p className="font-medium truncate flex items-center gap-2 flex-wrap">
+                            <span className="truncate">{ws.name}</span>
+                            <RoleBadge role={ws.role} />
+                          </p>
+                        </div>
+                      </DropdownMenuItem>
+                    </Link>
+                  ))}
               </>
             )}
             <DropdownMenuSeparator />
