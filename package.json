@@ -52,6 +52,7 @@
     "react-dom": "19.2.3",
     "react-resizable-panels": "^4.2.2",
     "react-textarea-autosize": "^8.5.9",
+    "resend": "^6.9.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0"
   },

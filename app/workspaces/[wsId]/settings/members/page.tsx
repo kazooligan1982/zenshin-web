@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getWorkspaceMembers } from "@/lib/workspace";
+import { getPendingInvitations } from "./actions";
 import { MembersPageContent } from "./members-page-content";
 
 export default async function MembersPage({
@@ -25,13 +26,17 @@ export default async function MembersPage({
 
   if (!membership) redirect("/");
 
-  const members = await getWorkspaceMembers(wsId);
+  const [members, pendingInvitations] = await Promise.all([
+    getWorkspaceMembers(wsId),
+    getPendingInvitations(wsId),
+  ]);
 
   return (
     <MembersPageContent
       workspaceId={wsId}
       currentRole={membership.role}
       initialMembers={members}
+      initialPendingInvitations={pendingInvitations}
     />
   );
 }
