@@ -28,6 +28,7 @@ interface TimelineItemProps {
   comment: TimelineComment
   currentUserId: string
   chartId: string
+  workspaceId?: string
   type: "action" | "vision" | "reality"
   onDelete?: (commentId: string) => void
   onDeleted?: (commentId: string) => void
@@ -39,6 +40,7 @@ export function TimelineItem({
   comment,
   currentUserId,
   chartId,
+  workspaceId,
   type,
   onDelete,
   onDeleted,
@@ -209,9 +211,12 @@ export function TimelineItem({
               if (mention) {
                 const mentionId = mention.getAttribute("data-id");
                 if (mentionId) {
-                  const [type, chartId] = mentionId.split(":");
-                  if (chartId) {
-                    router.push(`/charts/${chartId}`);
+                  const [mentionType, targetChartId] = mentionId.split(":");
+                  if (targetChartId) {
+                    const chartPath = workspaceId
+                      ? `/workspaces/${workspaceId}/charts/${targetChartId}`
+                      : `/charts/${targetChartId}`;
+                    router.push(chartPath);
                   }
                 }
               }

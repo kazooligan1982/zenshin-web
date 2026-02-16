@@ -7,8 +7,10 @@ import { ChartCard } from "./chart-card";
 
 export function CompletedChartsSection({
   completedCharts,
+  wsId,
 }: {
   completedCharts: ChartWithMeta[];
+  wsId?: string;
 }) {
   const [showCompletedCharts, setShowCompletedCharts] = useState(false);
 
@@ -30,7 +32,7 @@ export function CompletedChartsSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-70">
           {completedCharts.map((chart) => (
             <div key={chart.id} className="snap-start shrink-0 w-full">
-              <ChartCard chart={chart} />
+              <ChartCard chart={chart} wsId={wsId} />
             </div>
           ))}
         </div>

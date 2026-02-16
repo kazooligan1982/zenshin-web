@@ -5,7 +5,7 @@ import { getOrCreateWorkspace } from "@/lib/workspace";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const next = requestUrl.searchParams.get("next") || "/charts";
+  let next = requestUrl.searchParams.get("next") || "/charts";
 
   if (code) {
     const supabase = await createClient();
@@ -14,7 +14,10 @@ export async function GET(request: Request) {
     // 招待リンク経由でない場合のみワークスペースを作成/取得
     if (!next.startsWith("/invite/")) {
       try {
-        await getOrCreateWorkspace();
+        const workspaceId = await getOrCreateWorkspace();
+        if (next === "/charts") {
+          next = `/workspaces/${workspaceId}/charts`;
+        }
       } catch (error) {
         console.error("[auth/callback] workspace creation error:", error);
       }

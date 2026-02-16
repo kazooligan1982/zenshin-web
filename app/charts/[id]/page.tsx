@@ -1,94 +1,23 @@
-import { notFound } from "next/navigation";
-import { fetchChart } from "./actions";
-import { createClient } from "@/utils/supabase/server";
-import { getWorkspaceMembers } from "@/lib/workspace";
-import { ProjectEditor } from "./project-editor";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-interface PageProps {
+export default async function ChartRedirect({
+  params,
+}: {
   params: Promise<{ id: string }>;
-}
-
-export default async function ProjectDetailPage({ params }: PageProps) {
+}) {
   const { id } = await params;
-  
-  try {
-    const supabase = await createClient();
+  const supabase = await createClient();
 
-    // ユーザー取得とチャート取得を並列実行
-    const [{ data: { user } }, chart] = await Promise.all([
-      supabase.auth.getUser(),
-      fetchChart(id),
-    ]);
+  const { data: chart } = await supabase
+    .from("charts")
+    .select("workspace_id")
+    .eq("id", id)
+    .single();
 
-    let currentUser = null;
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, email, name, avatar_url")
-        .eq("id", user.id)
-        .single();
-      currentUser = profile || {
-        id: user.id,
-        email: user.email || "",
-        name: user.user_metadata?.name || user.email?.split("@")[0] || "",
-        avatar_url: null,
-      };
-    }
-
-    if (!chart) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseKey) {
-        return (
-          <div className="flex items-center justify-center h-screen bg-zenshin-cream">
-            <div className="bg-white p-8 rounded-2xl border border-zenshin-navy/8 max-w-md">
-              <h2 className="text-xl font-bold text-zenshin-navy mb-4">Supabase設定が必要です</h2>
-              <p className="text-sm text-zenshin-navy/40 mb-4">
-                データベースに接続するには、環境変数を設定してください。
-              </p>
-              <div className="bg-zenshin-cream p-4 rounded-xl text-xs font-mono">
-                <p className="mb-2">.env.local ファイルに以下を追加：</p>
-                <p>NEXT_PUBLIC_SUPABASE_URL=your_url</p>
-                <p>NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key</p>
-              </div>
-            </div>
-          </div>
-        );
-      }
-      
-      notFound();
-    }
-
-    let workspaceMembers: { id: string; email: string; name?: string; role: string; avatar_url?: string }[] = [];
-    if (chart.workspace_id) {
-      workspaceMembers = await getWorkspaceMembers(chart.workspace_id);
-    }
-
-    return (
-      <ProjectEditor
-        initialChart={chart}
-        chartId={id}
-        workspaceId={chart.workspace_id ?? ""}
-        currentUserId={user?.id ?? ""}
-        currentUser={currentUser}
-        workspaceMembers={workspaceMembers}
-      />
-    );
-  } catch (error) {
-    console.error("Error loading chart:", error);
-    return (
-      <div className="flex items-center justify-center h-screen bg-zenshin-cream">
-        <div className="bg-white p-8 rounded-2xl border border-zenshin-navy/8 max-w-md">
-          <h2 className="text-xl font-bold text-red-600 mb-4">エラーが発生しました</h2>
-          <p className="text-sm text-zenshin-navy/40 mb-4">
-            データの読み込みに失敗しました。
-          </p>
-          <p className="text-xs text-zenshin-navy/30">
-            {error instanceof Error ? error.message : "不明なエラー"}
-          </p>
-        </div>
-      </div>
-    );
+  if (chart?.workspace_id) {
+    redirect(`/workspaces/${chart.workspace_id}/charts/${id}`);
   }
+
+  redirect("/");
 }
