@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { getOrCreateWorkspace } from "@/lib/workspace";
+import { canCreateChart } from "@/lib/permissions";
 
 export type ActionStatusCounts = {
   total: number;
@@ -43,7 +44,8 @@ export type ProjectGroup = {
 };
 
 export async function createChart(
-  title: string = "無題のチャート"
+  title: string = "無題のチャート",
+  workspaceId?: string
 ): Promise<{ id: string; title: string }> {
   const supabase = await createClient();
   const {
@@ -54,14 +56,26 @@ export async function createChart(
     throw new Error("認証が必要です");
   }
 
-  const workspaceId = await getOrCreateWorkspace();
+  const resolvedWorkspaceId = workspaceId ?? (await getOrCreateWorkspace());
+
+  const { data: member } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", resolvedWorkspaceId)
+    .eq("user_id", user.id)
+    .single();
+
+  const role = (member?.role ?? "viewer") as "owner" | "consultant" | "editor" | "viewer";
+  if (!canCreateChart(role)) {
+    throw new Error("チャートの作成権限がありません");
+  }
 
   const { data, error } = await supabase
     .from("charts")
     .insert({
       title,
       user_id: user.id,
-      workspace_id: workspaceId,
+      workspace_id: resolvedWorkspaceId,
     })
     .select()
     .single();
@@ -72,23 +86,24 @@ export async function createChart(
   }
 
   revalidatePath("/charts");
+  revalidatePath(`/workspaces/${resolvedWorkspaceId}/charts`);
   return data;
 }
 
-export async function getChartsHierarchy(): Promise<{
+export async function getChartsHierarchy(workspaceId?: string): Promise<{
   projectGroups: ProjectGroup[];
   recentCharts: ChartWithMeta[];
   completedCharts: ChartWithMeta[];
 }> {
 
   const supabase = await createClient();
-  const workspaceId = await getOrCreateWorkspace();
+  const resolvedWorkspaceId = workspaceId ?? (await getOrCreateWorkspace());
 
   const { data: charts, error } = await supabase
     .from("charts")
     .select("id, title, description, due_date, created_at, updated_at, parent_action_id, status")
     .is("archived_at", null)
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", resolvedWorkspaceId)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -188,6 +203,8 @@ export async function deleteChart(chartId: string) {
     .update({ sub_chart_id: null })
     .in("sub_chart_id", allChartIds);
 
+  const { data: chart } = await supabase.from("charts").select("workspace_id").eq("id", chartId).single();
+
   const { error: deleteError } = await supabase
     .from("charts")
     .delete()
@@ -198,12 +215,17 @@ export async function deleteChart(chartId: string) {
   }
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/charts");
+  if (chart?.workspace_id) {
+    revalidatePath(`/workspaces/${chart.workspace_id}/charts`);
+  }
   return { success: true };
 }
 
 export async function archiveChart(chartId: string) {
   const supabase = await createClient();
   const now = new Date().toISOString();
+
+  const { data: chartData } = await supabase.from("charts").select("workspace_id").eq("id", chartId).single();
 
   const allChartIds = await getAllDescendantChartIds(supabase, chartId);
   allChartIds.push(chartId);
@@ -225,12 +247,17 @@ export async function archiveChart(chartId: string) {
 
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/charts");
+  if (chartData?.workspace_id) {
+    revalidatePath(`/workspaces/${chartData.workspace_id}/charts`);
+    revalidatePath(`/workspaces/${chartData.workspace_id}/settings/archive`);
+  }
 
   return { success: true, archivedCount: allChartIds.length };
 }
 
 export async function restoreChart(chartId: string) {
   const supabase = await createClient();
+  const { data: chart } = await supabase.from("charts").select("workspace_id").eq("id", chartId).single();
 
   const allChartIds = await getAllDescendantChartIds(supabase, chartId);
   allChartIds.push(chartId);
@@ -263,6 +290,10 @@ export async function restoreChart(chartId: string) {
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/charts");
   revalidatePath("/settings/archive");
+  if (chart?.workspace_id) {
+    revalidatePath(`/workspaces/${chart.workspace_id}/charts`);
+    revalidatePath(`/workspaces/${chart.workspace_id}/settings/archive`);
+  }
 
   return { success: true };
 }
@@ -416,14 +447,14 @@ async function getAllDescendantChartIds(
   return result;
 }
 
-export async function getArchivedCharts() {
+export async function getArchivedCharts(workspaceId?: string) {
   const supabase = await createClient();
-  const workspaceId = await getOrCreateWorkspace();
+  const resolvedWorkspaceId = workspaceId ?? (await getOrCreateWorkspace());
   const { data: charts, error } = await supabase
     .from("charts")
     .select("id, title, description, archived_at, created_at, updated_at, parent_action_id")
     .not("archived_at", "is", null)
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", resolvedWorkspaceId)
     .order("archived_at", { ascending: false });
 
   if (error) {

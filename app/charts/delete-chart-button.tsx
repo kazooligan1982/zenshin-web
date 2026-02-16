@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteChart } from "./actions";
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function DeleteChartButton({ chartId }: { chartId: string }) {
+  const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -26,6 +28,7 @@ export function DeleteChartButton({ chartId }: { chartId: string }) {
     try {
       await deleteChart(chartId);
       toast.success("チャートを削除しました", { duration: 3000 });
+      router.refresh();
     } catch (error) {
       console.error("Failed to delete chart:", error);
       toast.error("削除に失敗しました", { duration: 5000 });

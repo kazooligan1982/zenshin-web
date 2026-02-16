@@ -41,7 +41,10 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/reset-password") ||
     request.nextUrl.pathname.startsWith("/auth");
 
+  // 招待受諾ページ（未ログインでもアクセス可）
   const isInvitePage = request.nextUrl.pathname.startsWith("/invite");
+
+  // /workspaces 配下は認証必須（layout.tsx で WS メンバーシップ確認）
 
   // 未ログインで保護されたページにアクセスした場合
   if (!user && !isAuthPage && !isInvitePage) {
@@ -53,6 +56,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ログイン済みで認証ページにアクセスした場合（招待ページは除く）
+  // /charts にリダイレクトし、charts ページでデフォルトWSへリダイレクト
   if (
     user &&
     isAuthPage &&

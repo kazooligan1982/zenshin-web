@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export function NewChartButton() {
+export function NewChartButton({ workspaceId }: { workspaceId?: string }) {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
 
@@ -16,9 +16,9 @@ export function NewChartButton() {
     setIsCreating(true);
 
     try {
-      const chart = await createChart("無題のチャート");
+      const chart = await createChart("無題のチャート", workspaceId);
       toast.success("チャートを作成しました", { duration: 3000 });
-      router.push(`/charts/${chart.id}`);
+      router.push(workspaceId ? `/workspaces/${workspaceId}/charts/${chart.id}` : `/charts/${chart.id}`);
     } catch (error) {
       console.error("Failed to create chart:", error);
       toast.error("チャートの作成に失敗しました", { duration: 5000 });

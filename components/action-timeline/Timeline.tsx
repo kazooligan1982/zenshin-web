@@ -101,6 +101,7 @@ export function Timeline({
             comment={comment}
             currentUserId={currentUserId}
             chartId={chartId}
+            workspaceId={workspaceId}
             type={type}
             onDelete={handleDelete}
             onDeleted={onCommentDeleted}

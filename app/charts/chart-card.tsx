@@ -7,7 +7,8 @@ import { Calendar, RefreshCcw, CheckCircle2 } from "lucide-react";
 import { DeleteChartButton } from "./delete-chart-button";
 import type { ChartWithMeta } from "./actions";
 
-export function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; isMaster?: boolean }) {
+export function ChartCard({ chart, isMaster = false, wsId }: { chart: ChartWithMeta; isMaster?: boolean; wsId?: string }) {
+  const chartHref = wsId ? `/workspaces/${wsId}/charts/${chart.id}` : `/charts/${chart.id}`;
   const depthLabel =
     chart.depth === 1
       ? "Master"
@@ -32,7 +33,7 @@ export function ChartCard({ chart, isMaster = false }: { chart: ChartWithMeta; i
 
   return (
     <div className={`group relative rounded-xl border p-4 h-full hover:shadow-md hover:border-zenshin-orange/30 hover:-translate-y-0.5 transition-all cursor-pointer flex flex-col ${bgClass}`}>
-      <Link href={`/charts/${chart.id}`} className="flex flex-col flex-1 min-h-0 min-w-0">
+      <Link href={chartHref} className="flex flex-col flex-1 min-h-0 min-w-0">
         <div className="flex items-start justify-between mb-1">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <DepthBadge depth={chart.depth} label={depthLabel} />
