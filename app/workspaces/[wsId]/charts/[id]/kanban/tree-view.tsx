@@ -57,6 +57,7 @@ interface TreeNode {
   area_color?: string | null;
   is_completed?: boolean | null;
   child_chart_id?: string | null;
+  description?: string | null;
   children: TreeNode[];
 }
 
@@ -680,12 +681,13 @@ export function TreeView({
               | null,
             is_completed: selectedAction.is_completed || false,
             tension_id: selectedAction.tension_id || "",
-            description: null,
+            description: selectedAction.description ?? null,
             child_chart_id: selectedAction.child_chart_id || null,
           }}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           onSave={handleSaveAction}
+          onDataRefresh={fetchTreeData}
           projectId={projectId}
           currentUserId={currentUserId}
           currentUser={currentUser}

@@ -565,6 +565,7 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
           setSelectedAction(null);
         }}
         onSave={fetchActions}
+        onDataRefresh={fetchActions}
         projectId={projectId}
         currentUserId={currentUserId}
         currentUser={currentUser}

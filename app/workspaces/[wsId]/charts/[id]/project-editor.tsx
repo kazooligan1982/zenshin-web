@@ -126,6 +126,11 @@ const ItemDetailPanel = dynamic(
     import("@/components/item-detail-panel").then((mod) => mod.ItemDetailPanel),
   { loading: () => null, ssr: false }
 );
+const ActionEditModal = dynamic(
+  () =>
+    import("./kanban/action-edit-modal").then((mod) => mod.ActionEditModal),
+  { loading: () => null, ssr: false }
+);
 const FocusModeModal = dynamic(
   () =>
     import("@/components/focus-mode-modal").then((mod) => mod.FocusModeModal),
@@ -572,7 +577,7 @@ export function ProjectEditor({
         areas: initialChart.areas,
         dueDate: initialChart.due_date,
       }),
-    [initialChart.id]
+    [initialChart]
   );
 
   // Chartデータが更新されたら状態を更新
@@ -2369,8 +2374,42 @@ export function ProjectEditor({
         />
       )}
 
-      {/* 詳細サイドパネル */}
-      {detailPanel && (
+      {/* アクション編集モーダル（アクションクリック時） */}
+      {detailPanel?.itemType === "action" && detailPanel.itemId && (() => {
+        const actionPlan =
+          looseActions.find((a) => a.id === detailPanel.itemId) ??
+          tensions.flatMap((t) => t.actionPlans).find((a) => a.id === detailPanel.itemId);
+        const actionForModal = actionPlan
+          ? {
+              id: actionPlan.id,
+              title: actionPlan.title || "",
+              due_date: actionPlan.dueDate || null,
+              assignee: actionPlan.assignee || null,
+              status: (actionPlan.status || (actionPlan.isCompleted ? "done" : "todo")) as "todo" | "in_progress" | "done" | "pending" | "canceled",
+              is_completed: actionPlan.isCompleted ?? actionPlan.status === "done",
+              tension_id: actionPlan.tension_id ?? null,
+              child_chart_id: actionPlan.childChartId ?? null,
+              vision_tags: undefined,
+              description: actionPlan.description ?? null,
+            }
+          : null;
+        return (
+          <ActionEditModal
+            action={actionForModal}
+            isOpen={detailPanel.isOpen}
+            onClose={handleCloseDetailPanel}
+            onSave={() => router.refresh()}
+            onDataRefresh={() => router.refresh()}
+            projectId={chartId}
+            currentUserId={currentUserId || currentUser?.id}
+            currentUser={currentUser}
+            workspaceMembers={workspaceMembers}
+          />
+        );
+      })()}
+
+      {/* 詳細サイドパネル（Vision/Reality用） */}
+      {detailPanel && detailPanel.itemType !== "action" && (
         <ItemDetailPanel
           isOpen={detailPanel.isOpen}
           onClose={handleCloseDetailPanel}

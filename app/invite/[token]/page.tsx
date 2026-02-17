@@ -71,14 +71,14 @@ export default async function InvitePage({
       });
     }
     workspaceName = workspaceName || "ワークスペース";
-    let inviterName = "メンバー";
+    let inviterEmail: string | null = null;
     if (requestInvitation.invited_by) {
       const { data: inviterProfile } = await supabase
         .from("profiles")
-        .select("name")
+        .select("email")
         .eq("id", requestInvitation.invited_by)
         .single();
-      inviterName = inviterProfile?.name || "メンバー";
+      inviterEmail = inviterProfile?.email ?? null;
     }
     const roleLabel =
       ROLE_LABELS[requestInvitation.role as keyof typeof ROLE_LABELS] ||
@@ -125,7 +125,6 @@ export default async function InvitePage({
                 beta
               </span>
             </div>
-            <p className="text-muted-foreground mt-2">招待</p>
           </div>
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zenshin-navy mb-4">
@@ -136,10 +135,12 @@ export default async function InvitePage({
                 <InviteRoleIcon role={requestInvitation.role} />
                 <span>{roleLabel}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="w-4 h-4 shrink-0 text-gray-400" />
-                <span>{inviterName}</span>
-              </div>
+              {inviterEmail && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <User className="w-4 h-4 shrink-0 text-gray-400" />
+                  <span>{inviterEmail}</span>
+                </div>
+              )}
             </div>
             <div className="space-y-4">
               <Link href={`/login?redirect=/invite/${token}`}>
@@ -149,7 +150,7 @@ export default async function InvitePage({
                   ログインして招待を受ける
                 </Button>
               </Link>
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm text-muted-foreground text-center mt-4">
                 アカウントをお持ちでない方は
                 <Link
                   href={`/signup?redirect=/invite/${token}`}
@@ -248,13 +249,12 @@ export default async function InvitePage({
       <div className="space-y-6">
         <div className="text-center">
           <img src="/zenshin-icon.svg" alt="ZENSHIN CHART" className="w-12 h-12 mx-auto mb-4" />
-          <div className="flex items-start justify-center gap-1.5">
-            <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
-            <span className="text-[10px] font-light tracking-wider uppercase text-amber-400/70 pt-1">
-              beta
-            </span>
-          </div>
-          <p className="text-muted-foreground mt-2">招待</p>
+            <div className="flex items-start justify-center gap-1.5">
+              <h1 className="text-2xl font-bold">ZENSHIN CHART</h1>
+              <span className="text-[10px] font-light tracking-wider uppercase text-amber-400/70 pt-1">
+                beta
+              </span>
+            </div>
         </div>
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zenshin-navy mb-4">
@@ -271,7 +271,7 @@ export default async function InvitePage({
                 ログインして参加
               </Button>
             </Link>
-            <p className="text-sm text-muted-foreground text-center">
+            <p className="text-sm text-muted-foreground text-center mt-4">
               アカウントをお持ちでない方は
               <Link
                 href={`/signup?redirect=/invite/${token}`}

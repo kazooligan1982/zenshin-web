@@ -15,6 +15,10 @@ interface TimelineProps {
   workspaceId: string
   onCommentAdded?: () => void
   onCommentDeleted?: () => void
+  onDataRefresh?: () => void
+  deletedCommentIds?: Set<string>
+  onCommentDeletedId?: (commentId: string) => void
+  onCommentUndo?: (commentId: string) => void
 }
 
 const INITIAL_VISIBLE_COUNT = 5
@@ -29,11 +33,24 @@ export function Timeline({
   workspaceId,
   onCommentAdded,
   onCommentDeleted,
+  onDataRefresh,
+  deletedCommentIds: propDeletedCommentIds,
+  onCommentDeletedId,
+  onCommentUndo,
 }: TimelineProps) {
   const [comments, setComments] = useState(initialComments)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [internalDeletedIds, setInternalDeletedIds] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
   const prevCommentsLengthRef = useRef(initialComments.length)
+
+  const deletedIds = propDeletedCommentIds ?? internalDeletedIds
+  const handleCommentDeleted = onCommentDeletedId ?? ((id) => setInternalDeletedIds((prev) => new Set(prev).add(id)))
+  const handleCommentUndo = onCommentUndo ?? ((id) => setInternalDeletedIds((prev) => {
+    const next = new Set(prev)
+    next.delete(id)
+    return next
+  }))
 
   useEffect(() => {
     setComments(initialComments)
@@ -52,21 +69,10 @@ export function Timeline({
     }
   }, [])
 
-  const visibleComments = isExpanded ? comments : comments.slice(-INITIAL_VISIBLE_COUNT)
-  const hiddenCount = comments.length - INITIAL_VISIBLE_COUNT
+  const filteredComments = comments.filter((c) => !deletedIds.has(c.id))
+  const visibleComments = isExpanded ? filteredComments : filteredComments.slice(-INITIAL_VISIBLE_COUNT)
+  const hiddenCount = filteredComments.length - INITIAL_VISIBLE_COUNT
   const hasMoreComments = hiddenCount > 0
-
-  const handleDelete = (commentId: string) => {
-    setComments((prev) => prev.filter((comment) => comment.id !== commentId))
-  }
-
-  const handleRestore = (comment: TimelineComment) => {
-    setComments((prev) => {
-      const exists = prev.some((item) => item.id === comment.id)
-      if (exists) return prev
-      return [...prev, comment].sort((a, b) => a.created_at.localeCompare(b.created_at))
-    })
-  }
 
   const handleUpdate = (commentId: string, newContent: string) => {
     setComments((prev) =>
@@ -103,13 +109,14 @@ export function Timeline({
             chartId={chartId}
             workspaceId={workspaceId}
             type={type}
-            onDelete={handleDelete}
+            onDelete={handleCommentDeleted}
             onDeleted={onCommentDeleted}
-            onRestore={handleRestore}
+            onDataRefresh={onDataRefresh}
+            onUndo={handleCommentUndo}
             onUpdated={handleUpdate}
           />
         ))}
-        {comments.length === 0 && (
+        {filteredComments.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <p className="text-zenshin-navy/40 text-sm mb-2">まだコメントがありません</p>
             <p className="text-zenshin-navy/30 text-xs">最初のコメントを投稿してみましょう</p>

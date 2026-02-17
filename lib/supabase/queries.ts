@@ -140,6 +140,7 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
         subChartId: a.sub_chart_id || undefined,
         childChartId: a.child_chart_id || undefined,
         isCompleted: a.is_completed || false,
+        description: a.description || undefined,
         area_id: a.area_id || null,
         comment_count: a.action_comments?.[0]?.count ?? 0,
       };
