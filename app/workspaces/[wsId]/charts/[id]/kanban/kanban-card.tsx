@@ -43,8 +43,6 @@ export function KanbanCard({ action, isDragging, onClick }: KanbanCardProps) {
   const isOverdue =
     !!action.due_date && !action.is_completed && new Date(action.due_date) < new Date();
 
-  const hasFooter = action.assignee || action.due_date || action.has_children;
-
   return (
     <div
       ref={setNodeRef}
@@ -53,7 +51,7 @@ export function KanbanCard({ action, isDragging, onClick }: KanbanCardProps) {
       {...attributes}
       onClick={onClick}
       className={cn(
-        "group rounded-md border border-zenshin-navy/8 bg-white px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all",
+        "group rounded-md border border-zenshin-navy/8 bg-white px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all min-h-[60px] flex flex-col justify-between",
         isDragging && "shadow-lg ring-2 ring-zenshin-teal/30",
         "hover:shadow-sm hover:border-zenshin-navy/15",
         onClick && "cursor-pointer",
@@ -64,39 +62,41 @@ export function KanbanCard({ action, isDragging, onClick }: KanbanCardProps) {
       {/* Title */}
       <p
         className={cn(
-          "text-[13px] text-zenshin-navy leading-snug",
+          "text-[13px] text-zenshin-navy leading-snug line-clamp-2 min-h-[36px]",
           action.is_completed && "line-through text-zenshin-navy/40"
         )}
       >
         {action.title}
       </p>
 
-      {/* Footer: due date + assignee */}
-      {hasFooter && (
-        <div className="flex items-center justify-between mt-1.5">
-          <div className="flex items-center gap-2">
-            {action.due_date && (
-              <span className={cn(
-                "text-[11px]",
-                isOverdue ? "text-red-500 font-medium" : "text-zenshin-navy/40"
-              )}>
-                {format(new Date(action.due_date), "MM/dd", { locale: ja })}
-              </span>
-            )}
-            {action.has_children && (
-              <ChevronRight className="w-3 h-3 text-zenshin-navy/30" />
-            )}
-          </div>
-          {action.assignee && (
-            <div
-              className="w-5 h-5 rounded-full bg-zenshin-teal/15 text-zenshin-teal text-[10px] font-medium flex items-center justify-center shrink-0"
-              title={action.assignee}
-            >
-              {action.assignee.charAt(0).toUpperCase()}
-            </div>
+      {/* Footer: always visible */}
+      <div className="flex items-center justify-between mt-1.5">
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            "text-[11px]",
+            !action.due_date && "text-zenshin-navy/20",
+            action.due_date && !isOverdue && "text-zenshin-navy/40",
+            isOverdue && "text-red-500 font-medium"
+          )}>
+            {action.due_date
+              ? format(new Date(action.due_date), "MM/dd", { locale: ja })
+              : "期限なし"}
+          </span>
+          {action.has_children && (
+            <ChevronRight className="w-3 h-3 text-zenshin-navy/30" />
           )}
         </div>
-      )}
+        {action.assignee ? (
+          <div
+            className="w-5 h-5 rounded-full bg-zenshin-teal/15 text-zenshin-teal text-[10px] font-medium flex items-center justify-center shrink-0"
+            title={action.assignee}
+          >
+            {action.assignee.charAt(0).toUpperCase()}
+          </div>
+        ) : (
+          <div className="w-5 h-5 rounded-full bg-zenshin-navy/5 shrink-0" />
+        )}
+      </div>
     </div>
   );
 }
