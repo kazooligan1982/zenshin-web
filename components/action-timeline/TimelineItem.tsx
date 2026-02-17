@@ -32,7 +32,8 @@ interface TimelineItemProps {
   type: "action" | "vision" | "reality"
   onDelete?: (commentId: string) => void
   onDeleted?: (commentId: string) => void
-  onRestore?: (comment: TimelineComment) => void
+  onDataRefresh?: () => void
+  onUndo?: (commentId: string) => void
   onUpdated?: (commentId: string, newContent: string) => void
 }
 
@@ -44,14 +45,14 @@ export function TimelineItem({
   type,
   onDelete,
   onDeleted,
-  onRestore,
+  onDataRefresh,
+  onUndo,
   onUpdated,
 }: TimelineItemProps) {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(comment.content)
   const [isLoading, setIsLoading] = useState(false)
-  const [isDeleted, setIsDeleted] = useState(false)
   // TODO: 認証実装後に currentUserId 比較に戻す
   const isOwn = !currentUserId || comment.user_id === currentUserId
   const relativeTime = formatDistanceToNow(new Date(comment.created_at), {
@@ -93,30 +94,14 @@ export function TimelineItem({
     }
   }
 
-  const handleDelete = async () => {
-    // 即座にUIから非表示（楽観的削除）
-    setIsDeleted(true)
+  const handleDelete = () => {
     onDelete?.(comment.id)
 
-    // 15秒Undoトースト表示
     let undone = false
-    toast("コメントを削除しました", {
-      duration: 15000,
-      action: {
-        label: "元に戻す",
-        onClick: () => {
-          undone = true
-          setIsDeleted(false)
-          onRestore?.(comment)
-        },
-      },
-    })
-
-    // 15秒後に実際にDB削除（Undoされなかった場合）
-    setTimeout(async () => {
-      if (undone) return
-
-      setIsLoading(true)
+    let deleteExecuted = false
+    const runDelete = async () => {
+      if (undone || deleteExecuted) return
+      deleteExecuted = true
       let result
       switch (type) {
         case "vision":
@@ -129,20 +114,34 @@ export function TimelineItem({
         default:
           result = await deleteComment(comment.id, chartId)
       }
-      setIsLoading(false)
 
       if (!result.success) {
-        setIsDeleted(false)
-        onRestore?.(comment)
+        onUndo?.(comment.id)
         toast.error("削除に失敗しました", { duration: 5000 })
         return
       }
       onDeleted?.(comment.id)
+      onDataRefresh?.()
       router.refresh()
-    }, 15000)
-  }
+    }
 
-  if (isDeleted) return null
+    toast("コメントを削除しました", {
+      duration: 15000,
+      action: {
+        label: "元に戻す",
+        onClick: () => {
+          undone = true
+          onUndo?.(comment.id)
+        },
+      },
+      onDismiss: () => {
+        void runDelete()
+      },
+      onAutoClose: () => {
+        void runDelete()
+      },
+    })
+  }
 
   return (
     <div className="flex gap-3">

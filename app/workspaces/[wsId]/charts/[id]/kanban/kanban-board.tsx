@@ -43,6 +43,7 @@ interface Action {
   vision_title: string | null;
   has_children: boolean;
   vision_tags?: string[];
+  description?: string | null;
 }
 
 interface TensionGroup {
@@ -565,6 +566,7 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
           setSelectedAction(null);
         }}
         onSave={fetchActions}
+        onDataRefresh={fetchActions}
         projectId={projectId}
         currentUserId={currentUserId}
         currentUser={currentUser}

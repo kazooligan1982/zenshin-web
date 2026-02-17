@@ -16,6 +16,7 @@ interface TreeNode {
   area_color?: string | null;
   is_completed?: boolean | null;
   child_chart_id?: string | null;
+  description?: string | null;
   children: TreeNode[];
 }
 
@@ -91,6 +92,7 @@ async function getTensionsWithActions(
       tension_id: action.tension_id || null,
       is_completed: action.is_completed,
       child_chart_id: action.child_chart_id,
+      description: action.description ?? null,
       children: [],
     }));
   }
@@ -123,6 +125,7 @@ async function getTensionsWithActions(
         is_completed: action.is_completed,
         tension_id: action.tension_id || null,
         child_chart_id: action.child_chart_id,
+        description: action.description ?? null,
         children: [],
       };
 

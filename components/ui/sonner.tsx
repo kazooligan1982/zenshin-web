@@ -7,12 +7,21 @@ const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
 
   return (
-    <Sonner
+    <div
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <Sonner
       theme={theme as ToasterProps["theme"]}
-      className="toaster group"
+      className="toaster group !z-[99999]"
+      style={{ zIndex: 99999 }}
       position="bottom-center"
       closeButton={true}
       toastOptions={{
+        className: "!z-[99999]",
+        style: { zIndex: 99999, pointerEvents: "auto" },
         classNames: {
           toast:
             "group toast group-[.toaster]:bg-white group-[.toaster]:text-zenshin-navy group-[.toaster]:border-gray-200 group-[.toaster]:shadow-lg group-[.toaster]:rounded-xl group-[.toaster]:px-4 group-[.toaster]:py-3",
@@ -34,6 +43,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       {...props}
     />
+    </div>
   )
 }
 

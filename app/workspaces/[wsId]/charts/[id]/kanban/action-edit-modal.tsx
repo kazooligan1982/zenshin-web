@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -22,12 +24,10 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  updateActionPlanItem,
   fetchActionComments,
   checkIncompleteTelescopeActions,
 } from "../actions";
 import {
-  Loader2,
   AlertTriangle,
   Circle,
   Clock,
@@ -175,6 +175,7 @@ interface ActionEditModalProps {
     due_date?: string | null;
     is_completed?: boolean | null;
   }) => void;
+  onDataRefresh?: () => void;
   projectId: string;
   currentUserId?: string;
   currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
@@ -186,6 +187,7 @@ export function ActionEditModal({
   isOpen,
   onClose,
   onSave,
+  onDataRefresh,
   projectId,
   currentUserId = "",
   currentUser = null,
@@ -197,7 +199,6 @@ export function ActionEditModal({
   const [assignee, setAssignee] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<string | null>(null);
   const [description, setDescription] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
   const [actionComments, setActionComments] = useState<any[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -208,6 +209,7 @@ export function ActionEditModal({
     nextStatus: "done" | "canceled";
   } | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string>("");
+  const [deletedCommentIds, setDeletedCommentIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen) {
@@ -215,18 +217,25 @@ export function ActionEditModal({
     }
   }, [isOpen]);
 
+  const [initializedActionId, setInitializedActionId] = useState<string | null>(null);
   useEffect(() => {
-    if (action) {
-      setTitle(action.title || "");
-      setStatus(
-        (action.status as "todo" | "in_progress" | "done" | "pending" | "canceled") ||
-        (action.is_completed ? "done" : "todo")
-      );
-      setAssignee(action.assignee || null);
-      setDueDate(action.due_date || null);
-      setDescription(action.description || "");
+    if (isOpen && action) {
+      if (initializedActionId !== action.id) {
+        setTitle(action.title || "");
+        setStatus(
+          (action.status as "todo" | "in_progress" | "done" | "pending" | "canceled") ||
+          (action.is_completed ? "done" : "todo")
+        );
+        setAssignee(action.assignee || null);
+        setDueDate(action.due_date || null);
+        setDescription(action.description ?? (action as { content?: string | null }).content ?? "");
+        setInitializedActionId(action.id);
+      }
     }
-  }, [action]);
+    if (!isOpen) {
+      setInitializedActionId(null);
+    }
+  }, [isOpen, action, initializedActionId]);
 
   const loadActionComments = useCallback(async () => {
     if (!action?.id) return;
@@ -248,98 +257,172 @@ export function ActionEditModal({
     }
   }, [isOpen, action?.id, loadActionComments]);
 
-  const performSave = async (skipCheck: boolean) => {
-    if (!action) return;
-      setIsSaving(true);
+  const saveField = useCallback(
+    async (
+      field: "title" | "status" | "assignee" | "dueDate" | "description",
+      value: string | null
+    ) => {
+      if (!action) return;
       try {
-        const { updateActionStatus } = await import("../actions");
-
-        const currentStatus =
-          action.status || (action.is_completed ? "done" : "todo");
-        const nextStatus = status as "done" | "canceled" | "todo" | "in_progress" | "pending";
-
-        if (
-          !skipCheck &&
-          (nextStatus === "done" || nextStatus === "canceled") &&
-          action.child_chart_id
-        ) {
-          const result = await checkIncompleteTelescopeActions(action.id);
-          if (result.hasIncomplete) {
-            setConfirmDialog({
-              open: true,
-              actionTitle: action.title,
-              incompleteCount: result.incompleteCount,
-              incompleteActions: result.incompleteActions,
-              nextStatus,
-            });
-            setIsSaving(false);
-            return;
-          }
-        }
-
-        if (status !== currentStatus) {
-          await updateActionStatus(action.id, status);
-        }
-
-        if (title !== action.title) {
-          await updateActionPlanItem(action.id, action.tension_id || null, "title", title, projectId);
-        }
-        const assigneeValue = assignee || null;
-        const currentAssignee = action.assignee || null;
-        if (assigneeValue !== currentAssignee) {
-          await updateActionPlanItem(action.id, action.tension_id || null, "assignee", assigneeValue || "", projectId);
-        }
-        if (dueDate !== (action.due_date || "")) {
-          await updateActionPlanItem(
-            action.id,
-            action.tension_id || null,
-            "dueDate",
-            dueDate || "",
-            projectId
-          );
-        }
-
-        const currentDescription = action.description || "";
-        const newDescription = description.trim();
-        if (newDescription !== currentDescription) {
-          const descriptionValue = newDescription === "" ? null : newDescription;
-          await updateActionPlanItem(action.id, action.tension_id || null, "description", descriptionValue || "", projectId);
-        }
-
-        toast.success("アクションを更新しました", { duration: 3000 });
-        onSave({
-          id: action.id,
-          title,
-          status,
-          assignee: assigneeValue,
-          due_date: dueDate || null,
-          is_completed: status === "done",
+        const res = await fetch(`/api/charts/${projectId}/actions`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            actionId: action.id,
+            tensionId: action.tension_id || null,
+            field,
+            value,
+          }),
         });
-        router.refresh();
-        onClose();
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Update failed");
+        }
       } catch (error) {
         console.error("Error updating action:", error);
         toast.error("更新に失敗しました", { duration: 5000 });
-      } finally {
-        setIsSaving(false);
       }
-  };
+    },
+    [action, projectId]
+  );
 
-  const handleSave = async () => {
-    await performSave(false);
+  const handleStatusChange = async (v: typeof status) => {
+    if (!action) return;
+    const nextStatus = v;
+
+    if (
+      (nextStatus === "done" || nextStatus === "canceled") &&
+      action.child_chart_id
+    ) {
+      const result = await checkIncompleteTelescopeActions(action.id);
+      if (result.hasIncomplete) {
+        setConfirmDialog({
+          open: true,
+          actionTitle: action.title,
+          incompleteCount: result.incompleteCount,
+          incompleteActions: result.incompleteActions,
+          nextStatus,
+        });
+        return;
+      }
+    }
+
+    setStatus(nextStatus);
+    await saveField("status", nextStatus);
   };
 
   const handleConfirmStatusChange = async () => {
+    if (!confirmDialog) return;
+    const nextStatus = confirmDialog.nextStatus;
     setConfirmDialog(null);
-    await performSave(true);
+    try {
+      const res = await fetch(`/api/charts/${projectId}/actions`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actionId: action!.id,
+          tensionId: action!.tension_id || null,
+          field: "status",
+          value: nextStatus,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Update failed");
+      }
+      setStatus(nextStatus);
+    } catch (error) {
+      console.error("Error updating action status:", error);
+      toast.error("更新に失敗しました", { duration: 5000 });
+    }
+  };
+
+  const handleTitleBlur = () => {
+    if (!action || title === action.title) return;
+    const trimmed = title.trim();
+    if (trimmed !== (action.title || "")) {
+      saveField("title", trimmed);
+    }
+  };
+
+  const descriptionEditor = useEditor(
+    {
+      content: description,
+      extensions: [
+        StarterKit.configure({ heading: false }),
+        Placeholder.configure({ placeholder: "詳細や要件を入力..." }),
+      ],
+      editorProps: {
+        attributes: {
+          class:
+            "prose prose-sm max-w-none focus:outline-none min-h-[100px] p-3 border rounded-lg text-sm resize-none",
+        },
+      },
+      onBlur: ({ editor }) => {
+        const html = editor.getHTML();
+        const value = html === "<p></p>" ? "" : html;
+        saveField("description", value === "" ? null : value);
+      },
+      immediatelyRender: false,
+    },
+    [isOpen, saveField]
+  );
+
+  useEffect(() => {
+    if (descriptionEditor && description !== undefined) {
+      descriptionEditor.commands.setContent(description || "<p></p>", { emitUpdate: false });
+    }
+  }, [descriptionEditor, description]);
+
+  const handleDueDateSelect = (date: Date | undefined) => {
+    const newDate = date ? date.toISOString() : null;
+    setDueDate(newDate);
+    if (!action) return;
+    const currentDate = action.due_date || "";
+    if ((newDate || "") !== currentDate) {
+      saveField("dueDate", newDate);
+    }
+  };
+
+  const handleAssigneeChange = (email: string | null) => {
+    setAssignee(email);
+    if (!action) return;
+    const currentAssignee = action.assignee || null;
+    if (email !== currentAssignee) {
+      saveField("assignee", email);
+    }
   };
 
   if (!action) return null;
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            if (onDataRefresh) {
+              onDataRefresh();
+            } else {
+              router.refresh();
+            }
+            onClose();
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          onPointerDownOutside={(e) => {
+            if ((e.target as HTMLElement).closest("[data-sonner-toaster]")) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            if ((e.target as HTMLElement).closest("[data-sonner-toaster]")) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Target className="w-5 h-5 text-zenshin-teal" />
@@ -353,6 +436,7 @@ export function ActionEditModal({
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onBlur={handleTitleBlur}
               placeholder="タイトルを入力"
                 className="h-10"
             />
@@ -361,7 +445,7 @@ export function ActionEditModal({
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm text-zenshin-navy/50">ステータス</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+                <Select value={status} onValueChange={handleStatusChange}>
                   <SelectTrigger className="w-full h-10 bg-background">
                   <SelectValue />
                 </SelectTrigger>
@@ -421,11 +505,23 @@ export function ActionEditModal({
                     <Calendar
                       mode="single"
                       selected={dueDate ? new Date(dueDate) : undefined}
-                      onSelect={(date) =>
-                        setDueDate(date ? date.toISOString() : null)
-                      }
+                      onSelect={(date) => handleDueDateSelect(date ?? undefined)}
                       locale={ja}
                     />
+                    {dueDate && (
+                      <div className="border-t px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDueDate(null);
+                            saveField("dueDate", null);
+                          }}
+                          className="text-sm text-zenshin-navy/50 hover:text-red-500 transition-colors"
+                        >
+                          期限をクリア
+                        </button>
+                      </div>
+                    )}
                   </PopoverContent>
                 </Popover>
               </div>
@@ -434,7 +530,7 @@ export function ActionEditModal({
                 <Label className="text-sm text-zenshin-navy/50">担当者</Label>
                 <AssigneePopover
                   assignee={assignee}
-                  onAssigneeChange={setAssignee}
+                  onAssigneeChange={handleAssigneeChange}
                   workspaceMembers={workspaceMembers}
                   currentUser={currentUser}
                 />
@@ -453,12 +549,9 @@ export function ActionEditModal({
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">詳細</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="詳細や要件を入力..."
-                className="min-h-[100px] resize-none"
-              />
+              <div className="min-h-[100px] border rounded-lg overflow-hidden [&_.ProseMirror]:min-h-[100px] [&_.ProseMirror]:p-3">
+                <EditorContent editor={descriptionEditor} />
+              </div>
             </div>
 
           {/* タイムライン */}
@@ -479,23 +572,26 @@ export function ActionEditModal({
               chartId={projectId}
               workspaceId={workspaceId}
               onCommentAdded={loadActionComments}
+              onCommentDeleted={onDataRefresh}
+              onDataRefresh={onDataRefresh}
+              deletedCommentIds={deletedCommentIds}
+              onCommentDeletedId={(commentId) =>
+                setDeletedCommentIds((prev) => new Set(prev).add(commentId))
+              }
+              onCommentUndo={(commentId) =>
+                setDeletedCommentIds((prev) => {
+                  const next = new Set(prev);
+                  next.delete(commentId);
+                  return next;
+                })
+              }
             />
           </div>
 
-          {/* 保存ボタン */}
-          <div className="flex justify-end gap-2 pt-4">
+          {/* 閉じるボタン */}
+          <div className="flex justify-end pt-4">
             <Button variant="outline" onClick={onClose}>
-              キャンセル
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="bg-zenshin-orange hover:bg-zenshin-orange/90 text-white">
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  保存中...
-                </>
-              ) : (
-                "保存"
-              )}
+              閉じる
             </Button>
           </div>
           </div>

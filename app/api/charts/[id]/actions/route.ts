@@ -7,6 +7,7 @@ interface ActionWithHierarchy {
   id: string;
   title: string;
   content: string | null;
+  description?: string | null;
   due_date: string | null;
   assignee: string | null;
   status: string | null;
@@ -139,6 +140,7 @@ async function getActionsWithHierarchy(
         id: action.id,
         title: action.title || action.content || "(無題)",
         content: action.content,
+        description: action.description ?? action.content ?? null,
         due_date: action.due_date,
         assignee: action.assignee,
         status: action.status,
@@ -214,6 +216,7 @@ async function getActionsWithHierarchy(
         id: action.id,
         title: action.title || action.content || "(無題)",
         content: action.content,
+        description: action.description ?? action.content ?? null,
         due_date: action.due_date,
         assignee: action.assignee,
         status: action.status,
@@ -251,6 +254,120 @@ export async function GET(
     return NextResponse.json(actions);
   } catch (error) {
     console.error("Error in GET /api/charts/[id]/actions:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// モーダル内の自動保存用（revalidatePath を呼ばない）
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: chartId } = await params;
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { actionId, tensionId, field, value } = body as {
+      actionId: string;
+      tensionId: string | null;
+      field: "status" | "title" | "assignee" | "dueDate" | "description";
+      value: string | null;
+    };
+
+    if (!actionId || !field) {
+      return NextResponse.json(
+        { error: "actionId and field are required" },
+        { status: 400 }
+      );
+    }
+
+    if (field === "status") {
+      const validStatuses = ["todo", "in_progress", "done", "pending", "canceled"];
+      if (!value || !validStatuses.includes(value)) {
+        return NextResponse.json(
+          { error: "Invalid status value" },
+          { status: 400 }
+        );
+      }
+      const updateData: Record<string, unknown> = {
+        status: value,
+        is_completed: value === "done",
+      };
+      const { error } = await supabase
+        .from("actions")
+        .update(updateData)
+        .eq("id", actionId);
+
+      if (error) {
+        console.error("[PATCH actions] status update error:", error);
+        return NextResponse.json(
+          { error: error.message },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    if (field === "description") {
+      const descValue = value === "" || value === null ? null : value;
+      const { error: descError } = await supabase
+        .from("actions")
+        .update({ description: descValue })
+        .eq("id", actionId);
+      if (descError) {
+        return NextResponse.json(
+          { error: descError.message },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    // title, assignee, dueDate（actionId はテーブル全体で一意のため追加条件不要）
+    const updates: Record<string, unknown> = {};
+    if (field === "title") updates.title = value ?? "";
+    if (field === "assignee") updates.assignee = value;
+    if (field === "dueDate") updates.due_date = value;
+
+    const { error } = await supabase
+      .from("actions")
+      .update(updates)
+      .eq("id", actionId);
+    if (error) {
+      console.error("[PATCH actions] update error:", error);
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    // dueDate の場合は child_chart の due_date も更新
+    if (field === "dueDate") {
+      const { data: action } = await supabase
+        .from("actions")
+        .select("child_chart_id")
+        .eq("id", actionId)
+        .single();
+      if (action?.child_chart_id) {
+        await supabase
+          .from("charts")
+          .update({ due_date: value })
+          .eq("id", action.child_chart_id);
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error in PATCH /api/charts/[id]/actions:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

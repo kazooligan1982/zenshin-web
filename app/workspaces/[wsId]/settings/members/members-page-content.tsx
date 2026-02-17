@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy, Check, Users, Crown, User, X, Loader2, Shield, Eye, Stethoscope, Mail } from "lucide-react";
@@ -10,7 +9,7 @@ import {
   getWorkspaceMembers,
   removeMember,
 } from "@/lib/workspace";
-import { inviteMember, revokeInvitation } from "./actions";
+import { inviteMember, revokeInvitation, getPendingInvitations } from "./actions";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -72,7 +71,6 @@ export function MembersPageContent({
   const [inviteRole, setInviteRole] = useState<string>("editor");
   const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleGenerateLink = async () => {
     setIsGenerating(true);
@@ -122,7 +120,8 @@ export function MembersPageContent({
       await inviteMember(workspaceId, inviteEmail.trim(), inviteRole);
       toast.success("招待メールを送信しました", { duration: 3000 });
       setInviteEmail("");
-      router.refresh();
+      const updated = await getPendingInvitations(workspaceId);
+      setPendingInvitations(updated);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "招待の送信に失敗しました", { duration: 5000 });
     } finally {
@@ -135,7 +134,8 @@ export function MembersPageContent({
     try {
       await revokeInvitation(workspaceId, invitationId);
       toast.success("招待を取り消しました", { duration: 3000 });
-      router.refresh();
+      const updated = await getPendingInvitations(workspaceId);
+      setPendingInvitations(updated);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "取り消しに失敗しました", { duration: 5000 });
     } finally {
