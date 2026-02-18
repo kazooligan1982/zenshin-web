@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -100,6 +100,29 @@ export function Sidebar(props?: SidebarProps) {
   const currentWorkspace = props?.currentWorkspace ?? fetchedWorkspace;
   const allWorkspaces = props?.workspaces ?? fetchedAllWorkspaces;
   const wsId = props?.currentWsId ?? currentWorkspace?.id;
+
+  const router = useRouter();
+  const [isCreatingWs, setIsCreatingWs] = useState(false);
+  const [newWsName, setNewWsName] = useState("");
+
+  const handleCreateWorkspace = async () => {
+    if (!newWsName.trim()) return;
+    try {
+      const res = await fetch("/api/workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newWsName.trim() }),
+      });
+      if (!res.ok) throw new Error("作成に失敗しました");
+      const workspace = await res.json();
+      setIsCreatingWs(false);
+      setNewWsName("");
+      router.push(`/workspaces/${workspace.id}/charts`);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to create workspace:", error);
+    }
+  };
 
   const isInChart = !!chartId;
   const isExpanded = isHovered || isDropdownOpen;
@@ -275,10 +298,54 @@ export function Sidebar(props?: SidebarProps) {
                 メンバーを管理
               </DropdownMenuItem>
             </Link>
-            <DropdownMenuItem className="gap-2 text-muted-foreground" disabled>
-              <Plus className="w-4 h-4" />
-              新しいWorkspaceを作成
-            </DropdownMenuItem>
+            {isCreatingWs ? (
+              <div className="px-2 py-2 space-y-2">
+                <input
+                  type="text"
+                  value={newWsName}
+                  onChange={(e) => setNewWsName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateWorkspace();
+                    if (e.key === "Escape") {
+                      setIsCreatingWs(false);
+                      setNewWsName("");
+                    }
+                  }}
+                  placeholder="ワークスペース名"
+                  className="w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-zenshin-teal/50"
+                  autoFocus
+                />
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={handleCreateWorkspace}
+                    disabled={!newWsName.trim()}
+                    className="flex-1 px-2 py-1 text-xs font-medium text-white bg-zenshin-teal rounded-md hover:bg-zenshin-teal/90 disabled:opacity-40"
+                  >
+                    作成
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsCreatingWs(false);
+                      setNewWsName("");
+                    }}
+                    className="flex-1 px-2 py-1 text-xs font-medium text-zenshin-navy/60 bg-zenshin-navy/5 rounded-md hover:bg-zenshin-navy/10"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <DropdownMenuItem
+                className="gap-2"
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setIsCreatingWs(true);
+                }}
+              >
+                <Plus className="w-4 h-4" />
+                新しいWorkspaceを作成
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
