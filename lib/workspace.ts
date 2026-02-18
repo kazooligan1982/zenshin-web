@@ -343,3 +343,43 @@ export async function removeMember(
 
   return { success: true };
 }
+
+// 新しいワークスペースを作成
+export async function createNewWorkspace(
+  name: string
+): Promise<{ id: string; name: string } | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: workspace, error: wsError } = await supabase
+    .from("workspaces")
+    .insert({
+      name,
+      owner_id: user.id,
+    })
+    .select()
+    .single();
+
+  if (wsError) {
+    console.error("[createNewWorkspace] Failed:", wsError);
+    return null;
+  }
+
+  const { error: memberError } = await supabase
+    .from("workspace_members")
+    .insert({
+      workspace_id: workspace.id,
+      user_id: user.id,
+      role: "owner",
+    });
+
+  if (memberError) {
+    console.error("[createNewWorkspace] Failed to add owner:", memberError);
+    return null;
+  }
+
+  return { id: workspace.id, name: workspace.name };
+}
