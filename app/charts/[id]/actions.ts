@@ -3,6 +3,40 @@
 import { revalidatePath } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/utils/supabase/server";
+
+async function revalidateChartPath(chartId: string) {
+  revalidatePath(`/charts/${chartId}`);
+}
+
+async function recordChartHistory(
+  chartId: string,
+  entityType: "vision" | "reality" | "tension" | "action" | "comment" | "attachment",
+  entityId: string,
+  eventType: "created" | "updated" | "deleted" | "completed" | "reopened" | "moved",
+  field?: string | null,
+  oldValue?: string | null,
+  newValue?: string | null
+) {
+  try {
+    const supabaseClient = await createClient();
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+    const { error } = await supabaseClient.from("chart_history").insert({
+      chart_id: chartId,
+      entity_type: entityType,
+      entity_id: entityId,
+      event_type: eventType,
+      field: field ?? null,
+      old_value: oldValue ?? null,
+      new_value: newValue ?? null,
+      user_id: user.id,
+    });
+    if (error) console.error("[chart_history]", error);
+  } catch (e) {
+    console.error("[chart_history] unexpected:", e);
+  }
+}
+
 import { getAuthenticatedUser } from "@/lib/auth";
 import {
   getChartById,
@@ -51,7 +85,8 @@ export async function fetchChart(chartId: string) {
 export async function addVision(chartId: string, content: string, areaId?: string | null) {
   const result = await createVision(chartId, content, areaId);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "vision", result.id, "created", null, null, content);
+    await revalidateChartPath(chartId);
   } else {
     console.error("[addVision] 失敗 - result is null");
   }
@@ -74,7 +109,8 @@ export async function updateVisionItem(
 
   const result = await updateVision(visionId, chartId, updates);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "vision", visionId, "updated", field, null, String(value ?? ""));
+    await revalidateChartPath(chartId);
   } else {
     console.error("[updateVisionItem] 失敗");
   }
@@ -84,7 +120,8 @@ export async function updateVisionItem(
 export async function removeVision(visionId: string, chartId: string) {
   const result = await deleteVision(visionId, chartId);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "vision", visionId, "deleted");
+    await revalidateChartPath(chartId);
   } else {
     console.error("[removeVision] 失敗");
   }
@@ -95,7 +132,8 @@ export async function removeVision(visionId: string, chartId: string) {
 export async function addReality(chartId: string, content: string, areaId?: string | null) {
   const result = await createReality(chartId, content, areaId);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "reality", result.id, "created", null, null, content);
+    await revalidateChartPath(chartId);
   } else {
     console.error("[addReality] 失敗 - result is null");
   }
@@ -115,7 +153,8 @@ export async function updateRealityItem(
   if (field === "dueDate") updates.dueDate = value as string | null;
   const result = await updateReality(realityId, chartId, updates);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "reality", realityId, "updated", field, null, String(value ?? ""));
+    await revalidateChartPath(chartId);
   } else {
     console.error("[updateRealityItem] 失敗");
   }
@@ -160,7 +199,8 @@ export async function removeArea(areaId: string, chartId: string) {
 export async function removeReality(realityId: string, chartId: string) {
   const result = await deleteReality(realityId, chartId);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "reality", realityId, "deleted");
+    await revalidateChartPath(chartId);
   } else {
     console.error("[removeReality] 失敗");
   }
@@ -176,7 +216,8 @@ export async function addTension(
   const normalizedAreaId = areaId ?? null;
   const result = await createTension(chartId, title, normalizedAreaId);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "tension", result.id, "created", null, null, title);
+    await revalidateChartPath(chartId);
   } else {
     console.error("[addTension] 失敗");
   }
@@ -198,7 +239,14 @@ export async function updateTensionItem(
   const result = await updateTension(tensionId, chartId, updates);
   console.log("[updateTensionItem] result:", result);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    const eventType =
+      field === "status" && value === "resolved"
+        ? "completed"
+        : field === "status" && value === "active"
+          ? "reopened"
+          : "updated";
+    await recordChartHistory(chartId, "tension", tensionId, eventType, field, null, String(value ?? ""));
+    await revalidateChartPath(chartId);
   } else {
     console.error("[updateTensionItem] 失敗");
   }
@@ -208,7 +256,8 @@ export async function updateTensionItem(
 export async function removeTension(tensionId: string, chartId: string) {
   const result = await deleteTension(tensionId, chartId);
   if (result) {
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "tension", tensionId, "deleted");
+    await revalidateChartPath(chartId);
   } else {
     console.error("[removeTension] 失敗");
   }
@@ -256,7 +305,8 @@ export async function addActionPlan(
 ) {
   const result = await createAction(tensionId, title, areaId, chartId);
   if (result.action && result.chartId) {
-    revalidatePath(`/charts/${result.chartId}`);
+    await recordChartHistory(result.chartId, "action", result.action.id, "created", null, null, title);
+    await revalidateChartPath(result.chartId);
   } else {
     console.error("[addActionPlan] 失敗 - action or chartId is null");
   }
@@ -345,6 +395,9 @@ export async function updateActionPlanItem(
 }
 
 export async function removeActionPlan(actionId: string, tensionId: string | null, chartId?: string) {
+  if (chartId) {
+    await recordChartHistory(chartId, "action", actionId, "deleted");
+  }
   return await deleteAction(actionId, tensionId, chartId);
 }
 
@@ -411,6 +464,13 @@ export async function updateVisionArea(
 
   try {
     const supabase = await createClient();
+    const { data: existing } = await supabase
+      .from("visions")
+      .select("area_id")
+      .eq("id", visionId)
+      .single();
+    const oldAreaId = existing?.area_id ?? null;
+
     let maxOrderQuery: any = supabase
       .from("visions")
       .select("sort_order")
@@ -446,7 +506,8 @@ export async function updateVisionArea(
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/charts/${projectId}`);
+    await recordChartHistory(projectId, "vision", visionId, "updated", "area_id", oldAreaId ?? null, areaId ?? null);
+    await revalidateChartPath(projectId);
     const result = { success: true };
     return result;
   } catch (error) {
@@ -466,6 +527,13 @@ export async function updateRealityArea(
 ) {
   try {
     const supabase = await createClient();
+    const { data: existing } = await supabase
+      .from("realities")
+      .select("area_id")
+      .eq("id", realityId)
+      .single();
+    const oldAreaId = existing?.area_id ?? null;
+
     let maxOrderQuery: any = supabase
       .from("realities")
       .select("sort_order")
@@ -499,7 +567,8 @@ export async function updateRealityArea(
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/charts/${projectId}`);
+    await recordChartHistory(projectId, "reality", realityId, "updated", "area_id", oldAreaId ?? null, areaId ?? null);
+    await revalidateChartPath(projectId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -519,6 +588,13 @@ export async function updateTensionArea(
 ) {
   try {
     const supabase = await createClient();
+    const { data: existing } = await supabase
+      .from("tensions")
+      .select("area_id")
+      .eq("id", tensionId)
+      .single();
+    const oldAreaId = existing?.area_id ?? null;
+
     let maxOrderQuery: any = supabase
       .from("tensions")
       .select("sort_order")
@@ -551,6 +627,8 @@ export async function updateTensionArea(
       console.error("❌ Supabase update error:", error);
       return { success: false, error: error.message };
     }
+
+    await recordChartHistory(projectId, "tension", tensionId, "updated", "area_id", oldAreaId ?? null, areaId ?? null);
 
     if (updateChildActions) {
       const { error: actionsError } = await supabase
@@ -596,7 +674,7 @@ export async function updateTensionArea(
       }
     }
 
-    revalidatePath(`/charts/${projectId}`);
+    await revalidateChartPath(projectId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -618,7 +696,7 @@ export async function updateActionArea(
     const supabase = await createClient();
     const { data: actionMeta, error: actionMetaError } = await supabase
       .from("actions")
-      .select("child_chart_id")
+      .select("child_chart_id, area_id, tension_id")
       .eq("id", actionId)
       .single();
     if (actionMetaError) {
@@ -660,6 +738,9 @@ export async function updateActionArea(
       console.error("❌ Supabase update error:", error);
       return { success: false, error: error.message };
     }
+
+    const oldAreaId = actionMeta?.area_id ?? null;
+    await recordChartHistory(projectId, "action", actionId, "updated", "area_id", oldAreaId ?? null, areaId ?? null);
 
     if (actionMeta?.child_chart_id) {
       try {
@@ -705,7 +786,7 @@ export async function updateActionArea(
       }
     }
 
-    revalidatePath(`/charts/${projectId}`);
+    await revalidateChartPath(projectId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -723,6 +804,13 @@ export async function moveActionToTension(
 ) {
   try {
     const supabase = await createClient();
+    const { data: actionBefore } = await supabase
+      .from("actions")
+      .select("tension_id")
+      .eq("id", actionId)
+      .single();
+    const fromTensionId = actionBefore?.tension_id ?? null;
+
     const { data: tension, error: tensionError } = await supabase
       .from("tensions")
       .select("area_id")
@@ -741,7 +829,8 @@ export async function moveActionToTension(
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "action", actionId, "moved", "tension_id", fromTensionId ?? null, tensionId ?? null);
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
