@@ -26,6 +26,89 @@ const DatePicker = dynamic(
   { loading: () => null, ssr: false }
 );
 
+function InlineTagCreator({
+  onCreateAndAssign,
+}: {
+  onCreateAndAssign: (name: string, color: string) => Promise<void>;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [color, setColor] = useState("#3b82f6");
+  const [isCreating, setIsCreating] = useState(false);
+
+  const COLORS = [
+    "#EF4444", "#F97316", "#EAB308", "#22C55E",
+    "#14B8A6", "#3B82F6", "#8B5CF6", "#EC4899",
+  ];
+
+  const handleCreate = async () => {
+    if (!name.trim() || isCreating) return;
+    setIsCreating(true);
+    try {
+      await onCreateAndAssign(name.trim(), color);
+      setName("");
+      setIsOpen(false);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  if (!isOpen) {
+    return (
+      <div className="border-t border-gray-100 mt-1 pt-1">
+        <button
+          className="flex items-center gap-1.5 w-full px-2 py-1.5 text-xs text-gray-500 hover:text-zenshin-navy hover:bg-gray-50 rounded transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(true);
+          }}
+        >
+          <Plus className="w-3 h-3" />
+          新しいタグを追加
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-gray-100 mt-1 pt-2 px-1 space-y-2">
+      <div className="flex gap-1">
+        {COLORS.map((c) => (
+          <button
+            key={c}
+            className={`w-4 h-4 rounded-full transition-transform ${
+              color === c ? "ring-2 ring-offset-1 ring-gray-400 scale-110" : "hover:scale-105"
+            }`}
+            style={{ backgroundColor: c }}
+            onClick={(e) => { e.stopPropagation(); setColor(c); }}
+          />
+        ))}
+      </div>
+      <div className="flex gap-1.5">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) handleCreate();
+            if (e.key === "Escape") setIsOpen(false);
+          }}
+          placeholder="タグ名"
+          className="flex-1 text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-zenshin-teal/50"
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+        />
+        <button
+          onClick={(e) => { e.stopPropagation(); handleCreate(); }}
+          disabled={!name.trim() || isCreating}
+          className="text-xs px-2 py-1 bg-zenshin-teal text-white rounded hover:bg-zenshin-teal/90 disabled:opacity-40 shrink-0"
+        >
+          {isCreating ? "..." : "作成"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // SortableItemコンポーネント（Vision用）
 // ============================================
 // SortableVisionItem コンポーネント
@@ -40,6 +123,7 @@ export function SortableVisionItem({
   onOpenDetail,
   onOpenFocus,
   onOpenAreaSettings,
+  onCreateArea,
   currentUser,
   workspaceMembers = [],
 }: {
@@ -56,6 +140,7 @@ export function SortableVisionItem({
   onOpenDetail: (vision: VisionItem) => void;
   onOpenFocus: (vision: VisionItem, index: number) => void;
   onOpenAreaSettings?: () => void;
+  onCreateArea?: (name: string, color: string) => Promise<Area | null>;
   currentUser?: {
     id: string;
     email: string;
@@ -284,7 +369,7 @@ export function SortableVisionItem({
               <Tag size={16} />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-48 p-2" onClick={(e) => e.stopPropagation()}>
+          <PopoverContent className="w-56 p-2" onClick={(e) => e.stopPropagation()}>
             <div className="space-y-1">
               {areas.map((area) => (
                 <Button
@@ -307,19 +392,15 @@ export function SortableVisionItem({
               >
                 未分類
               </Button>
-              {onOpenAreaSettings && (
-                <div className="border-t border-gray-100 mt-1 pt-1">
-                  <button
-                    className="flex items-center gap-1.5 w-full px-2 py-1.5 text-xs text-gray-500 hover:text-zenshin-navy hover:bg-gray-50 rounded transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenAreaSettings();
-                    }}
-                  >
-                    <Plus className="w-3 h-3" />
-                    新しいタグを追加
-                  </button>
-                </div>
+              {onCreateArea && (
+                <InlineTagCreator
+                  onCreateAndAssign={async (name, color) => {
+                    const newArea = await onCreateArea(name, color);
+                    if (newArea) {
+                      onUpdate(vision.id, "areaId", newArea.id);
+                    }
+                  }}
+                />
               )}
             </div>
           </PopoverContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import type { Area } from "@/types/chart";
 import {
   Dialog,
@@ -46,13 +47,23 @@ export function TagManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCreate = async () => {
-    if (!newName.trim()) return;
-    const created = await onCreateArea(newName.trim(), newColor);
-    if (created) {
-      setNewName("");
-      setNewColor(COLOR_PALETTE[0]);
+    if (!newName.trim() || isCreating) return;
+    setIsCreating(true);
+    try {
+      const name = newName.trim();
+      const created = await onCreateArea(name, newColor);
+      if (created) {
+        setNewName("");
+        setNewColor(COLOR_PALETTE[0]);
+        toast.success(`「${name}」を作成しました`);
+      }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -66,10 +77,27 @@ export function TagManager({
     if (!editingId || !editName.trim()) return;
     await onUpdateArea(editingId, { name: editName.trim(), color: editColor });
     setEditingId(null);
+    toast.success("タグを更新しました");
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
+  };
+
+  const handleConfirmDelete = async (id: string) => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await onDeleteArea(id);
+      setDeletingId(null);
+      toast.success("タグを削除しました");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeletingId(null);
   };
 
   return (
@@ -123,6 +151,30 @@ export function TagManager({
                         <X className="w-4 h-4 text-gray-400" />
                       </Button>
                     </div>
+                  ) : deletingId === area.id ? (
+                    <div className="flex items-center justify-between gap-2 flex-1">
+                      <span className="text-sm text-gray-600">削除しますか？</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleConfirmDelete(area.id)}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "削除中..." : "削除"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7"
+                          onClick={handleCancelDelete}
+                          disabled={isDeleting}
+                        >
+                          キャンセル
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <div className="flex items-center gap-3">
@@ -145,7 +197,7 @@ export function TagManager({
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7"
-                          onClick={() => onDeleteArea(area.id)}
+                          onClick={() => setDeletingId(area.id)}
                         >
                           <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
                         </Button>
@@ -179,12 +231,9 @@ export function TagManager({
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="タグ名を入力..."
                 className="flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreate();
-                }}
               />
-              <Button onClick={handleCreate} disabled={!newName.trim()}>
-                追加
+              <Button onClick={handleCreate} disabled={!newName.trim() || isCreating}>
+                {isCreating ? "追加中..." : "追加"}
               </Button>
             </div>
           </div>
