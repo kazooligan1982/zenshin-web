@@ -290,6 +290,49 @@ export async function PATCH(
       );
     }
 
+    // 履歴記録用: 更新前の値を取得
+    const { data: currentAction } = await supabase
+      .from("actions")
+      .select("title, status, assignee, due_date, description, tension_id, area_id")
+      .eq("id", actionId)
+      .single();
+
+    const fieldToColumn: Record<string, string> = {
+      title: "title",
+      status: "status",
+      assignee: "assignee",
+      dueDate: "due_date",
+      description: "description",
+    };
+
+    const getOldValue = (f: string): string | null => {
+      if (!currentAction) return null;
+      const col = fieldToColumn[f] || f;
+      const val = (currentAction as Record<string, unknown>)[col];
+      return val === undefined || val === null ? null : String(val);
+    };
+
+    const recordHistory = async (
+      eventType: string,
+      historyField: string | null,
+      oldVal: string | null,
+      newVal: string | null
+    ) => {
+      const { error: histError } = await supabase.from("chart_history").insert({
+        chart_id: chartId,
+        entity_type: "action",
+        entity_id: actionId,
+        event_type: eventType,
+        field: historyField,
+        old_value: oldVal,
+        new_value: newVal,
+        user_id: user.id,
+      });
+      if (histError) {
+        console.error("[chart_history] insert error:", histError);
+      }
+    };
+
     if (field === "status") {
       const validStatuses = ["todo", "in_progress", "done", "pending", "canceled"];
       if (!value || !validStatuses.includes(value)) {
@@ -314,6 +357,8 @@ export async function PATCH(
           { status: 500 }
         );
       }
+      const eventType = value === "done" ? "completed" : "updated";
+      await recordHistory(eventType, "status", getOldValue("status"), value);
       return NextResponse.json({ success: true });
     }
 
@@ -329,6 +374,7 @@ export async function PATCH(
           { status: 500 }
         );
       }
+      await recordHistory("updated", "description", getOldValue("description"), descValue);
       return NextResponse.json({ success: true });
     }
 
@@ -365,6 +411,8 @@ export async function PATCH(
       }
     }
 
+    const dbField = fieldToColumn[field] || field;
+    await recordHistory("updated", dbField, getOldValue(field), value ?? null);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in PATCH /api/charts/[id]/actions:", error);

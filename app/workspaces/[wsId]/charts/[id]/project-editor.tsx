@@ -830,6 +830,7 @@ export function ProjectEditor({
         )
       }
       onOpenAreaSettings={() => setTagManagerOpen(true)}
+      onCreateArea={handleCreateArea}
       currentUser={currentUser}
       workspaceMembers={workspaceMembers}
     />
@@ -882,6 +883,7 @@ export function ProjectEditor({
                           )
                         }
                         onOpenAreaSettings={() => setTagManagerOpen(true)}
+                        onCreateArea={handleCreateArea}
                         currentUser={currentUser}
                         workspaceMembers={workspaceMembers}
                       />
@@ -935,6 +937,7 @@ export function ProjectEditor({
                           )
                         }
                         onOpenAreaSettings={() => setTagManagerOpen(true)}
+                        onCreateArea={handleCreateArea}
                         currentUser={currentUser}
                         workspaceMembers={workspaceMembers}
                       />
