@@ -873,18 +873,25 @@ export async function createComment(actionId: string, content: string, chartId: 
     return { success: false, error: "認証が必要です" };
   }
   try {
-    const { error } = await supabase.from("action_comments").insert({
-      action_id: actionId,
-      user_id: user.id,
-      content: content.trim(),
-    });
+    const { data: inserted, error } = await supabase
+      .from("action_comments")
+      .insert({
+        action_id: actionId,
+        user_id: user.id,
+        content: content.trim(),
+      })
+      .select("id")
+      .single();
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/charts/${chartId}`);
+    if (inserted) {
+      await recordChartHistory(chartId, "comment", inserted.id, "created", "action", actionId, content);
+    }
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -983,7 +990,8 @@ export async function updateComment(
       console.error("❌ Supabase update error:", error);
       return { success: false, error: error.message };
     }
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "comment", commentId, "updated", "action", null, newContent);
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -998,6 +1006,7 @@ export async function deleteComment(commentId: string, chartId: string) {
   const supabase = await createClient();
   // TODO: 認証実装後にユーザー確認を復活
   try {
+    await recordChartHistory(chartId, "comment", commentId, "deleted", "action");
     const { error: deleteError } = await supabase
       .from("action_comments")
       .delete()
@@ -1006,7 +1015,7 @@ export async function deleteComment(commentId: string, chartId: string) {
       console.error("❌ Supabase delete error:", deleteError);
       throw deleteError;
     }
-    revalidatePath(`/charts/${chartId}`);
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -1054,18 +1063,25 @@ export async function createVisionComment(
     return { success: false, error: "認証が必要です" };
   }
   try {
-    const { error } = await supabase.from("vision_comments").insert({
-      vision_id: visionId,
-      user_id: user.id,
-      content: content.trim(),
-    });
+    const { data: inserted, error } = await supabase
+      .from("vision_comments")
+      .insert({
+        vision_id: visionId,
+        user_id: user.id,
+        content: content.trim(),
+      })
+      .select("id")
+      .single();
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/charts/${chartId}`);
+    if (inserted) {
+      await recordChartHistory(chartId, "comment", inserted.id, "created", "vision", visionId, content);
+    }
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -1092,7 +1108,8 @@ export async function updateVisionComment(
       console.error("❌ Supabase update error:", error);
       return { success: false, error: error.message };
     }
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "comment", commentId, "updated", "vision", null, newContent);
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -1107,6 +1124,7 @@ export async function deleteVisionComment(commentId: string, chartId: string) {
   const supabase = await createClient();
   // TODO: 認証実装後にユーザー確認を復活
   try {
+    await recordChartHistory(chartId, "comment", commentId, "deleted", "vision");
     const { error: deleteError } = await supabase
       .from("vision_comments")
       .delete()
@@ -1115,7 +1133,7 @@ export async function deleteVisionComment(commentId: string, chartId: string) {
       console.error("❌ Supabase delete error:", deleteError);
       throw deleteError;
     }
-    revalidatePath(`/charts/${chartId}`);
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -1163,18 +1181,25 @@ export async function createRealityComment(
     return { success: false, error: "認証が必要です" };
   }
   try {
-    const { error } = await supabase.from("reality_comments").insert({
-      reality_id: realityId,
-      user_id: user.id,
-      content: content.trim(),
-    });
+    const { data: inserted, error } = await supabase
+      .from("reality_comments")
+      .insert({
+        reality_id: realityId,
+        user_id: user.id,
+        content: content.trim(),
+      })
+      .select("id")
+      .single();
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/charts/${chartId}`);
+    if (inserted) {
+      await recordChartHistory(chartId, "comment", inserted.id, "created", "reality", realityId, content);
+    }
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -1201,7 +1226,8 @@ export async function updateRealityComment(
       console.error("❌ Supabase update error:", error);
       return { success: false, error: error.message };
     }
-    revalidatePath(`/charts/${chartId}`);
+    await recordChartHistory(chartId, "comment", commentId, "updated", "reality", null, newContent);
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);
@@ -1216,6 +1242,7 @@ export async function deleteRealityComment(commentId: string, chartId: string) {
   const supabase = await createClient();
   // TODO: 認証実装後にユーザー確認を復活
   try {
+    await recordChartHistory(chartId, "comment", commentId, "deleted", "reality");
     const { error: deleteError } = await supabase
       .from("reality_comments")
       .delete()
@@ -1224,7 +1251,7 @@ export async function deleteRealityComment(commentId: string, chartId: string) {
       console.error("❌ Supabase delete error:", deleteError);
       throw deleteError;
     }
-    revalidatePath(`/charts/${chartId}`);
+    await revalidateChartPath(chartId);
     return { success: true };
   } catch (error) {
     console.error("❌ Server action error:", error);

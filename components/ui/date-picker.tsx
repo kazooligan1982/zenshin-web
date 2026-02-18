@@ -64,14 +64,14 @@ export function DatePicker({
           {date ? (
             <>
               <span>{format(date, "yyyy/MM/dd")}</span>
-              <button
-                type="button"
+              <span
+                role="button"
                 onClick={handleClear}
-                className="absolute -top-1 -right-1 opacity-0 group-hover/datepicker:opacity-100 h-4 w-4 flex items-center justify-center rounded-full bg-gray-500 text-white text-[10px] hover:bg-gray-600 transition-all z-10"
+                className="absolute -top-1 -right-1 opacity-0 group-hover/datepicker:opacity-100 h-4 w-4 flex items-center justify-center rounded-full bg-gray-500 text-white text-[10px] hover:bg-gray-600 transition-all z-10 cursor-pointer"
                 title="日付をクリア"
               >
                 ×
-              </button>
+              </span>
             </>
           ) : (
             <span className="flex items-center justify-center w-full"><CalendarPlus className="w-4 h-4" /></span>
