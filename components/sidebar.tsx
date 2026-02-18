@@ -305,7 +305,7 @@ export function Sidebar(props?: SidebarProps) {
                   value={newWsName}
                   onChange={(e) => setNewWsName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCreateWorkspace();
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing) handleCreateWorkspace();
                     if (e.key === "Escape") {
                       setIsCreatingWs(false);
                       setNewWsName("");
