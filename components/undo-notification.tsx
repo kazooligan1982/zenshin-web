@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { X, RotateCcw } from "lucide-react";
 import { useEffect } from "react";
@@ -17,6 +18,7 @@ export function UndoNotification({
   onDismiss,
   duration = 5000,
 }: UndoNotificationProps) {
+  const tt = useTranslations("toast");
   useEffect(() => {
     const timer = setTimeout(() => {
       onDismiss();
@@ -51,7 +53,7 @@ export function UndoNotification({
               onClick={onUndo}
               className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium px-4 py-2"
             >
-              元に戻す
+              {tt("undo")}
             </Button>
             <Button
               size="icon"

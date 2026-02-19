@@ -5,13 +5,6 @@
 
 export type WorkspaceRole = "owner" | "consultant" | "editor" | "viewer";
 
-export const ROLE_LABELS: Record<WorkspaceRole, string> = {
-  owner: "オーナー",
-  consultant: "コンサルタント",
-  editor: "編集者",
-  viewer: "閲覧者",
-};
-
 // lucide-react アイコン名（コンポーネントで使用）
 export const ROLE_ICONS: Record<WorkspaceRole, string> = {
   owner: "Crown",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -21,6 +22,7 @@ export function DashboardChartFilter({
   charts,
   selectedChartId,
 }: DashboardChartFilterProps) {
+  const t = useTranslations("dashboard");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,10 +51,10 @@ export function DashboardChartFilter({
     >
       <Select value={selectedChartId} onValueChange={handleChange}>
       <SelectTrigger className="w-[220px] border-zenshin-navy/15 text-zenshin-navy [&>span]:truncate">
-        <SelectValue placeholder="全体" />
+        <SelectValue placeholder={t("all")} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">全体</SelectItem>
+        <SelectItem value="all">{t("all")}</SelectItem>
         {charts.map((chart) => (
           <SelectItem key={chart.id} value={chart.id}>
             {chart.title}

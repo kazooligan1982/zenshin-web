@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
-import { ja } from "date-fns/locale"
+import { ja, enUS } from "date-fns/locale"
+import { useLocale } from "next-intl"
 import { MoreVertical, Edit2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -50,14 +52,19 @@ export function TimelineItem({
   onUpdated,
 }: TimelineItemProps) {
   const router = useRouter()
+  const locale = useLocale()
+  const t = useTranslations("timeline")
+  const tCommon = useTranslations("common")
+  const tToast = useTranslations("toast")
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(comment.content)
   const [isLoading, setIsLoading] = useState(false)
   // TODO: 認証実装後に currentUserId 比較に戻す
   const isOwn = !currentUserId || comment.user_id === currentUserId
+  const dateLocale = locale === "ja" ? ja : enUS
   const relativeTime = formatDistanceToNow(new Date(comment.created_at), {
     addSuffix: true,
-    locale: ja,
+    locale: dateLocale,
   })
   const userName = comment.profile?.name || comment.profile?.email || "Unknown"
   const userInitial = userName[0]?.toUpperCase() || "?"
@@ -90,7 +97,7 @@ export function TimelineItem({
     } else {
       onUpdated?.(comment.id, comment.content)
       setEditContent(comment.content)
-      toast.error("更新に失敗しました", { duration: 5000 })
+      toast.error(tToast("updateFailed"), { duration: 5000 })
     }
   }
 
@@ -117,7 +124,7 @@ export function TimelineItem({
 
       if (!result.success) {
         onUndo?.(comment.id)
-        toast.error("削除に失敗しました", { duration: 5000 })
+        toast.error(tToast("deleteFailed"), { duration: 5000 })
         return
       }
       onDeleted?.(comment.id)
@@ -125,10 +132,10 @@ export function TimelineItem({
       router.refresh()
     }
 
-    toast("コメントを削除しました", {
+    toast(t("commentDeleted"), {
       duration: 15000,
       action: {
-        label: "元に戻す",
+        label: t("restore"),
         onClick: () => {
           undone = true
           onUndo?.(comment.id)
@@ -163,7 +170,7 @@ export function TimelineItem({
           <span className="font-semibold text-sm text-zenshin-navy">{userName}</span>
           <span className="text-xs text-gray-400">{relativeTime}</span>
           {comment.updated_at !== comment.created_at && (
-            <span className="text-xs text-gray-400">(編集済み)</span>
+            <span className="text-xs text-gray-400">{t("edited")}</span>
           )}
         </div>
         {isEditing ? (
@@ -182,7 +189,7 @@ export function TimelineItem({
                 disabled={isLoading}
                 className="px-3 py-1 bg-zenshin-teal text-white text-sm rounded hover:bg-zenshin-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isLoading ? "保存中..." : "保存"}
+                {isLoading ? t("saving") : tCommon("save")}
               </button>
               <button
                 onClick={() => {
@@ -192,7 +199,7 @@ export function TimelineItem({
                 disabled={isLoading}
                 className="px-3 py-1 bg-zenshin-navy/10 text-sm rounded hover:bg-zenshin-navy/15 disabled:opacity-50 transition-colors"
               >
-                キャンセル
+                {tCommon("cancel")}
               </button>
             </div>
           </div>
@@ -250,7 +257,7 @@ export function TimelineItem({
                 className="cursor-pointer"
               >
               <Edit2 className="h-4 w-4 mr-2" />
-              編集
+              {tCommon("edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={(e) => {
@@ -260,7 +267,7 @@ export function TimelineItem({
                 className="text-red-600 focus:text-red-600 cursor-pointer"
               >
               <Trash2 className="h-4 w-4 mr-2" />
-              削除
+              {tCommon("delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenuPortal>

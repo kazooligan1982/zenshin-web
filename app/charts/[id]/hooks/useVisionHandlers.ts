@@ -1,5 +1,6 @@
 import type { VisionItem, Area } from "@/types/chart";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { addVision, updateVisionItem, removeVision } from "../actions";
 
@@ -28,6 +29,8 @@ export function useVisionHandlers({
   chart: { areas: Area[] };
   router: ReturnType<typeof useRouter>;
 }) {
+  const tt = useTranslations("toast");
+  const tTags = useTranslations("tags");
   const handleAddVision = async (content: string, areaIdOverride?: string | null) => {
     if (!content.trim() || isSubmittingVision) return;
 
@@ -99,7 +102,7 @@ export function useVisionHandlers({
           const areaName = value
             ? chart.areas.find((area: Area) => area.id === value)?.name
             : "未分類";
-          toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+          toast.success(tt("movedToArea", { areaName: areaName ?? tTags("untagged") }), { duration: 3000 });
           router.refresh();
         } else {
           setVisions(previousState);
@@ -148,7 +151,7 @@ export function useVisionHandlers({
       } else {
         // 削除失敗時は元に戻す
         setVisions(originalVisions);
-        toast.error("削除に失敗しました", { duration: 5000 });
+        toast.error(tt("deleteFailed"), { duration: 5000 });
       }
       setPendingDeletions((prev: Record<string, any>) => {
         const next = { ...prev };
@@ -167,10 +170,10 @@ export function useVisionHandlers({
       },
     }));
 
-    toast.success("Visionを削除しました", {
+    toast.success(tt("visionDeleted"), {
       duration: 15000,
       action: {
-        label: "元に戻す",
+        label: tt("undo"),
         onClick: () => {
           clearTimeout(timeoutId);
           setVisions(originalVisions);

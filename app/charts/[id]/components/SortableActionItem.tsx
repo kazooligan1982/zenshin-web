@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -124,6 +125,12 @@ export function SortableActionItem({
   handleOptimisticMove?: (sourceTensionId: string, targetTensionId: string, action: ActionPlan) => void;
   workspaceMembers?: { id: string; email: string; name?: string; avatar_url?: string }[];
 }) {
+  const t = useTranslations("editor");
+  const tc = useTranslations("common");
+  const tt = useTranslations("toast");
+  const tAction = useTranslations("action");
+  const tTags = useTranslations("tags");
+  const tk = useTranslations("kanban");
   const actionInput = useItemInput({
     initialValue: actionPlan.title || "",
     onSave: (val) => {
@@ -158,7 +165,7 @@ export function SortableActionItem({
     opacity: isDraggingThis ? 0.5 : 1,
   };
   const actionArea = areas.find((area) => area.id === actionPlan.area_id) || null;
-  const actionAreaName = actionArea?.name ?? "未分類";
+  const actionAreaName = actionArea?.name ?? tTags("untagged");
   const actionAreaColor = actionArea?.color ?? "#9CA3AF";
   const isDifferentFromParent =
     !hideAreaBadge &&
@@ -195,12 +202,12 @@ export function SortableActionItem({
 
     // 即座にトースト表示
     const targetTension = allTensions.find((t) => t.id === targetTensionId);
-    toast.success(`「${targetTension?.title || "Tension"}」に移動しました`, { duration: 3000 });
+    toast.success(tt("movedToTension", { name: targetTension?.title || "Tension" }), { duration: 3000 });
 
     // バックグラウンドでサーバー更新
     const result = await moveActionToTension(actionPlan.id, targetTensionId, chartId);
     if (!result.success) {
-      toast.error("移動に失敗しました。元に戻します", { duration: 5000 });
+      toast.error(tt("moveFailedRevert"), { duration: 5000 });
       router.refresh();
     }
     setIsMovingToTension(false);
@@ -222,7 +229,7 @@ export function SortableActionItem({
           setIncompleteDialog({
             isOpen: true,
             actionId: actionPlan.id,
-            actionTitle: actionPlan.title || "(無題)",
+            actionTitle: actionPlan.title || t("noTitle"),
             newStatus: nextStatus,
             incompleteCount: result.incompleteCount,
             incompleteActions: result.incompleteActions,
@@ -274,18 +281,18 @@ export function SortableActionItem({
           <PopoverTrigger asChild>
             <button
               className="shrink-0 p-1 rounded-full hover:bg-zenshin-navy/8 transition-colors"
-              title="ステータスを変更"
+              title={t("changeStatus")}
             >
               {getActionStatusIcon(actionPlan.status || null, isCompleted)}
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-40 p-1 z-50" align="start">
             {[
-              { value: "todo", label: "未着手", icon: <Circle className="w-4 h-4 text-zenshin-navy/40" /> },
-              { value: "in_progress", label: "進行中", icon: <Clock className="w-4 h-4 text-blue-500" /> },
-              { value: "done", label: "完了", icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
-              { value: "pending", label: "保留", icon: <Pause className="w-4 h-4 text-yellow-500" /> },
-              { value: "canceled", label: "中止", icon: <XCircle className="w-4 h-4 text-zenshin-navy/40" /> },
+              { value: "todo", label: tk("todo"), icon: <Circle className="w-4 h-4 text-zenshin-navy/40" /> },
+              { value: "in_progress", label: tk("inProgress"), icon: <Clock className="w-4 h-4 text-blue-500" /> },
+              { value: "done", label: tk("done"), icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
+              { value: "pending", label: tk("pending"), icon: <Pause className="w-4 h-4 text-yellow-500" /> },
+              { value: "canceled", label: tk("canceled"), icon: <XCircle className="w-4 h-4 text-zenshin-navy/40" /> },
             ].map((statusOption) => (
               <button
               key={statusOption.value}
@@ -323,14 +330,14 @@ export function SortableActionItem({
             borderColor: actionAreaColor,
             color: actionAreaColor,
           }}
-          title={isDifferentFromParent ? "親Tensionと異なるカテゴリ" : undefined}
+          title={isDifferentFromParent ? t("differentParentCategory") : undefined}
         >
           {actionAreaName}
         </Badge>
       )}
       <Input
         {...actionInput.bind}
-        placeholder="Actionを記述..."
+        placeholder={t("actionPlaceholder")}
         className={`text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable ${
           isCompleted ? "line-through text-zenshin-navy/40" : ""
         }`}
@@ -353,14 +360,14 @@ export function SortableActionItem({
                   e.stopPropagation();
                 }}
                 disabled={isMovingToTension}
-                title="Tensionに追加"
+                title={t("addToTension")}
               >
                 <Plus size={16} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel className="text-xs text-zenshin-navy/50">
-                Tensionに追加:
+                {t("addToTensionLabel")}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {availableTensions?.map((tension) => (
@@ -370,7 +377,7 @@ export function SortableActionItem({
                   disabled={isMovingToTension}
                 >
                   <span className="truncate">
-                    {tension.title || "(タイトルなし)"}
+                    {tension.title || t("noTitle")}
                   </span>
                 </DropdownMenuItem>
               ))}
@@ -412,7 +419,7 @@ export function SortableActionItem({
                   size="icon"
                   variant="ghost"
                   className={ICON_BTN_CLASS}
-                  title={actionPlan.assignee || "担当者を選択"}
+                  title={actionPlan.assignee || t("selectAssignee")}
                 >
                 {actionPlan.assignee ? (
                   assigneeMember?.avatar_url ? (
@@ -438,7 +445,7 @@ export function SortableActionItem({
                       setAssigneePopoverOpen(false);
                     }}
                     className="absolute -top-1 -right-1 hidden group-hover/avatar:flex h-4 w-4 items-center justify-center rounded-full bg-gray-500 text-white text-[10px] hover:bg-gray-600 transition-colors z-10"
-                    title="担当者を解除"
+                    title={t("clearAssignee")}
                   >
                     ×
                   </button>
@@ -461,7 +468,7 @@ export function SortableActionItem({
                   }}
                 >
                   {!actionPlan.assignee ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
-                  担当者なし
+                  {tAction("noAssignee")}
                 </Button>
                 {workspaceMembers.length > 0 ? (
                   workspaceMembers.map((member) => (
@@ -529,7 +536,7 @@ export function SortableActionItem({
                 e.stopPropagation();
                 onOpenDetailPanel("action", actionPlan.id, actionInput.value);
               }}
-              title="詳細/履歴"
+              title={t("detailHistory")}
             >
               <FileText size={16} />
             </Button>
@@ -549,7 +556,7 @@ export function SortableActionItem({
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
-                  title="タグを変更"
+                  title={t("changeTag")}
                 >
                   <Tag size={16} />
                 </Button>
@@ -571,7 +578,7 @@ export function SortableActionItem({
                     className="w-full justify-start text-xs h-7 text-muted-foreground"
                     onClick={() => handleChangeArea(null)}
                   >
-                    未分類
+                    {tTags("untagged")}
                   </Button>
                 </div>
               </PopoverContent>
@@ -598,8 +605,8 @@ export function SortableActionItem({
               disabled={telescopingActionId === actionPlan.id}
               title={
                 actionPlan.childChartId || actionPlan.hasSubChart
-                  ? "チャート化済み（クリックで移動）"
-                  : "テレスコープ（チャート化）"
+                  ? t("telescopeCharted")
+                  : t("telescope")
               }
             >
               {telescopingActionId === actionPlan.id ? (
@@ -617,24 +624,24 @@ export function SortableActionItem({
                 variant="ghost"
                 className="h-7 w-7 text-zenshin-navy/40 hover:text-gray-600 hover:bg-transparent rounded-full p-0 shrink-0 transition-opacity opacity-0 group-hover:opacity-100"
                 onClick={(e) => e.stopPropagation()}
-                title="別のTensionに移動"
+                title={t("moveToAnotherTension")}
               >
                 <ArrowRightLeft size={14} />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2" onClick={(e) => e.stopPropagation()}>
-              <div className="text-xs font-semibold text-zenshin-navy/50 mb-2 px-2">移動先のTensionを選択</div>
+              <div className="text-xs font-semibold text-zenshin-navy/50 mb-2 px-2">{t("selectTargetTension")}</div>
               <div className="space-y-0.5 max-h-60 overflow-y-auto">
                 {allTensions
                   .filter((t) => t.id !== tensionId && t.status !== "resolved")
-                  .map((t) => {
-                    const tArea = areas.find((a) => a.id === t.area_id);
+                  .map((tension) => {
+                    const tArea = areas.find((a) => a.id === tension.area_id);
                     return (
                       <Button
-                        key={t.id}
+                        key={tension.id}
                         variant="ghost"
                         className="w-full justify-start text-xs h-auto py-2 px-2"
-                        onClick={() => handleMoveToTension(t.id)}
+                        onClick={() => handleMoveToTension(tension.id)}
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           {tArea && (
@@ -643,13 +650,13 @@ export function SortableActionItem({
                               style={{ backgroundColor: tArea.color }}
                             />
                           )}
-                          <span className="truncate">{t.title || "無題のTension"}</span>
+                          <span className="truncate">{tension.title || t("noTitleTension")}</span>
                         </div>
                       </Button>
                     );
                   })}
-                {allTensions.filter((t) => t.id !== tensionId && t.status !== "resolved").length === 0 && (
-                  <div className="text-xs text-zenshin-navy/40 px-2 py-2">他にTensionがありません</div>
+                {allTensions.filter((tension) => tension.id !== tensionId && tension.status !== "resolved").length === 0 && (
+                  <div className="text-xs text-zenshin-navy/40 px-2 py-2">{t("noOtherTensions")}</div>
                 )}
               </div>
             </PopoverContent>
@@ -662,7 +669,7 @@ export function SortableActionItem({
               e.stopPropagation();
               handleDeleteActionPlan(tensionId, actionPlan.id);
             }}
-            title="削除"
+            title={tc("delete")}
           >
             <Trash2 size={16} />
           </Button>
@@ -677,22 +684,21 @@ export function SortableActionItem({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-yellow-600">
               <AlertTriangle className="w-5 h-5" />
-              未完了のアクションがあります
+              {tAction("incompleteActionsTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  「{incompleteDialog?.actionTitle}」のテレスコープ先に、
-                  <span className="font-bold text-red-600 mx-1">
-                    {incompleteDialog?.incompleteCount}件
-                  </span>
-                  の未完了アクションがあります。
+                  {tAction("incompleteActionsDescription", {
+                    title: incompleteDialog?.actionTitle ?? "",
+                    count: incompleteDialog?.incompleteCount ?? 0,
+                  })}
                 </p>
                 {incompleteDialog?.incompleteActions &&
                   incompleteDialog.incompleteActions.length > 0 && (
                     <div className="bg-gray-50 rounded-lg p-3">
                       <p className="text-xs text-zenshin-navy/50 mb-2">
-                        未完了のアクション:
+                        {tAction("incompleteActionsLabel")}
                       </p>
                       <ul className="space-y-1">
                         {incompleteDialog.incompleteActions.map((action) => (
@@ -706,7 +712,7 @@ export function SortableActionItem({
                         ))}
                         {incompleteDialog.incompleteCount > 5 && (
                           <li className="text-xs text-zenshin-navy/50 pl-5">
-                            他 {incompleteDialog.incompleteCount - 5}件...
+                            {tAction("moreActionsCount", { count: incompleteDialog.incompleteCount - 5 })}
                           </li>
                         )}
                       </ul>
@@ -714,21 +720,21 @@ export function SortableActionItem({
                   )}
                 <p className="text-sm">
                   このまま「
-                  {incompleteDialog?.newStatus === "done" ? "完了" : "中止"}
+                  {incompleteDialog?.newStatus === "done" ? tk("done") : tk("canceled")}
                   」にしますか？
                 </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmStatusChange}
               className="bg-yellow-600 hover:bg-yellow-700"
             >
               {incompleteDialog?.newStatus === "done"
-                ? "完了にする"
-                : "中止にする"}
+                ? t("confirmDone")
+                : t("confirmCanceled")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

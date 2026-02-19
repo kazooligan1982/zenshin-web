@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { LoginForm } from "@/components/auth/login-form";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
@@ -7,6 +8,7 @@ export default async function LoginPage({
 }: {
   searchParams?: Promise<{ redirect?: string }>;
 }) {
+  const t = await getTranslations("auth");
   const params = await searchParams;
   const redirectTo = params?.redirect || "/charts";
 
@@ -20,7 +22,7 @@ export default async function LoginPage({
             beta
           </span>
         </div>
-        <p className="text-muted-foreground mt-2">ログイン</p>
+        <p className="text-muted-foreground mt-2">{t("login")}</p>
       </div>
       <OAuthButtons redirectTo={redirectTo} />
       <div className="relative">
@@ -28,17 +30,17 @@ export default async function LoginPage({
           <div className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-gray-50 px-2 text-muted-foreground">または</span>
+          <span className="bg-gray-50 px-2 text-muted-foreground">{t("or")}</span>
         </div>
       </div>
       <LoginForm redirectTo={redirectTo} />
       <p className="text-center text-sm text-muted-foreground">
-        アカウントをお持ちでない方は{" "}
+        {t("noAccount")}{" "}
         <Link
           href={`/signup${params?.redirect ? `?redirect=${params.redirect}` : ""}`}
           className="text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium"
         >
-          サインアップ
+          {t("signupLink")}
         </Link>
       </p>
     </div>

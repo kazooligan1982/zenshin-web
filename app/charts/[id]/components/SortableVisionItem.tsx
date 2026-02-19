@@ -4,6 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useTranslations } from "next-intl";
 import { GripVertical, FileText, Tag, Plus, Trash2, UserPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +65,10 @@ export function SortableVisionItem({
   } | null;
   workspaceMembers?: { id: string; email: string; name?: string; avatar_url?: string }[];
 }) {
+  const t = useTranslations("editor");
+  const tc = useTranslations("common");
+  const tTags = useTranslations("tags");
+  const tAction = useTranslations("action");
   const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
   const area = areas.find((a) => a.id === vision.area_id);
   const assigneeMember = workspaceMembers.find((m) => m.email === vision.assignee);
@@ -108,7 +113,7 @@ export function SortableVisionItem({
       <div className="flex-1 min-w-0">
         <Input
           {...visionInput.bind}
-          placeholder="理想の状態を書く..."
+          placeholder={t("visionIdealPlaceholder")}
           className="text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable"
           onKeyDown={(e) => {
             visionInput.handleKeyDown(e);
@@ -146,7 +151,7 @@ export function SortableVisionItem({
                   size="icon"
                   variant="ghost"
                   className={ICON_BTN_CLASS}
-                  title={vision.assignee || "担当者を選択"}
+                  title={vision.assignee || t("selectAssignee")}
                 >
                   {vision.assignee ? (
                     assigneeMember?.avatar_url ? (
@@ -172,7 +177,7 @@ export function SortableVisionItem({
                       setAssigneePopoverOpen(false);
                     }}
                     className="absolute -top-1 -right-1 hidden group-hover/avatar:flex h-4 w-4 items-center justify-center rounded-full bg-gray-500 text-white text-[10px] hover:bg-gray-600 transition-colors z-10"
-                    title="担当者を解除"
+                    title={t("clearAssignee")}
                   >
                     ×
                   </button>
@@ -195,7 +200,7 @@ export function SortableVisionItem({
                   }}
                 >
                   {!vision.assignee ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
-                  担当者なし
+                  {tAction("noAssignee")}
                 </Button>
                 {workspaceMembers.length > 0 ? (
                   workspaceMembers.map((member) => (
@@ -262,7 +267,7 @@ export function SortableVisionItem({
               e.stopPropagation();
               onOpenDetail(vision);
             }}
-            title="詳細/履歴"
+            title={t("detailHistory")}
           >
             <FileText size={16} />
           </Button>
@@ -279,7 +284,7 @@ export function SortableVisionItem({
               variant="ghost"
               className={`${ICON_BTN_CLASS} opacity-0 group-hover:opacity-100 transition-opacity`}
               onClick={(e) => e.stopPropagation()}
-              title="タグを変更"
+              title={t("changeTag")}
             >
               <Tag size={16} />
             </Button>
@@ -305,7 +310,7 @@ export function SortableVisionItem({
                 className="w-full justify-start text-xs h-7 text-muted-foreground"
                 onClick={() => onUpdate(vision.id, "areaId", null)}
               >
-                未分類
+                {tTags("untagged")}
               </Button>
               {onOpenAreaSettings && (
                 <div className="border-t border-gray-100 mt-1 pt-1">
@@ -317,7 +322,7 @@ export function SortableVisionItem({
                     }}
                   >
                     <Plus className="w-3 h-3" />
-                    新しいタグを追加
+                    {tTags("addNew")}
                   </button>
                 </div>
               )}
@@ -333,7 +338,7 @@ export function SortableVisionItem({
               e.stopPropagation();
               onDelete(vision.id);
             }}
-            title="削除"
+            title={tc("delete")}
           >
             <Trash2 size={16} />
           </Button>

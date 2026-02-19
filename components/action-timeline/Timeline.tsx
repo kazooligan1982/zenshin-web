@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import { TimelineItem } from "@/components/action-timeline/TimelineItem"
 import { CommentInput } from "@/components/action-timeline/CommentInput"
 import type { TimelineComment } from "@/types/database"
@@ -38,6 +39,7 @@ export function Timeline({
   onCommentDeletedId,
   onCommentUndo,
 }: TimelineProps) {
+  const t = useTranslations("timeline")
   const [comments, setComments] = useState(initialComments)
   const [isExpanded, setIsExpanded] = useState(false)
   const [internalDeletedIds, setInternalDeletedIds] = useState<Set<string>>(new Set())
@@ -98,7 +100,7 @@ export function Timeline({
             onClick={() => setIsExpanded(true)}
             className="w-full py-2 text-xs text-zenshin-navy/50 hover:text-zenshin-navy hover:bg-zenshin-cream/50 rounded-lg transition-colors"
           >
-            以前のコメントを表示 ({hiddenCount}件)
+            {t("showPrevious", { count: hiddenCount })}
           </button>
         )}
         {visibleComments.map((comment) => (
@@ -118,8 +120,8 @@ export function Timeline({
         ))}
         {filteredComments.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <p className="text-zenshin-navy/40 text-sm mb-2">まだコメントがありません</p>
-            <p className="text-zenshin-navy/30 text-xs">最初のコメントを投稿してみましょう</p>
+            <p className="text-zenshin-navy/40 text-sm mb-2">{t("noComments")}</p>
+            <p className="text-zenshin-navy/30 text-xs">{t("postFirst")}</p>
           </div>
         )}
       </div>

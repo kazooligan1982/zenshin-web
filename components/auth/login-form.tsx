@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +14,8 @@ type LoginFormProps = {
 };
 
 export function LoginForm({ redirectTo = "/charts" }: LoginFormProps) {
+  const t = useTranslations("auth");
+  const tt = useTranslations("toast");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,11 +31,11 @@ export function LoginForm({ redirectTo = "/charts" }: LoginFormProps) {
     });
     if (error) {
       console.error("Login error:", error);
-      toast.error("ログインに失敗しました: " + error.message, { duration: 5000 });
+      toast.error(tt("loginFailed") + ": " + error.message, { duration: 5000 });
       setIsLoading(false);
       return;
     }
-    toast.success("ログインしました", { duration: 3000 });
+    toast.success(tt("loginSuccess"), { duration: 3000 });
     router.push(redirectTo);
     router.refresh();
   };
@@ -40,22 +43,22 @@ export function LoginForm({ redirectTo = "/charts" }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">メールアドレス</Label>
+        <Label htmlFor="email">{t("email")}</Label>
         <Input
           id="email"
           type="email"
-          placeholder="you@example.com"
+          placeholder={t("emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">パスワード</Label>
+        <Label htmlFor="password">{t("password")}</Label>
         <Input
           id="password"
           type="password"
-          placeholder="••••••••"
+          placeholder={t("passwordPlaceholder")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -64,11 +67,11 @@ export function LoginForm({ redirectTo = "/charts" }: LoginFormProps) {
           href="/forgot-password"
           className="text-sm text-muted-foreground hover:underline block"
         >
-          パスワードをお忘れですか？
+          {t("forgotPassword")}
         </Link>
       </div>
       <Button type="submit" className="w-full bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm" disabled={isLoading}>
-        {isLoading ? "ログイン中..." : "ログイン"}
+        {isLoading ? t("loggingIn") : t("login")}
       </Button>
     </form>
   );

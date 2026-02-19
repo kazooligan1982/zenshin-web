@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getInvitationByCode, joinWorkspaceByInvite } from "@/lib/workspace";
 import { acceptInvitation } from "@/app/workspaces/[wsId]/settings/members/actions";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Crown, Stethoscope, Shield, Eye, User } from "lucide-react";
-import { ROLE_LABELS, ROLE_ICONS, type WorkspaceRole } from "@/lib/permissions";
+import { ROLE_ICONS, type WorkspaceRole } from "@/lib/permissions";
 
 const ROLE_ICON_MAP = {
   Crown,
@@ -33,6 +34,8 @@ export default async function InvitePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+  const t = await getTranslations("invite");
+  const tMembers = await getTranslations("members");
   const supabase = await createClient();
   const {
     data: { user },
@@ -70,7 +73,7 @@ export default async function InvitePage({
         workspaceName,
       });
     }
-    workspaceName = workspaceName || "ワークスペース";
+    workspaceName = workspaceName || t("workspaceFallback");
     let inviterEmail: string | null = null;
     if (requestInvitation.invited_by) {
       const { data: inviterProfile } = await supabase
@@ -80,9 +83,11 @@ export default async function InvitePage({
         .single();
       inviterEmail = inviterProfile?.email ?? null;
     }
+    const roleKey = requestInvitation.role as "owner" | "consultant" | "editor" | "viewer";
     const roleLabel =
-      ROLE_LABELS[requestInvitation.role as keyof typeof ROLE_LABELS] ||
-      requestInvitation.role;
+      ["owner", "consultant", "editor", "viewer"].includes(requestInvitation.role)
+        ? tMembers(`role.${roleKey}`)
+        : requestInvitation.role;
 
     if (isExpired) {
       return (
@@ -95,18 +100,18 @@ export default async function InvitePage({
                 beta
               </span>
             </div>
-            <p className="text-muted-foreground mt-2">招待の有効期限が切れています</p>
+            <p className="text-muted-foreground mt-2">{t("inviteExpired")}</p>
           </div>
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <p className="text-sm text-muted-foreground mb-4">
-              この招待リンクは7日間で失効しています。招待者に再度招待を依頼してください。
+              {t("inviteExpiredDesc")}
             </p>
             <Link href="/">
               <Button
                 variant="outline"
                 className="w-full border-zenshin-navy/25 hover:border-zenshin-navy/50 hover:bg-zenshin-navy/5 text-zenshin-navy"
               >
-                ホームに戻る
+                {t("home")}
               </Button>
             </Link>
           </div>
@@ -128,7 +133,7 @@ export default async function InvitePage({
           </div>
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zenshin-navy mb-4">
-              「{workspaceName}」への招待
+              {t("inviteTo", { name: workspaceName })}
             </h2>
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -147,18 +152,18 @@ export default async function InvitePage({
                 <Button
                   className="w-full py-3 rounded-lg font-bold text-lg bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm"
                 >
-                  ログインして招待を受ける
+                  {t("loginToAccept")}
                 </Button>
               </Link>
               <p className="text-sm text-muted-foreground text-center mt-4">
-                アカウントをお持ちでない方は
+                {t("noAccount")}{" "}
                 <Link
                   href={`/signup?redirect=/invite/${token}`}
                   className="text-zenshin-navy underline hover:no-underline font-medium"
                 >
-                  こちら
+                  {t("signupHere")}
                 </Link>
-                から作成
+                {t("signupSuffix")}
               </p>
             </div>
           </div>
@@ -174,7 +179,7 @@ export default async function InvitePage({
       redirectUrl = `/workspaces/${result.workspaceId}/charts`;
     } catch (error) {
       errorMessage =
-        error instanceof Error ? error.message : "参加できませんでした";
+        error instanceof Error ? error.message : t("joinFailed");
     }
 
     // redirect は try/catch の完全に外（Next.js の redirect() は内部で throw するため）
@@ -192,18 +197,18 @@ export default async function InvitePage({
               beta
             </span>
           </div>
-          <p className="text-muted-foreground mt-2">参加できませんでした</p>
+          <p className="text-muted-foreground mt-2">{t("joinFailed")}</p>
         </div>
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <p className="text-sm text-muted-foreground mb-4">
-            {errorMessage ?? "エラーが発生しました"}
+            {errorMessage ?? t("errorOccurred")}
           </p>
           <Link href="/">
             <Button
               variant="outline"
               className="w-full border-zenshin-navy/25 hover:border-zenshin-navy/50 hover:bg-zenshin-navy/5 text-zenshin-navy"
             >
-              ホームに戻る
+              {t("home")}
             </Button>
           </Link>
         </div>
@@ -225,18 +230,18 @@ export default async function InvitePage({
               beta
             </span>
           </div>
-          <p className="text-muted-foreground mt-2">招待が見つかりません</p>
+          <p className="text-muted-foreground mt-2">{t("inviteNotFound")}</p>
         </div>
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <p className="text-sm text-muted-foreground mb-4">
-            このリンクは無効か、期限切れの可能性があります。
+            {t("invalidOrExpired")}
           </p>
           <Link href="/">
             <Button
               variant="outline"
               className="w-full border-zenshin-navy/25 hover:border-zenshin-navy/50 hover:bg-zenshin-navy/5 text-zenshin-navy"
             >
-              ホームに戻る
+              {t("home")}
             </Button>
           </Link>
         </div>
@@ -258,17 +263,17 @@ export default async function InvitePage({
         </div>
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-zenshin-navy mb-4">
-            「{invitation.workspaceName}」への招待
+            {t("inviteTo", { name: invitation.workspaceName })}
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            参加するにはログインしてください。
+            {t("loginRequired")}
           </p>
           <div className="space-y-4">
             <Link href={`/login?redirect=/invite/${token}`}>
               <Button
                 className="w-full py-3 rounded-lg font-bold text-lg bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm"
               >
-                ログインして参加
+                {t("loginToJoin")}
               </Button>
             </Link>
             <p className="text-sm text-muted-foreground text-center mt-4">
@@ -303,16 +308,16 @@ export default async function InvitePage({
             beta
           </span>
         </div>
-        <p className="text-muted-foreground mt-2">参加できませんでした</p>
+        <p className="text-muted-foreground mt-2">{t("joinFailed")}</p>
       </div>
       <div className="rounded-lg border bg-card p-6 shadow-sm">
-        <p className="text-sm text-muted-foreground mb-4">{result.error}</p>
+        <p className="text-sm text-muted-foreground mb-4">{result.error ? t(result.error as "joinFailed" | "invalidInvite" | "loginRequired") : t("joinFailed")}</p>
         <Link href="/">
           <Button
             variant="outline"
             className="w-full border-zenshin-navy/25 hover:border-zenshin-navy/50 hover:bg-zenshin-navy/5 text-zenshin-navy"
           >
-            ホームに戻る
+            {t("home")}
           </Button>
         </Link>
       </div>

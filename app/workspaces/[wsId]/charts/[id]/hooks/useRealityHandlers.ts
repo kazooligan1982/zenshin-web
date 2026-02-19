@@ -1,5 +1,6 @@
 import type { RealityItem, Area } from "@/types/chart";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { addReality, updateRealityItem, removeReality } from "../actions";
 
@@ -28,6 +29,8 @@ export function useRealityHandlers({
   chart: { areas: Area[] };
   router: ReturnType<typeof useRouter>;
 }) {
+  const tt = useTranslations("toast");
+  const tTags = useTranslations("tags");
   const handleAddReality = async (content: string, areaIdOverride?: string | null) => {
     if (!content.trim() || isSubmittingReality) return;
 
@@ -93,8 +96,8 @@ export function useRealityHandlers({
     if (field === "areaId") {
       const areaName = value
         ? chart.areas.find((area: Area) => area.id === value)?.name
-        : "未分類";
-      toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+        : tTags("untagged");
+      toast.success(tt("movedToArea", { areaName: areaName ?? tTags("untagged") }), { duration: 3000 });
     }
 
     const success = await updateRealityItem(id, chartId, field, value);
@@ -127,7 +130,7 @@ export function useRealityHandlers({
       } else {
         // 削除失敗時は元に戻す
         setRealities(originalRealities);
-        toast.error("削除に失敗しました", { duration: 5000 });
+        toast.error(tt("deleteFailed"), { duration: 5000 });
       }
       setPendingDeletions((prev: Record<string, any>) => {
         const next = { ...prev };
@@ -146,10 +149,10 @@ export function useRealityHandlers({
       },
     }));
 
-    toast.success("Realityを削除しました", {
+    toast.success(tt("realityDeleted"), {
       duration: 15000,
       action: {
-        label: "元に戻す",
+        label: tt("undo"),
         onClick: () => {
           clearTimeout(timeoutId);
           setRealities(originalRealities);

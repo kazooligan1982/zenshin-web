@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -25,6 +26,9 @@ type ArchivedChart = {
 };
 
 export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
+  const t = useTranslations("archive");
+  const tc = useTranslations("common");
+  const tt = useTranslations("toast");
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -33,11 +37,11 @@ export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
     setIsLoading(true);
     try {
       await restoreChart(chart.id);
-      toast.success("チャートを復元しました", { duration: 3000 });
+      toast.success(tt("chartRestored"), { duration: 3000 });
       router.refresh();
     } catch (error) {
       console.error("Failed to restore chart:", error);
-      toast.error("復元に失敗しました", { duration: 5000 });
+      toast.error(tt("restoreFailed"), { duration: 5000 });
     } finally {
       setIsLoading(false);
     }
@@ -48,11 +52,11 @@ export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
     setIsLoading(true);
     try {
       await deleteChart(chart.id);
-      toast.success("チャートを削除しました", { duration: 3000 });
+      toast.success(tt("chartDeleted"), { duration: 3000 });
       router.refresh();
     } catch (error) {
       console.error("Failed to delete chart:", error);
-      toast.error("削除に失敗しました", { duration: 5000 });
+      toast.error(tt("deleteFailed"), { duration: 5000 });
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +67,7 @@ export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
       <div>
         <h3 className="font-medium text-zenshin-navy">{chart.title}</h3>
         <p className="text-sm text-zenshin-navy/40">
-          アーカイブ日: {chart.archived_at}
+          {t("archivedAt", { date: chart.archived_at })}
         </p>
       </div>
       <div className="flex items-center gap-2">
@@ -75,7 +79,7 @@ export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
           className="border-zenshin-navy/10 text-zenshin-navy hover:bg-zenshin-cream"
         >
           <RotateCcw className="w-4 h-4 mr-1" />
-          復元
+          {t("restore")}
         </Button>
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogTrigger asChild>
@@ -91,10 +95,10 @@ export function ArchivedChartCard({ chart }: { chart: ArchivedChart }) {
           <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
-                このチャートを完全に削除しますか？
+                {t("deleteChartConfirm")}
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm text-gray-500">
-                この操作は取り消せません。
+                {t("deleteChartWarning")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2">

@@ -1,5 +1,6 @@
 import type { VisionItem, RealityItem, Tension, ActionPlan, Area } from "@/types/chart";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -42,6 +43,8 @@ export function useDndHandlers({
   getVisionDate: (vision: VisionItem) => string | null;
   router: ReturnType<typeof useRouter>;
 }) {
+  const tt = useTranslations("toast");
+  const tTags = useTranslations("tags");
   // ドラッグ＆ドロップハンドラ
   const handleDragEnd = async (event: DragEndEvent, type: "visions" | "realities" | "actions", tensionId?: string) => {
     const { active, over } = event;
@@ -87,14 +90,14 @@ export function useDndHandlers({
               targetAreaId !== null
                 ? chart.areas.find((a) => a.id === targetAreaId)?.name
                 : "未分類";
-            toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+            toast.success(tt("movedToArea", { areaName: areaName ?? tTags("untagged") }), { duration: 3000 });
           } else {
             throw new Error("Update failed");
           }
         } catch (error) {
           console.error("❌ Server update failed:", error);
           setVisions(previousState);
-          toast.error("移動に失敗しました", { duration: 5000 });
+          toast.error(tt("moveFailed"), { duration: 5000 });
         }
         return;
       }
@@ -128,7 +131,7 @@ export function useDndHandlers({
       } catch (error) {
         console.error("Sort order update failed:", error);
         setVisions(previousState);
-        toast.error("並び順の更新に失敗しました", { duration: 5000 });
+        toast.error(tt("orderUpdateFailed"), { duration: 5000 });
       }
     } else if (type === "realities") {
       if (!over) return;
@@ -166,10 +169,10 @@ export function useDndHandlers({
             targetAreaId !== null
               ? chart.areas.find((a) => a.id === targetAreaId)?.name
               : "未分類";
-          toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+          toast.success(tt("movedToArea", { areaName: areaName ?? tTags("untagged") }), { duration: 3000 });
         } else {
           setRealities(previousState);
-          toast.error("移動に失敗しました", { duration: 5000 });
+          toast.error(tt("moveFailed"), { duration: 5000 });
         }
         return;
       }
@@ -194,7 +197,7 @@ export function useDndHandlers({
       } catch (error) {
         console.error("Sort order update failed:", error);
         setRealities(previousState);
-        toast.error("並び順の更新に失敗しました", { duration: 5000 });
+        toast.error(tt("orderUpdateFailed"), { duration: 5000 });
       }
     } else if (type === "actions" && tensionId) {
       if (!over) return;
@@ -233,7 +236,7 @@ export function useDndHandlers({
       } catch (error) {
         console.error("Sort order update failed:", error);
         setTensions(previousState);
-        toast.error("並び順の更新に失敗しました", { duration: 5000 });
+        toast.error(tt("orderUpdateFailed"), { duration: 5000 });
       }
     }
   };
@@ -288,10 +291,10 @@ export function useDndHandlers({
         if (result.success) {
           const areaName =
             targetAreaId !== null ? chart.areas.find((a) => a.id === targetAreaId)?.name : "未分類";
-          toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+          toast.success(tt("movedToArea", { areaName: areaName ?? tTags("untagged") }), { duration: 3000 });
         } else {
           setTensions(previousState);
-          toast.error("移動に失敗しました", { duration: 5000 });
+          toast.error(tt("moveFailed"), { duration: 5000 });
         }
         return;
       }
@@ -332,7 +335,7 @@ export function useDndHandlers({
       } catch (error) {
         console.error("Sort order update failed:", error);
         setTensions(previousState);
-        toast.error("並び順の更新に失敗しました", { duration: 5000 });
+        toast.error(tt("orderUpdateFailed"), { duration: 5000 });
       }
       return;
     }
@@ -399,11 +402,11 @@ export function useDndHandlers({
       if (result.success) {
         const areaName =
           targetAreaId !== null ? chart.areas.find((a) => a.id === targetAreaId)?.name : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+        toast.success(tt("movedToArea", { areaName: areaName ?? tTags("untagged") }), { duration: 3000 });
       } else {
         setTensions(previousTensions);
         setLooseActions(previousLooseActions);
-        toast.error("移動に失敗しました", { duration: 5000 });
+        toast.error(tt("moveFailed"), { duration: 5000 });
       }
       return;
     }
@@ -437,7 +440,7 @@ export function useDndHandlers({
         } catch (error) {
           console.error("Sort order update failed:", error);
           setLooseActions(previousState);
-          toast.error("並び順の更新に失敗しました", { duration: 5000 });
+          toast.error(tt("orderUpdateFailed"), { duration: 5000 });
         }
       }
     }

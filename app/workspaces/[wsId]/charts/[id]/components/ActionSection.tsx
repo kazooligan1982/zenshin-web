@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useDroppable, useDndContext } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,6 @@ import {
   handleKeyboardNavigation,
   splitItemsByDate,
   getActionStatusIcon,
-  getActionStatusLabel,
 } from "../editor-utils";
 import { SortableActionItem } from "./SortableActionItem";
 import { TensionGroup } from "./TensionGroup";
@@ -87,6 +87,8 @@ export function ActionSection({
   toggleCompletedTensionExpand?: (tensionId: string) => void;
   workspaceMembers?: { id: string; email: string; name?: string; avatar_url?: string }[];
 }) {
+  const t = useTranslations("editor");
+  const tk = useTranslations("kanban");
   const sectionKey = areaId || "uncategorized";
   const sectionId = `action-section-${sectionKey}`;
   const { setNodeRef, isOver } = useDroppable({
@@ -133,7 +135,7 @@ export function ActionSection({
         >
           {areaName}
         </Badge>
-        <span className="text-xs text-muted-foreground">({tensionActionCount + looseActions.length}件)</span>
+        <span className="text-xs text-muted-foreground">{t("itemCount", { count: tensionActionCount + looseActions.length })}</span>
       </div>
 
       <div className="space-y-4 px-2">
@@ -156,12 +158,16 @@ export function ActionSection({
                 handleKeyboardNavigation(e);
               }
             }}
-            placeholder={`「${areaName}」のTensionを追加...`}
+            placeholder={t("addTensionForArea", { areaName })}
             className="h-8 text-sm keyboard-focusable"
           />
         </div>
 
         <div className="space-y-4">
+          <SortableContext
+            items={sortedTensionsInSection.map((t) => `tension-${t.id}`)}
+            strategy={verticalListSortingStrategy}
+          >
           {sortedTensionsInSection.map((tension, tensionIndex) => (
             <TensionGroup
               key={tension.id}
@@ -191,6 +197,7 @@ export function ActionSection({
               workspaceMembers={workspaceMembers}
             />
           ))}
+          </SortableContext>
         </div>
       </div>
 
@@ -256,10 +263,15 @@ export function ActionSection({
                         key === "done"
                       )}
                       <span className="text-xs font-medium text-gray-500">
-                        {getActionStatusLabel(
-                          key === "unset" ? null : (key as ActionPlan["status"]),
-                          key === "done"
-                        )}{" "}
+                        {(key === "done"
+                          ? tk("done")
+                          : key === "in_progress"
+                            ? tk("inProgress")
+                            : key === "pending"
+                              ? tk("pending")
+                              : key === "canceled"
+                                ? tk("canceled")
+                                : tk("todo"))}{" "}
                         ({groupActions.length})
                       </span>
                     </div>
@@ -338,7 +350,7 @@ export function ActionSection({
                         : "border-gray-300 text-zenshin-navy/40"
                     }`}
                   >
-                    <div className="text-sm font-medium">ここにドロップ</div>
+                    <div className="text-sm font-medium">{t("dropHere")}</div>
                   </div>
                 ) : null
               ) : (
@@ -375,7 +387,7 @@ export function ActionSection({
             )}
             {hideCompleted && looseHiddenCount > 0 && (
               <div className="text-center py-1.5 text-xs text-gray-300">
-                {looseHiddenCount}件の完了済みActionを非表示中
+                {t("hiddenCompletedCount", { count: looseHiddenCount })}
               </div>
             )}
           </div>

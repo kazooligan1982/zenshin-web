@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { CalendarPlus } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -24,11 +25,12 @@ interface DatePickerProps {
 export function DatePicker({
   value,
   onChange,
-  placeholder = "日付を選択",
+  placeholder,
   disabled = false,
   className,
   modal,
 }: DatePickerProps) {
+  const t = useTranslations("datePicker");
   const [open, setOpen] = React.useState(false);
   const date = value ? new Date(value) : undefined;
 
@@ -68,7 +70,7 @@ export function DatePicker({
                 role="button"
                 onClick={handleClear}
                 className="absolute -top-1 -right-1 opacity-0 group-hover/datepicker:opacity-100 h-4 w-4 flex items-center justify-center rounded-full bg-gray-500 text-white text-[10px] hover:bg-gray-600 transition-all z-10 cursor-pointer"
-                title="日付をクリア"
+                title={t("clearDate")}
               >
                 ×
               </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import type { Area } from "@/types/chart";
 import {
@@ -42,6 +43,9 @@ export function TagManager({
   onUpdateArea,
   onDeleteArea,
 }: TagManagerProps) {
+  const tTags = useTranslations("tags");
+  const tc = useTranslations("common");
+  const tt = useTranslations("toast");
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState(COLOR_PALETTE[0]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -60,7 +64,7 @@ export function TagManager({
       if (created) {
         setNewName("");
         setNewColor(COLOR_PALETTE[0]);
-        toast.success(`「${name}」を作成しました`);
+        toast.success(tt("tagCreatedWithName", { name }));
       }
     } finally {
       setIsCreating(false);
@@ -77,7 +81,7 @@ export function TagManager({
     if (!editingId || !editName.trim()) return;
     await onUpdateArea(editingId, { name: editName.trim(), color: editColor });
     setEditingId(null);
-    toast.success("タグを更新しました");
+    toast.success(tt("tagUpdated"));
   };
 
   const handleCancelEdit = () => {
@@ -90,7 +94,7 @@ export function TagManager({
     try {
       await onDeleteArea(id);
       setDeletingId(null);
-      toast.success("タグを削除しました");
+      toast.success(tt("tagDeleted"));
     } finally {
       setIsDeleting(false);
     }
@@ -104,14 +108,14 @@ export function TagManager({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>タグの管理</DialogTitle>
-          <DialogDescription>プロジェクトで使用するタグを編集できます</DialogDescription>
+          <DialogTitle>{tTags("manage")}</DialogTitle>
+          <DialogDescription>{tTags("manageDescription")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-1 max-h-[300px] overflow-y-auto">
             {areas.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">タグがありません</p>
+              <p className="text-sm text-gray-500 text-center py-4">{tTags("noTags")}</p>
             ) : (
               areas.map((area) => (
                 <div
@@ -153,7 +157,7 @@ export function TagManager({
                     </div>
                   ) : deletingId === area.id ? (
                     <div className="flex items-center justify-between gap-2 flex-1">
-                      <span className="text-sm text-gray-600">削除しますか？</span>
+                      <span className="text-sm text-gray-600">{tTags("deleteConfirm")}</span>
                       <div className="flex items-center gap-1">
                         <Button
                           size="sm"
@@ -162,7 +166,7 @@ export function TagManager({
                           onClick={() => handleConfirmDelete(area.id)}
                           disabled={isDeleting}
                         >
-                          {isDeleting ? "削除中..." : "削除"}
+                          {isDeleting ? tTags("deleting") : tc("delete")}
                         </Button>
                         <Button
                           size="sm"
@@ -171,7 +175,7 @@ export function TagManager({
                           onClick={handleCancelDelete}
                           disabled={isDeleting}
                         >
-                          キャンセル
+                          {tc("cancel")}
                         </Button>
                       </div>
                     </div>
@@ -210,7 +214,7 @@ export function TagManager({
           </div>
 
           <div className="border-t pt-4 space-y-3">
-            <p className="text-sm font-medium text-gray-700">新しいタグを追加</p>
+            <p className="text-sm font-medium text-gray-700">{tTags("addNew")}</p>
             <div className="flex gap-2">
               {COLOR_PALETTE.map((color) => (
                 <button
@@ -229,11 +233,11 @@ export function TagManager({
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="タグ名を入力..."
+                placeholder={tTags("namePlaceholderInput")}
                 className="flex-1"
               />
               <Button onClick={handleCreate} disabled={!newName.trim() || isCreating}>
-                {isCreating ? "追加中..." : "追加"}
+                {isCreating ? tTags("adding") : tTags("add")}
               </Button>
             </div>
           </div>

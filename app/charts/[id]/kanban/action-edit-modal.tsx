@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -76,11 +77,13 @@ function AssigneePopover({
   onAssigneeChange,
   workspaceMembers,
   currentUser,
+  noAssigneeLabel,
 }: {
   assignee: string | null;
   onAssigneeChange: (email: string | null) => void;
   workspaceMembers: { id: string; email: string; name?: string; avatar_url?: string }[];
   currentUser: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
+  noAssigneeLabel: string;
 }) {
   const assigneeMember =
     workspaceMembers.find((m) => m.email === assignee) ??
@@ -114,7 +117,7 @@ function AssigneePopover({
             <UserPlus className="h-4 w-4 shrink-0 text-zenshin-navy/40" />
           )}
           <span className="truncate">
-            {assignee ? (assigneeMember?.name || assigneeMember?.email || assignee) : "担当者なし"}
+            {assignee ? (assigneeMember?.name || assigneeMember?.email || assignee) : noAssigneeLabel}
           </span>
         </Button>
       </PopoverTrigger>
@@ -126,7 +129,7 @@ function AssigneePopover({
             onClick={() => onAssigneeChange(null)}
           >
             {!assignee ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
-            担当者なし
+            {noAssigneeLabel}
           </Button>
           {members.map((member) => (
             <Button
@@ -193,6 +196,11 @@ export function ActionEditModal({
   currentUser = null,
   workspaceMembers = [],
 }: ActionEditModalProps) {
+  const t = useTranslations("action");
+  const tk = useTranslations("kanban");
+  const tc = useTranslations("common");
+  const tt = useTranslations("toast");
+  const te = useTranslations("editor");
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<"todo" | "in_progress" | "done" | "pending" | "canceled">("todo");
@@ -280,10 +288,10 @@ export function ActionEditModal({
         }
       } catch (error) {
         console.error("Error updating action:", error);
-        toast.error("更新に失敗しました", { duration: 5000 });
+        toast.error(tt("updateFailed"), { duration: 5000 });
       }
     },
-    [action, projectId]
+    [action, projectId, tt]
   );
 
   const handleStatusChange = async (v: typeof status) => {
@@ -333,7 +341,7 @@ export function ActionEditModal({
       setStatus(nextStatus);
     } catch (error) {
       console.error("Error updating action status:", error);
-      toast.error("更新に失敗しました", { duration: 5000 });
+      toast.error(tt("updateFailed"), { duration: 5000 });
     }
   };
 
@@ -350,7 +358,7 @@ export function ActionEditModal({
       content: description,
       extensions: [
         StarterKit.configure({ heading: false }),
-        Placeholder.configure({ placeholder: "詳細や要件を入力..." }),
+        Placeholder.configure({ placeholder: t("descriptionPlaceholder") }),
       ],
       editorProps: {
         attributes: {
@@ -365,7 +373,7 @@ export function ActionEditModal({
       },
       immediatelyRender: false,
     },
-    [isOpen, saveField]
+    [isOpen, saveField, t("descriptionPlaceholder")]
   );
 
   useEffect(() => {
@@ -426,25 +434,25 @@ export function ActionEditModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Target className="w-5 h-5 text-zenshin-teal" />
-              アクションを編集
+              {t("editTitle")}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
           <div className="space-y-2">
-              <Label className="text-sm font-medium">タイトル</Label>
+              <Label className="text-sm font-medium">{t("title")}</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={handleTitleBlur}
-              placeholder="タイトルを入力"
+              placeholder={t("titlePlaceholder")}
                 className="h-10"
             />
           </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm text-zenshin-navy/50">ステータス</Label>
+                <Label className="text-sm text-zenshin-navy/50">{t("status")}</Label>
                 <Select value={status} onValueChange={handleStatusChange}>
                   <SelectTrigger className="w-full h-10 bg-background">
                   <SelectValue />
@@ -453,31 +461,31 @@ export function ActionEditModal({
                   <SelectItem value="todo">
                     <div className="flex items-center gap-2">
                       <Circle className="w-3 h-3 text-zenshin-navy/30" />
-                      未着手
+                      {tk("todo")}
                     </div>
                   </SelectItem>
                   <SelectItem value="in_progress">
                     <div className="flex items-center gap-2">
                       <Clock className="w-3 h-3 text-blue-500" />
-                      進行中
+                      {tk("inProgress")}
                     </div>
                   </SelectItem>
                   <SelectItem value="done">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-3 h-3 text-green-500" />
-                      完了
+                      {tk("done")}
                     </div>
                   </SelectItem>
                   <SelectItem value="pending">
                     <div className="flex items-center gap-2">
                       <Pause className="w-3 h-3 text-amber-500" />
-                      保留
+                      {tk("pending")}
                     </div>
                   </SelectItem>
                   <SelectItem value="canceled">
                     <div className="flex items-center gap-2">
                       <XCircle className="w-3 h-3 text-zenshin-navy/30" />
-                      中止
+                      {tk("canceled")}
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -485,7 +493,7 @@ export function ActionEditModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm text-zenshin-navy/50">期限</Label>
+                <Label className="text-sm text-zenshin-navy/50">{t("dueDate")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -498,7 +506,7 @@ export function ActionEditModal({
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dueDate
                         ? format(new Date(dueDate), "yyyy/MM/dd", { locale: ja })
-                        : "未設定"}
+                        : t("notSet")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -518,7 +526,7 @@ export function ActionEditModal({
                           }}
                           className="text-sm text-zenshin-navy/50 hover:text-red-500 transition-colors"
                         >
-                          期限をクリア
+                          {t("clearDueDate")}
                         </button>
                       </div>
                     )}
@@ -527,12 +535,13 @@ export function ActionEditModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm text-zenshin-navy/50">担当者</Label>
+                <Label className="text-sm text-zenshin-navy/50">{t("assignee")}</Label>
                 <AssigneePopover
                   assignee={assignee}
                   onAssigneeChange={handleAssigneeChange}
                   workspaceMembers={workspaceMembers}
                   currentUser={currentUser}
+                  noAssigneeLabel={t("noAssignee")}
                 />
               </div>
             </div>
@@ -548,7 +557,7 @@ export function ActionEditModal({
           )}
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">詳細</Label>
+              <Label className="text-sm font-medium">{t("description")}</Label>
               <div className="min-h-[100px] border rounded-lg overflow-hidden [&_.ProseMirror]:min-h-[100px] [&_.ProseMirror]:p-3">
                 <EditorContent editor={descriptionEditor} />
               </div>
@@ -558,10 +567,10 @@ export function ActionEditModal({
             <div className="space-y-2 border-t pt-6">
               <Label className="text-sm font-medium flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-zenshin-navy/50" />
-              アクティビティ
+              {t("activity")}
             </Label>
             {isLoadingComments && (
-              <div className="text-sm text-zenshin-navy/40">コメントを読み込み中...</div>
+              <div className="text-sm text-zenshin-navy/40">{t("loadingComments")}</div>
             )}
             <Timeline
               type="action"
@@ -591,7 +600,7 @@ export function ActionEditModal({
           {/* 閉じるボタン */}
           <div className="flex justify-end pt-4">
             <Button variant="outline" onClick={onClose}>
-              閉じる
+              {tc("close")}
             </Button>
           </div>
           </div>
@@ -604,19 +613,18 @@ export function ActionEditModal({
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-yellow-600">
                 <AlertTriangle className="w-5 h-5" />
-                未完了のアクションがあります
+                {t("incompleteActionsTitle")}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                「{confirmDialog.actionTitle}」のテレスコープ先に、
-                <span className="font-bold text-red-600">
-                  {confirmDialog.incompleteCount}件
-                </span>
-                の未完了アクションがあります。
+                {t("incompleteActionsDescription", {
+                  title: confirmDialog.actionTitle,
+                  count: confirmDialog.incompleteCount,
+                })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             {confirmDialog.incompleteActions.length > 0 && (
               <div className="bg-zenshin-cream/50 rounded-lg p-3">
-                <p className="text-xs text-zenshin-navy/50 mb-2">未完了のアクション:</p>
+                <p className="text-xs text-zenshin-navy/50 mb-2">{t("incompleteActionsLabel")}</p>
                 <ul className="space-y-1">
                   {confirmDialog.incompleteActions.map((item) => (
                     <li key={item.id} className="text-sm text-zenshin-navy flex items-center gap-2">
@@ -626,7 +634,7 @@ export function ActionEditModal({
                   ))}
                   {confirmDialog.incompleteCount > 5 && (
                     <li className="text-xs text-zenshin-navy/50">
-                      他 {confirmDialog.incompleteCount - 5}件...
+                      {t("moreActionsCount", { count: confirmDialog.incompleteCount - 5 })}
                     </li>
                   )}
                 </ul>
@@ -634,13 +642,13 @@ export function ActionEditModal({
             )}
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setConfirmDialog(null)}>
-                キャンセル
+                {tc("cancel")}
               </AlertDialogCancel>
               <AlertDialogAction
                 className="bg-yellow-600 hover:bg-yellow-700"
                 onClick={handleConfirmStatusChange}
               >
-                完了にする
+                {te("markComplete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

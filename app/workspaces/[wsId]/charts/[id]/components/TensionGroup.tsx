@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useDroppable, useDndContext } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus, Check, ChevronRight, ChevronDown, Trash2, Tag, Loader2 } from "lucide-react";
+import { Plus, Check, ChevronRight, ChevronDown, Trash2, Tag, Loader2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,7 +23,6 @@ import {
   handleKeyboardNavigation,
   splitItemsByDate,
   getActionStatusIcon,
-  getActionStatusLabel,
 } from "../editor-utils";
 import { SortableActionItem } from "./SortableActionItem";
 import { updateTensionArea } from "../actions";
@@ -84,6 +86,11 @@ export function TensionGroup({
   toggleCompletedTensionExpand?: (tensionId: string) => void;
   workspaceMembers?: { id: string; email: string; name?: string; avatar_url?: string }[];
 }) {
+  const t = useTranslations("editor");
+  const tc = useTranslations("common");
+  const tt = useTranslations("toast");
+  const tTags = useTranslations("tags");
+  const tk = useTranslations("kanban");
   const [isMovingArea, setIsMovingArea] = useState(false);
   const sortByStatusFlag = sortByStatus ?? false;
   const hideCompletedFlag = hideCompleted ?? false;
@@ -135,13 +142,30 @@ export function TensionGroup({
   const { datedItems, undatedItems, indexById } = dateSplit;
   const allItemsForIndex = [...dateSplit.datedItems, ...dateSplit.undatedItems];
   const indexByIdAll = new Map(allItemsForIndex.map((item, i) => [item.id, i]));
-  const { setNodeRef } = useDroppable({
-    id: `tension-${tension.id}`,
+
+  const sortableId = `tension-${tension.id}`;
+  const sortableAreaId = tension.area_id ?? areaId ?? null;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isDraggingThis,
+    isOver,
+  } = useSortable({
+    id: sortableId,
     data: {
       type: "tension",
-      areaId: tension.area_id ?? areaId ?? null,
+      areaId: sortableAreaId,
     },
+    disabled: isOverlay,
   });
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isOverlay ? 1 : isDraggingThis ? 0.5 : 1,
+  };
 
   const handleNewActionKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -167,10 +191,10 @@ export function TensionGroup({
       const result = await updateTensionArea(tension.id, targetAreaId, chartId, true);
       if (result.success) {
         const areaName =
-          targetAreaId !== null ? areas.find((area) => area.id === targetAreaId)?.name : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+          targetAreaId !== null ? areas.find((area) => area.id === targetAreaId)?.name : tTags("untagged");
+        toast.success(tt("movedToArea", { areaName: areaName ?? tTags("untagged") }), { duration: 3000 });
       } else {
-        toast.error("移動に失敗しました", { duration: 5000 });
+        toast.error(tt("moveFailed"), { duration: 5000 });
       }
     }
     setIsMovingArea(false);
@@ -180,15 +204,29 @@ export function TensionGroup({
     return (
       <div
         ref={setNodeRef}
+        style={isOverlay ? undefined : sortableStyle}
         className={cn(
-          "group border border-gray-200 rounded-md bg-white transition-all",
-          isOverlay && "shadow-2xl border-blue-500 ring-2 ring-blue-200"
+          "group border rounded-md bg-white transition-all",
+          !isOverlay && "w-full min-w-0 flex-shrink-0",
+          isOverlay && "shadow-2xl border-blue-500 ring-2 ring-blue-200",
+          !isOverlay && (isOver ? "border-2 border-blue-400 ring-2 ring-blue-200" : "border border-gray-200")
         )}
       >
         <div
           className="flex items-center gap-2 px-3 py-2 opacity-60 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => toggleCompletedTensionExpand?.(tension.id)}
         >
+          {!isOverlay && (
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-zenshin-navy/8 rounded shrink-0"
+              title={t("dragToReorder")}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4 text-zenshin-navy/40" />
+            </div>
+          )}
           <button
             type="button"
             className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500 border-2 border-emerald-500 text-white flex items-center justify-center"
@@ -200,7 +238,7 @@ export function TensionGroup({
               e.stopPropagation();
               handleUpdateTension(tension.id, "status", "active");
             }}
-            title="未完了に戻す"
+            title={t("markIncomplete")}
           >
             <Check className="w-3 h-3" />
           </button>
@@ -216,14 +254,27 @@ export function TensionGroup({
   return (
     <div
       ref={setNodeRef}
+      style={isOverlay ? undefined : sortableStyle}
       className={cn(
-        "group border border-gray-200 rounded-md bg-white transition-all",
+        "group border rounded-md bg-white transition-all",
+        !isOverlay && "w-full min-w-0 flex-shrink-0",
         isOverlay && "shadow-2xl border-blue-500 ring-2 ring-blue-200",
+        !isOverlay && (isOver ? "border-2 border-blue-400 ring-2 ring-blue-200" : "border border-gray-200"),
         isResolved && isExpanded && "opacity-60"
       )}
     >
       <div className="flex items-center justify-between gap-4 px-3 py-2 border-b bg-gray-50">
         <div className="flex items-center gap-2 flex-1 min-w-0">
+          {!isOverlay && (
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-zenshin-navy/8 rounded shrink-0"
+              title={t("dragToReorder")}
+            >
+              <GripVertical className="h-4 w-4 text-zenshin-navy/40" />
+            </div>
+          )}
           <button
             type="button"
             className={cn(
@@ -244,13 +295,13 @@ export function TensionGroup({
                 tension.status === "resolved" ? "active" : "resolved"
               );
             }}
-            title={tension.status === "resolved" ? "未完了に戻す" : "完了にする"}
+            title={tension.status === "resolved" ? t("markIncomplete") : t("markComplete")}
           >
             <Check className="w-3 h-3" />
           </button>
           <Input
             {...tensionTitleInput.bind}
-            placeholder="VisionとRealityのギャップは？"
+            placeholder={t("tensionGapPlaceholder")}
             className="text-base font-semibold bg-transparent border-none focus-visible:ring-0 flex-1 min-w-0 keyboard-focusable"
             onKeyDown={(e) => {
               tensionTitleInput.handleKeyDown(e);
@@ -265,7 +316,7 @@ export function TensionGroup({
             <button
               className="p-1 rounded transition-all hover:bg-gray-200"
               onClick={() => toggleCompletedTensionExpand?.(tension.id)}
-              title="折りたたむ"
+              title={t("collapse")}
             >
               <ChevronDown className="h-4 w-4 text-zenshin-navy/50" />
             </button>
@@ -276,7 +327,7 @@ export function TensionGroup({
                 type="button"
                 className="p-1 rounded transition-all hover:bg-gray-200 opacity-0 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isMovingArea}
-                title="カテゴリーを変更"
+                title={t("changeCategory")}
               >
                 <Tag className="h-4 w-4 text-zenshin-navy/50" />
               </button>
@@ -286,7 +337,7 @@ export function TensionGroup({
                 onClick={() => handleMoveTensionArea(null)}
                 disabled={!tension.area_id}
               >
-                未分類に移動
+                {t("moveToUntagged")}
               </DropdownMenuItem>
               {areas.map((area) => (
                 <DropdownMenuItem
@@ -312,7 +363,7 @@ export function TensionGroup({
               e.stopPropagation();
               handleDeleteTension(tension.id);
             }}
-            title="削除"
+            title={tc("delete")}
           >
             <Trash2 className="w-3 h-3" />
           </Button>
@@ -336,10 +387,15 @@ export function TensionGroup({
                     key === "done"
                   )}
                   <span className="text-xs font-medium text-gray-500">
-                    {getActionStatusLabel(
-                      key === "unset" ? null : (key as ActionPlan["status"]),
-                      key === "done"
-                    )}{" "}
+                    {(key === "done"
+                      ? tk("done")
+                      : key === "in_progress"
+                        ? tk("inProgress")
+                        : key === "pending"
+                          ? tk("pending")
+                          : key === "canceled"
+                            ? tk("canceled")
+                            : tk("todo"))}{" "}
                     ({groupActions.length})
                   </span>
                 </div>
@@ -424,7 +480,7 @@ export function TensionGroup({
                             : "border-gray-300 text-zenshin-navy/40"
                         }`}
                       >
-                        <div className="text-sm font-medium">ここにドロップ</div>
+                        <div className="text-sm font-medium">{t("dropHere")}</div>
                       </div>
                     ) : null
                   ) : (
@@ -458,7 +514,7 @@ export function TensionGroup({
         )}
         {hideCompletedFlag && hiddenCount > 0 && (
           <div className="text-center py-1.5 text-xs text-gray-300">
-            {hiddenCount}件の完了済みActionを非表示中
+            {t("hiddenCompletedCount", { count: hiddenCount })}
           </div>
         )}
         <div className="p-2 border-t border-zenshin-navy/5 bg-white">
@@ -471,7 +527,7 @@ export function TensionGroup({
                   handleKeyboardNavigation(e);
                 }
               }}
-              placeholder="＋ このTensionにActionを追加"
+              placeholder={t("addActionToTension")}
               className="text-sm h-7 flex-1 keyboard-focusable"
               disabled={isSubmittingAction[tension.id]}
             />

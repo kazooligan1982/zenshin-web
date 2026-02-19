@@ -47,6 +47,7 @@ export default async function KanbanPage({ params }: PageProps) {
         currentUserId={user?.id ?? ""}
         currentUser={currentUser}
         workspaceMembers={workspaceMembers}
+        workspaceId={chart.workspace_id ?? undefined}
       />
     </div>
   );

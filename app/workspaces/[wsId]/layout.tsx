@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
+import { updateLastWorkspace } from "@/lib/workspace";
 
 export default async function WorkspaceLayout({
   children,
@@ -25,6 +26,8 @@ export default async function WorkspaceLayout({
     .single();
 
   if (!membership) redirect("/");
+
+  await updateLastWorkspace(wsId);
 
   const { data: allMembers } = await supabase
     .from("workspace_members")

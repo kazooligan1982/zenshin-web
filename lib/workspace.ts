@@ -2,6 +2,51 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * ログイン後の着地先として適切なワークスペースIDを取得する。
+ * 常に自分がOwnerのワークスペースのみを返す（last_workspace_id はリダイレクトには使わない）。
+ * @returns OwnerのWS ID、または null（OwnerのWSがない場合）
+ */
+export async function getPreferredWorkspaceId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: members } = await supabase
+    .from("workspace_members")
+    .select("workspace_id, role")
+    .eq("user_id", user.id);
+
+  if (!members || members.length === 0) return null;
+
+  const ownerWs = members.find((m) => m.role === "owner");
+  return ownerWs ? ownerWs.workspace_id : null;
+}
+
+/**
+ * ユーザーがワークスペースにアクセスした際に last_workspace_id を更新する。
+ */
+export async function updateLastWorkspace(workspaceId: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from("user_preferences")
+    .upsert(
+      {
+        user_id: user.id,
+        last_workspace_id: workspaceId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+}
+
 export async function getOrCreateWorkspace(): Promise<string> {
   const supabase = await createClient();
   const {
@@ -134,7 +179,7 @@ export async function joinWorkspaceByInvite(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "ログインが必要です" };
+  if (!user) return { success: false, error: "loginRequired" };
 
   // 招待を取得
   const { data: invitation } = await supabase
@@ -144,7 +189,7 @@ export async function joinWorkspaceByInvite(
     .eq("is_active", true)
     .single();
 
-  if (!invitation) return { success: false, error: "無効な招待リンクです" };
+  if (!invitation) return { success: false, error: "invalidInvite" };
 
   // 既にメンバーか確認
   const { data: existingMember } = await supabase
@@ -173,7 +218,7 @@ export async function joinWorkspaceByInvite(
       return { success: true };
     }
     console.error("[joinWorkspaceByInvite] Failed to join workspace:", error);
-    return { success: false, error: "参加に失敗しました" };
+    return { success: false, error: "joinFailed" };
   }
 
   return { success: true };
@@ -294,7 +339,7 @@ export async function removeMember(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "認証が必要です" };
+  if (!user) return { success: false, error: "authRequired" };
 
   // 操作者の権限を確認
   const { data: currentMember } = await supabase
@@ -305,7 +350,7 @@ export async function removeMember(
     .single();
 
   if (!currentMember || !["owner"].includes(currentMember.role)) {
-    return { success: false, error: "権限がありません" };
+    return { success: false, error: "noPermission" };
   }
 
   // 対象メンバーの権限を確認
@@ -317,17 +362,17 @@ export async function removeMember(
     .single();
 
   if (!targetMember) {
-    return { success: false, error: "メンバーが見つかりません" };
+    return { success: false, error: "memberNotFound" };
   }
 
   // オーナーは削除できない
   if (targetMember.role === "owner") {
-    return { success: false, error: "オーナーは削除できません" };
+    return { success: false, error: "cannotRemoveOwner" };
   }
 
   // 自分自身は削除できない
   if (targetUserId === user.id) {
-    return { success: false, error: "自分自身を削除することはできません" };
+    return { success: false, error: "cannotRemoveSelf" };
   }
 
   const { error } = await supabase
@@ -338,7 +383,7 @@ export async function removeMember(
 
   if (error) {
     console.error("[removeMember] Failed:", error);
-    return { success: false, error: "削除に失敗しました" };
+    return { success: false, error: "deleteFailed" };
   }
 
   return { success: true };

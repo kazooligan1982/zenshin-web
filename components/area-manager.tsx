@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,7 @@ export function AreaManager({
   onDeleteArea,
   onCreateArea,
 }: AreaManagerProps) {
+  const tTags = useTranslations("tags");
   const [open, setOpen] = useState(false);
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -115,7 +117,7 @@ export function AreaManager({
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="h-8 gap-2 text-sm text-gray-600">
           <Settings className="w-4 h-4" />
-          タグ設定
+          {tTags("tagSettings")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

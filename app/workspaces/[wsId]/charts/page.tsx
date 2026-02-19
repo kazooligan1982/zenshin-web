@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import {
   FolderOpen,
   Sparkles,
@@ -28,6 +29,7 @@ export default async function WorkspaceChartsPage({
   const showNewChartButton = canCreateChart(role);
 
   const { projectGroups, recentCharts, completedCharts } = await getChartsHierarchy(wsId);
+  const t = await getTranslations("home");
 
   return (
     <div className="min-h-screen bg-zenshin-cream">
@@ -36,10 +38,10 @@ export default async function WorkspaceChartsPage({
         <div className="flex items-center justify-between mb-10">
           <div>
             <h1 className="text-3xl font-extrabold text-zenshin-navy tracking-tight">
-              Home
+              {t("title")}
             </h1>
             <p className="text-sm text-zenshin-navy/60 mt-1">
-              あなたの緊張構造チャート
+              {t("subtitle")}
             </p>
           </div>
           {showNewChartButton && <NewChartButton workspaceId={wsId} />}
@@ -51,7 +53,7 @@ export default async function WorkspaceChartsPage({
             <div className="flex items-center gap-2 mb-5">
               <Sparkles className="w-4 h-4 text-zenshin-orange" />
               <h2 className="text-sm font-bold text-zenshin-navy/70 uppercase tracking-wider">
-                Recent Activity
+                {t("recentActivity")}
               </h2>
             </div>
 
@@ -70,7 +72,7 @@ export default async function WorkspaceChartsPage({
           <div className="flex items-center gap-2 mb-6">
             <FolderOpen className="w-4 h-4 text-zenshin-teal" />
             <h2 className="text-sm font-bold text-zenshin-navy/70 uppercase tracking-wider">
-              All Charts
+              {t("allCharts")}
             </h2>
           </div>
 
@@ -78,18 +80,18 @@ export default async function WorkspaceChartsPage({
             <div className="text-center py-20 rounded-2xl bg-white/60 border border-zenshin-navy/10">
               <FolderOpen className="w-16 h-16 mx-auto mb-4 text-zenshin-navy/20" />
               <p className="text-lg font-semibold text-zenshin-navy/60">
-                まだチャートがありません
+                {t("noCharts")}
               </p>
               <p className="text-sm mt-2 text-zenshin-navy/40">
                 {showNewChartButton
-                  ? "「チャートを作成」ボタンから最初のチャートを作成しましょう"
-                  : "オーナーまたはコンサルタントにチャートの作成を依頼してください"}
+                  ? t("noChartsHint")
+                  : t("noChartsHintViewer")}
               </p>
             </div>
           ) : (
             <div className="space-y-10">
               {projectGroups.map((group) => (
-                <ProjectGroupSection key={group.master.id} group={group} wsId={wsId} />
+                <ProjectGroupSection key={group.master.id} group={group} wsId={wsId} t={t} />
               ))}
             </div>
           )}
@@ -104,7 +106,7 @@ export default async function WorkspaceChartsPage({
   );
 }
 
-function ProjectGroupSection({ group, wsId }: { group: ProjectGroup; wsId: string }) {
+function ProjectGroupSection({ group, wsId, t }: { group: ProjectGroup; wsId: string; t: (key: string, values?: Record<string, string | number>) => string }) {
   const { master, layers } = group;
   const layerDepths = Object.keys(layers)
     .map(Number)
@@ -125,10 +127,10 @@ function ProjectGroupSection({ group, wsId }: { group: ProjectGroup; wsId: strin
               <div className="h-px bg-zenshin-navy/10 flex-1" />
               <span className="text-[10px] font-bold text-zenshin-navy/40 uppercase tracking-widest">
                 {depth === 2
-                  ? "2nd Charts"
+                  ? t("secondCharts")
                   : depth === 3
-                    ? "3rd Charts"
-                    : `${depth}th Charts`}
+                    ? t("thirdCharts")
+                    : t("nthCharts", { n: depth })}
               </span>
               <div className="h-px bg-zenshin-navy/10 flex-1" />
             </div>
@@ -144,7 +146,7 @@ function ProjectGroupSection({ group, wsId }: { group: ProjectGroup; wsId: strin
         ))
       ) : (
         <p className="text-sm text-zenshin-navy/30 italic py-2">
-          サブチャートはまだありません
+          {t("noSubCharts")}
         </p>
       )}
     </div>
