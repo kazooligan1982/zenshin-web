@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,8 @@ import type { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 
 export default function ProfilePage() {
+  const t = useTranslations("account");
+  const tCommon = useTranslations("common");
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -49,9 +52,9 @@ export default function ProfilePage() {
     });
 
     if (error) {
-      toast.error("保存に失敗しました: " + error.message, { duration: 5000 });
+      toast.error(t("profileSaveFailed") + ": " + error.message, { duration: 5000 });
     } else {
-      toast.success("プロフィールを更新しました", { duration: 3000 });
+      toast.success(t("profileUpdated"), { duration: 3000 });
     }
 
     setIsLoading(false);
@@ -71,7 +74,7 @@ export default function ProfilePage() {
     return (
       <div className="container max-w-4xl mx-auto py-10 px-6">
         <p className="text-muted-foreground">
-          ユーザー情報を取得できませんでした
+          {t("fetchUserFailed")}
         </p>
       </div>
     );
@@ -90,9 +93,9 @@ export default function ProfilePage() {
   return (
     <div className="container max-w-4xl mx-auto py-10 px-6">
       <div className="mb-8 space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("profileTitle")}</h1>
         <p className="text-muted-foreground">
-          あなたの公開プロフィール情報を管理します
+          {t("profileDescription")}
         </p>
       </div>
 
@@ -100,8 +103,8 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>基本情報</CardTitle>
-          <CardDescription>他のユーザーに表示される情報です</CardDescription>
+          <CardTitle>{t("basicInfo")}</CardTitle>
+          <CardDescription>{t("basicInfoDesc")}</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -113,25 +116,25 @@ export default function ProfilePage() {
               </AvatarFallback>
             </Avatar>
             <div className="text-sm text-muted-foreground">
-              <p>プロフィール画像はGoogleアカウントから取得されます</p>
+              <p>{t("avatarFromGoogle")}</p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="displayName">表示名</Label>
+            <Label htmlFor="displayName">{t("displayName")}</Label>
             <Input
               id="displayName"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="あなたの名前"
+              placeholder={t("displayNamePlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>メールアドレス</Label>
+            <Label>{t("email")}</Label>
             <Input value={user.email || ""} disabled className="bg-muted" />
             <p className="text-xs text-muted-foreground">
-              メールアドレスの変更はアカウント設定から行えます
+              {t("emailChangeNote")}
             </p>
           </div>
         </CardContent>
@@ -141,10 +144,10 @@ export default function ProfilePage() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                保存中...
+                {t("saving")}
               </>
             ) : (
-              "保存"
+              tCommon("save")
             )}
           </Button>
         </CardFooter>

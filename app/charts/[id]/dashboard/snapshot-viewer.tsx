@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,7 @@ interface SnapshotDetail {
 }
 
 export function SnapshotViewer({ snapshot }: SnapshotViewerProps) {
+  const t = useTranslations("snapshot");
   const [isOpen, setIsOpen] = useState(false);
   const [detailData, setDetailData] = useState<SnapshotDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +72,7 @@ export function SnapshotViewer({ snapshot }: SnapshotViewerProps) {
       setDetailData(data as SnapshotDetail);
     } catch (err) {
       console.error("[SnapshotViewer] Error fetching detail:", err);
-      setError(err instanceof Error ? err.message : "データの取得に失敗しました");
+      setError(err instanceof Error ? err.message : t("fetchDataFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +104,7 @@ export function SnapshotViewer({ snapshot }: SnapshotViewerProps) {
         onClick={handleOpen}
         className="text-xs bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-800 transition-colors"
       >
-        View Data
+        {t("viewData")}
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -114,20 +116,20 @@ export function SnapshotViewer({ snapshot }: SnapshotViewerProps) {
                   #{snapshot.versionNumber}
                 </span>
               )}
-              <span>Snapshot Details</span>
+              <span>{t("snapshotDetails")}</span>
             </DialogTitle>
           </DialogHeader>
 
           {isLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              <span className="ml-2 text-sm text-gray-500">データを読み込んでいます...</span>
+              <span className="ml-2 text-sm text-gray-500">{t("loadingData")}</span>
             </div>
           )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
-              <p className="text-sm font-medium">エラー</p>
+              <p className="text-sm font-medium">{t("error")}</p>
               <p className="text-xs mt-1">{error}</p>
             </div>
           )}
@@ -137,14 +139,14 @@ export function SnapshotViewer({ snapshot }: SnapshotViewerProps) {
               {/* メタデータセクション */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                 <div className="space-y-1">
-                  <p className="text-xs text-gray-500 font-medium">取得日時</p>
+                  <p className="text-xs text-gray-500 font-medium">{t("fetchedAt")}</p>
                   <p className="text-lg font-bold text-gray-800">
                     {format(new Date(snapshot.created_at), "yyyy/MM/dd HH:mm")}
                   </p>
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs text-gray-500 font-medium">取得方法</p>
+                  <p className="text-xs text-gray-500 font-medium">{t("fetchMethod")}</p>
                   <Badge
                     variant="outline"
                     className={
@@ -160,7 +162,7 @@ export function SnapshotViewer({ snapshot }: SnapshotViewerProps) {
                 {/* 統計情報 */}
                 {stats && (
                   <div className="col-span-1 md:col-span-2 space-y-1 mt-2">
-                    <p className="text-xs text-gray-500 font-medium">チャート概要</p>
+                    <p className="text-xs text-gray-500 font-medium">{t("chartSummary")}</p>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
                         Visions: {stats.visions}
@@ -181,7 +183,7 @@ export function SnapshotViewer({ snapshot }: SnapshotViewerProps) {
                 {/* メモ（Description） */}
                 {snapshot.description && (
                   <div className="col-span-1 md:col-span-2 space-y-1 mt-2 pt-2 border-t border-gray-200">
-                    <p className="text-xs text-gray-500 font-medium">メモ</p>
+                    <p className="text-xs text-gray-500 font-medium">{t("memo")}</p>
                     <p className="text-sm text-gray-700 italic bg-white p-2 rounded border border-gray-200">
                       {snapshot.description}
                     </p>
@@ -191,7 +193,7 @@ export function SnapshotViewer({ snapshot }: SnapshotViewerProps) {
 
               {/* JSONデータ */}
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-700">Raw Data (JSON)</h3>
+                <h3 className="text-sm font-semibold text-gray-700">{t("rawData")}</h3>
                 <div className="rounded-md bg-muted p-4 overflow-auto max-h-[400px] w-full border border-gray-200">
                   <pre className="text-xs whitespace-pre-wrap break-all">
                     {JSON.stringify(detailData.data, null, 2)}

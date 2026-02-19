@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import {
   DndContext,
@@ -12,6 +13,7 @@ import {
   useSensors,
   DragEndEvent,
 } from "@dnd-kit/core";
+import { TensionDragOverlay } from "./components/TensionDragOverlay";
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -136,6 +138,13 @@ const FocusModeModal = dynamic(
     import("@/components/focus-mode-modal").then((mod) => mod.FocusModeModal),
   { loading: () => null, ssr: false }
 );
+const UnifiedDetailModal = dynamic(
+  () =>
+    import("@/components/unified-detail-modal/UnifiedDetailModal").then(
+      (mod) => mod.UnifiedDetailModal
+    ),
+  { loading: () => null, ssr: false }
+);
 
 type WorkspaceMember = {
   id: string;
@@ -167,6 +176,13 @@ export function ProjectEditor({
   currentUser: initialCurrentUser,
   workspaceMembers = [],
 }: ProjectEditorProps) {
+  const t = useTranslations("editor");
+  const tc = useTranslations("common");
+  const tt = useTranslations("toast");
+  const tTags = useTranslations("tags");
+  const tSidebar = useTranslations("sidebar");
+  const tk = useTranslations("kanban");
+  const tAction = useTranslations("action");
   const router = useRouter();
   // areasがundefinedの場合に空配列を設定
   const chartWithAreas: Chart = {
@@ -331,6 +347,24 @@ export function ProjectEditor({
     setLooseActions,
     router,
   });
+
+  // UnifiedDetailModal（Phase 1: 既存トリガーを新モーダルに切り替え）
+  const [unifiedModal, setUnifiedModal] = useState<{
+    isOpen: boolean;
+    itemType: "vision" | "reality" | "action";
+    itemId: string;
+  } | null>(null);
+  const openUnifiedModal = (itemType: "vision" | "reality" | "action", itemId: string) => {
+    setUnifiedModal({ isOpen: true, itemType, itemId });
+  };
+  const closeUnifiedModal = () => setUnifiedModal(null);
+  const handleOpenDetailPanelForModal = (
+    itemType: "vision" | "reality" | "action",
+    itemId: string,
+    _itemContent?: string
+  ) => {
+    openUnifiedModal(itemType, itemId);
+  };
 
   const toggleCompletedTensionExpand = (tensionId: string) => {
     setExpandedCompletedTensions((prev) => {
@@ -803,9 +837,7 @@ export function ProjectEditor({
       ) + structuredData.uncategorized.orphanedActions.length;
 
     if (totalOrphans > 0) {
-      console.warn(
-        "これらのActionはまだTensionに入っていません。フェーズ2でUI表示します。"
-      );
+      console.warn(t("orphanActionsNote"));
     }
 
     console.groupEnd();
@@ -820,7 +852,7 @@ export function ProjectEditor({
       onUpdate={handleUpdateVision}
       onDelete={handleDeleteVision}
       areas={chart.areas || []}
-      onOpenDetail={(item) => handleOpenDetailPanel("vision", item.id, item.content || "")}
+      onOpenDetail={(item) => handleOpenDetailPanelForModal("vision", item.id, item.content || "")}
       onOpenFocus={(item, itemIndex) =>
         openFocusMode(
           "vision",
@@ -853,13 +885,13 @@ export function ProjectEditor({
                   style={{ backgroundColor: area.color }}
                 />
                 <span className="text-sm font-bold text-zenshin-navy">{area.name}</span>
-                <span className="ml-2 text-xs text-zenshin-navy/40">({areaVisions.length}件)</span>
+                <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: areaVisions.length })}</span>
               </div>
               <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
                 <SortableContext items={areaVisions} strategy={verticalListSortingStrategy}>
                   {areaVisions.length === 0 ? (
                     <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                      アイテムなし
+                      {t("noItems")}
                     </div>
                   ) : (
                     areaVisions.map((vision, index) => (
@@ -872,7 +904,7 @@ export function ProjectEditor({
                         onDelete={handleDeleteVision}
                         areas={chart.areas || []}
                         onOpenDetail={(item) =>
-                          handleOpenDetailPanel("vision", item.id, item.content || "")
+                          handleOpenDetailPanelForModal("vision", item.id, item.content || "")
                         }
                         onOpenFocus={(item, itemIndex) =>
                           openFocusMode(
@@ -901,9 +933,9 @@ export function ProjectEditor({
             <div className="mb-4 last:mb-0">
               <div className="flex items-center px-3 mb-1">
                 <span className="w-3 h-3 rounded-full mr-2 bg-gray-400" />
-                <span className="text-sm font-bold text-zenshin-navy">未分類</span>
+                <span className="text-sm font-bold text-zenshin-navy">{tTags("untagged")}</span>
                 <span className="ml-2 text-xs text-zenshin-navy/40">
-                  ({uncategorizedVisions.length}件)
+                  {t("itemCount", { count: uncategorizedVisions.length })}
                 </span>
               </div>
               <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
@@ -913,7 +945,7 @@ export function ProjectEditor({
                 >
                   {uncategorizedVisions.length === 0 ? (
                     <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                      アイテムなし
+                      {t("noItems")}
                     </div>
                   ) : (
                     uncategorizedVisions.map((vision, index) => (
@@ -926,7 +958,7 @@ export function ProjectEditor({
                         onDelete={handleDeleteVision}
                         areas={chart.areas || []}
                         onOpenDetail={(item) =>
-                          handleOpenDetailPanel("vision", item.id, item.content || "")
+                          handleOpenDetailPanelForModal("vision", item.id, item.content || "")
                         }
                         onOpenFocus={(item, itemIndex) =>
                           openFocusMode(
@@ -961,7 +993,7 @@ export function ProjectEditor({
       handleUpdateReality={handleUpdateReality}
       handleDeleteReality={handleDeleteReality}
       areas={chart.areas}
-      onOpenDetail={(item) => handleOpenDetailPanel("reality", item.id, item.content || "")}
+      onOpenDetail={(item) => handleOpenDetailPanelForModal("reality", item.id, item.content || "")}
       onOpenFocus={(item, itemIndex) =>
         openFocusMode(
           "reality",
@@ -992,13 +1024,13 @@ export function ProjectEditor({
                   style={{ backgroundColor: area.color }}
                 />
                 <span className="text-sm font-bold text-zenshin-navy">{area.name}</span>
-                <span className="ml-2 text-xs text-zenshin-navy/40">({areaRealities.length}件)</span>
+                <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: areaRealities.length })}</span>
               </div>
               <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
                 <SortableContext items={areaRealities} strategy={verticalListSortingStrategy}>
                   {areaRealities.length === 0 ? (
                     <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                      アイテムなし
+                      {t("noItems")}
                     </div>
                   ) : (
                     areaRealities.map((reality, index) => (
@@ -1011,7 +1043,7 @@ export function ProjectEditor({
                         handleDeleteReality={handleDeleteReality}
                         areas={chart.areas}
                         onOpenDetail={(item) =>
-                          handleOpenDetailPanel("reality", item.id, item.content || "")
+                          handleOpenDetailPanelForModal("reality", item.id, item.content || "")
                         }
                         onOpenFocus={(item, itemIndex) =>
                           openFocusMode(
@@ -1038,9 +1070,9 @@ export function ProjectEditor({
             <div className="mb-4 last:mb-0">
               <div className="flex items-center px-3 mb-1">
                 <span className="w-3 h-3 rounded-full mr-2 bg-gray-400" />
-                <span className="text-sm font-bold text-zenshin-navy">未分類</span>
+                <span className="text-sm font-bold text-zenshin-navy">{tTags("untagged")}</span>
                 <span className="ml-2 text-xs text-zenshin-navy/40">
-                  ({uncategorizedRealities.length}件)
+                  {t("itemCount", { count: uncategorizedRealities.length })}
                 </span>
               </div>
               <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
@@ -1050,7 +1082,7 @@ export function ProjectEditor({
                 >
                   {uncategorizedRealities.length === 0 ? (
                     <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                      アイテムなし
+                      {t("noItems")}
                     </div>
                   ) : (
                     uncategorizedRealities.map((reality, index) => (
@@ -1063,7 +1095,7 @@ export function ProjectEditor({
                         handleDeleteReality={handleDeleteReality}
                         areas={chart.areas}
                         onOpenDetail={(item) =>
-                          handleOpenDetailPanel("reality", item.id, item.content || "")
+                          handleOpenDetailPanelForModal("reality", item.id, item.content || "")
                         }
                         onOpenFocus={(item, itemIndex) =>
                           openFocusMode(
@@ -1147,13 +1179,13 @@ export function ProjectEditor({
     try {
       const result = await createSnapshot(chartId, undefined, "manual");
       if (result.success) {
-        toast.success("スナップショットを保存しました", { duration: 3000 });
+        toast.success(tt("snapshotSaved"), { duration: 3000 });
       } else {
-        toast.error(`スナップショットの保存に失敗しました: ${result.error || "不明なエラー"}`, { duration: 5000 });
+        toast.error(tt("snapshotSaveFailed", { error: tt(result.error ?? "unknownError") }), { duration: 5000 });
       }
     } catch (error) {
       console.error("[handleCreateSnapshot] エラー:", error);
-      toast.error("スナップショットの保存中にエラーが発生しました", { duration: 5000 });
+      toast.error(tt("snapshotError"), { duration: 5000 });
     } finally {
       setIsSavingSnapshot(false);
     }
@@ -1165,13 +1197,13 @@ export function ProjectEditor({
     setIsChartMenuLoading(true);
     try {
       const result = await archiveChart(chart.id);
-      toast.success(`${result.archivedCount}件のチャートをアーカイブしました`, {
+      toast.success(tt("chartsArchived", { count: result.archivedCount }), {
         duration: 3000,
         action: {
-          label: "元に戻す",
+          label: t("restoreView"),
           onClick: async () => {
             await restoreChart(chart.id);
-            toast.success("アーカイブを復元しました", { duration: 3000 });
+            toast.success(tt("archiveRestored"), { duration: 3000 });
             router.refresh();
           },
         },
@@ -1184,7 +1216,7 @@ export function ProjectEditor({
       }
     } catch (error) {
       console.error("Failed to archive:", error);
-      toast.error("アーカイブに失敗しました", { duration: 5000 });
+      toast.error(tt("archiveFailed"), { duration: 5000 });
     } finally {
       setIsChartMenuLoading(false);
     }
@@ -1196,7 +1228,7 @@ export function ProjectEditor({
     setIsChartMenuLoading(true);
     try {
       await deleteChart(chart.id);
-      toast.success("チャートを削除しました", { duration: 3000 });
+      toast.success(tt("chartDeleted"), { duration: 3000 });
       const basePath = chart.workspace_id ? `/workspaces/${chart.workspace_id}/charts` : "/charts";
       if (chart.parentChartId) {
         router.push(`${basePath}/${chart.parentChartId}`);
@@ -1205,7 +1237,7 @@ export function ProjectEditor({
       }
     } catch (error) {
       console.error("Failed to delete:", error);
-      toast.error("削除に失敗しました", { duration: 5000 });
+      toast.error(tt("deleteFailed"), { duration: 5000 });
     } finally {
       setIsChartMenuLoading(false);
     }
@@ -1254,21 +1286,21 @@ export function ProjectEditor({
         <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
-              チャートをアーカイブしますか？
+              {t("archiveChartConfirm")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-gray-500">
-              「{chart?.title}」とその全てのサブチャートをアーカイブします。
+              {t("archiveChartDescription", { title: chart?.title ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
-              キャンセル
+              {tc("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="rounded-lg px-4 py-2 text-sm bg-zenshin-navy text-white hover:bg-zenshin-navy/90"
               onClick={handleArchiveChart}
             >
-              アーカイブする
+              {t("archiveConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1279,21 +1311,21 @@ export function ProjectEditor({
         <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
-              チャートを完全に削除しますか？
+              {t("deleteChartConfirm")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-gray-500">
-              この操作は取り消せません。
+              {t("deleteChartWarning")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
-              キャンセル
+              {tc("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="rounded-lg px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600"
               onClick={handleDeleteChart}
             >
-              削除する
+              {t("deleteConfirmAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1376,11 +1408,11 @@ export function ProjectEditor({
                     const newStatus = chart.status === "completed" ? "active" : "completed";
                     const result = await updateChartStatusAction(chartId, newStatus);
                     if (result.error) {
-                      toast.error("ステータスの更新に失敗しました", { duration: 5000 });
+                      toast.error(tt("statusUpdateFailed"), { duration: 5000 });
                     } else {
                       setChart((prev) => ({ ...prev, status: newStatus }));
                       toast.success(
-                        newStatus === "completed" ? "チャートを完了にしました" : "チャートを再開しました",
+                        newStatus === "completed" ? tt("chartCompleted") : tt("chartReopened"),
                         { duration: 3000 }
                       );
                     }
@@ -1390,12 +1422,12 @@ export function ProjectEditor({
                   {chart.status === "completed" ? (
                     <>
                       <RotateCcw className="w-4 h-4" />
-                      チャートを再開
+                      {t("chartReopen")}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      チャートを完了にする
+                      {t("chartComplete")}
                     </>
                   )}
                 </DropdownMenuItem>
@@ -1404,7 +1436,7 @@ export function ProjectEditor({
                   className="gap-2"
                 >
                   <Archive className="w-4 h-4" />
-                  アーカイブ
+                  {tSidebar("archive")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -1412,7 +1444,7 @@ export function ProjectEditor({
                   className="gap-2 text-red-600 focus:text-red-600"
                 >
                   <Trash2 className="w-4 h-4" />
-                  削除
+                  {tc("delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1425,12 +1457,12 @@ export function ProjectEditor({
             type="text"
             {...chartTitleInput.bind}
             className="text-2xl font-bold text-zenshin-navy bg-transparent border-none outline-none w-full hover:bg-zenshin-cream focus:bg-zenshin-cream rounded px-1 -ml-1 transition-colors min-w-0"
-            placeholder="チャートの目的を一言で"
+            placeholder={t("chartTitlePlaceholder")}
           />
           {chart.status === "completed" && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full shrink-0">
               <CheckCircle2 className="w-3 h-3" />
-              完了
+              {tk("done")}
             </span>
           )}
         </div>
@@ -1445,7 +1477,7 @@ export function ProjectEditor({
                   <span>
                     {chartDueDate
                       ? format(new Date(chartDueDate), "yyyy/MM/dd")
-                      : "期限未設定"}
+                      : t("noDueDate")}
                   </span>
                 </button>
               </PopoverTrigger>
@@ -1466,7 +1498,7 @@ export function ProjectEditor({
                       className="w-full text-zenshin-navy/50 hover:text-red-500"
                       onClick={() => handleUpdateChartDueDate(null)}
                     >
-                      期限をクリア
+                      {tAction("clearDueDate")}
                     </Button>
                   </div>
                 )}
@@ -1477,11 +1509,11 @@ export function ProjectEditor({
 
             <Select value={selectedAreaId || "all"} onValueChange={(value) => setSelectedAreaId(value)}>
               <SelectTrigger className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-zenshin-navy/70 hover:text-zenshin-navy hover:bg-white/60 rounded-lg transition-colors cursor-pointer border-0 shadow-none bg-transparent h-auto w-auto justify-start min-w-0">
-                <SelectValue placeholder="すべてのタグ" />
+                <SelectValue placeholder={t("allTags")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">すべてのタグ</SelectItem>
-                <SelectItem value="uncategorized">未分類</SelectItem>
+                <SelectItem value="all">{t("allTags")}</SelectItem>
+                <SelectItem value="uncategorized">{tTags("untagged")}</SelectItem>
                 {chart.areas.map((area) => (
                   <SelectItem key={area.id} value={area.id}>
                     <div className="flex items-center gap-2">
@@ -1503,7 +1535,7 @@ export function ProjectEditor({
               onClick={() => setTagManagerOpen(true)}
             >
               <Settings className="w-3.5 h-3.5" />
-              <span>タグ設定</span>
+              <span>{tTags("tagSettings")}</span>
             </button>
           </div>
 
@@ -1517,7 +1549,7 @@ export function ProjectEditor({
               }`}
               onClick={() => setViewMode("default")}
             >
-              標準モード
+              {t("standardMode")}
             </button>
             <button
               className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
@@ -1527,7 +1559,7 @@ export function ProjectEditor({
               }`}
               onClick={() => setViewMode("comparison")}
             >
-              対比モード
+              {t("comparisonMode")}
             </button>
           </div>
         </div>
@@ -1558,7 +1590,7 @@ export function ProjectEditor({
                   <div className="px-3 py-2 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg">
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-zenshin-teal" />
-                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">Vision</h2>
+                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("vision")}</h2>
                     </div>
                     <Button
                       size="icon"
@@ -1594,7 +1626,7 @@ export function ProjectEditor({
                           }
                           newVisionInput.handleKeyDown(e);
                         }}
-                        placeholder="＋ 新しいVisionを追加"
+                        placeholder={t("addNewVisionPlaceholder")}
                         className="text-sm h-7 flex-1"
                         disabled={isSubmittingVision}
                       />
@@ -1628,7 +1660,7 @@ export function ProjectEditor({
                     <div className="flex items-center gap-2">
                       <Search className="w-4 h-4 text-zenshin-orange" />
                       <h2 className="text-base font-bold text-foreground leading-tight">
-                        Reality
+                        {t("reality")}
                       </h2>
                     </div>
                     <Button
@@ -1669,7 +1701,7 @@ export function ProjectEditor({
                           }
                           newRealityInput.handleKeyDown(e);
                         }}
-                        placeholder="＋ 新しいRealityを追加"
+                        placeholder={t("addNewRealityPlaceholder")}
                         className="text-sm h-7 flex-1"
                         disabled={isSubmittingReality}
                       />
@@ -1705,7 +1737,7 @@ export function ProjectEditor({
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-zenshin-navy" />
                       <h2 className="text-base font-bold text-foreground leading-tight">
-                        Tension & Action
+                        {t("tensionAndAction")}
                       </h2>
                     </div>
                     <div className="flex items-center gap-1">
@@ -1718,7 +1750,7 @@ export function ProjectEditor({
                             : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                         }`}
                         onClick={() => setSortByStatus(!sortByStatus)}
-                        title="ステータス順に並べ替え"
+                        title={t("sortByStatusTitle")}
                       >
                         <ArrowUpDown className="w-3 h-3" />
                       </Button>
@@ -1731,7 +1763,7 @@ export function ProjectEditor({
                             : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                         }`}
                         onClick={() => setHideCompleted(!hideCompleted)}
-                        title={hideCompleted ? "完了済みを表示" : "完了済みを非表示"}
+                        title={hideCompleted ? t("showCompleted") : t("hideCompletedTitle")}
                       >
                         {hideCompleted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                       </Button>
@@ -1740,7 +1772,7 @@ export function ProjectEditor({
                         variant="ghost"
                         className="h-6 w-6 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                         onClick={() => setFocusedArea(null)}
-                        title="元に戻す"
+                        title={t("restoreView")}
                       >
                         <Minimize2 className="w-3 h-3" />
                       </Button>
@@ -1776,12 +1808,29 @@ export function ProjectEditor({
                             collisionDetection={closestCenter}
                             onDragEnd={handleTensionDragEnd}
                           >
+                            <TensionDragOverlay
+                              tensions={tensions}
+                              areas={chart.areas}
+                              chartId={chartId}
+                              handleUpdateTension={handleUpdateTension}
+                              handleDeleteTension={handleDeleteTension}
+                              handleUpdateActionPlan={handleUpdateActionPlan}
+                              handleDeleteActionPlan={handleDeleteActionPlan}
+                              handleTelescopeClick={handleTelescopeClick}
+                              telescopingActionId={telescopingActionId}
+                              currentUser={currentUser}
+                              onOpenDetailPanel={handleOpenDetailPanelForModal}
+                              onAddAction={handleAddActionPlan}
+                              isSubmittingAction={isSubmittingAction}
+                              handleOptimisticMove={handleOptimisticMove}
+                              workspaceMembers={workspaceMembers}
+                            />
                             <div className="space-y-4">
                               {areaOrder.map((areaId) => {
                                 const area = areaId
                                   ? chart.areas.find((a) => a.id === areaId)
                                   : null;
-                                const areaName = area ? area.name : "未分類";
+                                const areaName = area ? area.name : tTags("untagged");
                                 const areaColor = area ? area.color : "#9CA3AF";
                                 const group = areaId
                                   ? structuredData.categorized.find(
@@ -1814,7 +1863,7 @@ export function ProjectEditor({
                                     currentUser={currentUser}
                                     areas={chart.areas}
                                     chartId={chartId}
-                                    onOpenDetailPanel={handleOpenDetailPanel}
+                                    onOpenDetailPanel={handleOpenDetailPanelForModal}
                                     getSortedAndNumberedActions={
                                       getSortedAndNumberedActions
                                     }
@@ -1858,7 +1907,7 @@ export function ProjectEditor({
                                     ) : (
                                       <ChevronRight className="w-3.5 h-3.5" />
                                     )}
-                                    完了済みTension（{allCompletedTensions.length}件）
+                                    {t("completedTensions", { count: allCompletedTensions.length })}
                                   </button>
                                   {showCompletedTensions && (
                                     <div className="opacity-60">
@@ -1886,7 +1935,7 @@ export function ProjectEditor({
                                           currentUser={currentUser}
                                           areas={chart.areas}
                                           chartId={chartId}
-                                          onOpenDetailPanel={handleOpenDetailPanel}
+                                          onOpenDetailPanel={handleOpenDetailPanelForModal}
                                           onAddAction={handleAddActionPlan}
                                           isSubmittingAction={isSubmittingAction}
                                           onOpenFocus={(t) =>
@@ -1944,7 +1993,7 @@ export function ProjectEditor({
             handleTelescopeClick={handleTelescopeClick}
             telescopingActionId={telescopingActionId}
             currentUser={currentUser}
-            onOpenDetailPanel={handleOpenDetailPanel}
+            onOpenDetailPanel={handleOpenDetailPanelForModal}
             onOpenAreaSettings={() => setTagManagerOpen(true)}
             highlightedItemId={highlightedItemId}
             onOpenFocusVision={(item, itemIndex) =>
@@ -2003,7 +2052,7 @@ export function ProjectEditor({
                   <div className="px-3 py-2 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg">
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-zenshin-teal" />
-                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">Vision</h2>
+                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("vision")}</h2>
                     </div>
                     <Button
                       size="icon"
@@ -2047,7 +2096,7 @@ export function ProjectEditor({
                           }
                           newVisionInput.handleKeyDown(e);
                         }}
-                        placeholder="＋ 新しいVisionを追加"
+                        placeholder={t("addNewVisionPlaceholder")}
                         className="text-sm h-7 flex-1"
                         disabled={isSubmittingVision}
                       />
@@ -2080,7 +2129,7 @@ export function ProjectEditor({
                   <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
                       <Search className="w-4 h-4 text-zenshin-orange" />
-                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">Reality</h2>
+                      <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("reality")}</h2>
                     </div>
                     <Button
                       size="icon"
@@ -2124,7 +2173,7 @@ export function ProjectEditor({
                           }
                           newRealityInput.handleKeyDown(e);
                         }}
-                        placeholder="＋ 新しいRealityを追加"
+                        placeholder={t("addNewRealityPlaceholder")}
                         className="text-sm h-7 flex-1"
                         disabled={isSubmittingReality}
                       />
@@ -2158,7 +2207,7 @@ export function ProjectEditor({
                 <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-zenshin-navy" />
-                    <h2 className="text-base font-bold text-zenshin-navy leading-tight">Tension & Action</h2>
+                    <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("tensionAndAction")}</h2>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button
@@ -2170,7 +2219,7 @@ export function ProjectEditor({
                           : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                       }`}
                       onClick={() => setSortByStatus(!sortByStatus)}
-                      title="ステータス順に並べ替え"
+                      title={t("sortByStatusTitle")}
                     >
                       <ArrowUpDown className="w-3 h-3" />
                     </Button>
@@ -2183,7 +2232,7 @@ export function ProjectEditor({
                           : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                       }`}
                       onClick={() => setHideCompleted(!hideCompleted)}
-                      title={hideCompleted ? "完了済みを表示" : "完了済みを非表示"}
+                      title={hideCompleted ? t("showCompleted") : t("hideCompletedTitle")}
                     >
                       {hideCompleted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                     </Button>
@@ -2196,7 +2245,7 @@ export function ProjectEditor({
                       }
                       onMouseEnter={() => setHoveredSection("tension")}
                       onMouseLeave={() => setHoveredSection(null)}
-                      title={focusedArea === "tension" ? "元に戻す" : "拡大表示"}
+                      title={focusedArea === "tension" ? t("restoreView") : t("expandView")}
                     >
                       {focusedArea === "tension" ? (
                         <Minimize2 className="w-3 h-3" />
@@ -2234,10 +2283,27 @@ export function ProjectEditor({
                           collisionDetection={closestCenter}
                           onDragEnd={handleTensionDragEnd}
                         >
+                          <TensionDragOverlay
+                            tensions={tensions}
+                            areas={chart.areas}
+                            chartId={chartId}
+                            handleUpdateTension={handleUpdateTension}
+                            handleDeleteTension={handleDeleteTension}
+                            handleUpdateActionPlan={handleUpdateActionPlan}
+                            handleDeleteActionPlan={handleDeleteActionPlan}
+                            handleTelescopeClick={handleTelescopeClick}
+                            telescopingActionId={telescopingActionId}
+                            currentUser={currentUser}
+                            onOpenDetailPanel={handleOpenDetailPanelForModal}
+                            onAddAction={handleAddActionPlan}
+                            isSubmittingAction={isSubmittingAction}
+                            handleOptimisticMove={handleOptimisticMove}
+                            workspaceMembers={workspaceMembers}
+                          />
                           <div className="space-y-4">
                             {areaOrder.map((areaId) => {
                               const area = areaId ? chart.areas.find((a) => a.id === areaId) : null;
-                              const areaName = area ? area.name : "未分類";
+                              const areaName = area ? area.name : tTags("untagged");
                               const areaColor = area ? area.color : "#9CA3AF";
                               const group = areaId
                                 ? structuredData.categorized.find((g) => g.area.id === areaId)
@@ -2266,7 +2332,7 @@ export function ProjectEditor({
                                   currentUser={currentUser}
                                   areas={chart.areas}
                                   chartId={chartId}
-                                  onOpenDetailPanel={handleOpenDetailPanel}
+                                  onOpenDetailPanel={handleOpenDetailPanelForModal}
                                   getSortedAndNumberedActions={getSortedAndNumberedActions}
                                   isSubmittingAction={isSubmittingAction}
                                   onAddAction={handleAddActionPlan}
@@ -2307,7 +2373,7 @@ export function ProjectEditor({
                                   ) : (
                                     <ChevronRight className="w-3.5 h-3.5" />
                                   )}
-                                  完了済みTension（{allCompletedTensions.length}件）
+                                  {t("completedTensions", { count: allCompletedTensions.length })}
                                 </button>
                                 {showCompletedTensions && (
                                   <div className="opacity-60">
@@ -2333,7 +2399,7 @@ export function ProjectEditor({
                                         currentUser={currentUser}
                                         areas={chart.areas}
                                         chartId={chartId}
-                                        onOpenDetailPanel={handleOpenDetailPanel}
+                                        onOpenDetailPanel={handleOpenDetailPanelForModal}
                                         onAddAction={handleAddActionPlan}
                                         isSubmittingAction={isSubmittingAction}
                                         onOpenFocus={(t) =>
@@ -2411,7 +2477,19 @@ export function ProjectEditor({
         );
       })()}
 
-      {/* 詳細サイドパネル（Vision/Reality用） */}
+      {/* UnifiedDetailModal（Phase 1: 骨格） */}
+      {unifiedModal && (
+        <UnifiedDetailModal
+          isOpen={unifiedModal.isOpen}
+          onClose={closeUnifiedModal}
+          itemType={unifiedModal.itemType}
+          itemId={unifiedModal.itemId}
+          chartId={chartId}
+          workspaceId={workspaceId}
+        />
+      )}
+
+      {/* 詳細サイドパネル（Vision/Reality用）※Phase 4 で削除 */}
       {detailPanel && detailPanel.itemType !== "action" && (
         <ItemDetailPanel
           isOpen={detailPanel.isOpen}
@@ -2540,6 +2618,8 @@ function ComparisonView({
   onMoveTensionArea?: (tensionId: string, targetAreaId: string | null) => Promise<void>;
   workspaceMembers?: WorkspaceMember[];
 }) {
+  const t = useTranslations("editor");
+  const tTags = useTranslations("tags");
   const [visionInputByArea, setVisionInputByArea] = useState<Record<string, string>>({});
   const [realityInputByArea, setRealityInputByArea] = useState<Record<string, string>>({});
 
@@ -2551,9 +2631,9 @@ function ComparisonView({
   }, [visions, realities]);
 
   const getAreaName = (areaId: string) => {
-    if (areaId === "uncategorized") return "未分類";
+    if (areaId === "uncategorized") return tTags("untagged");
     const area = areas.find((a) => a.id === areaId);
-    return area?.name || "未分類";
+    return area?.name || tTags("untagged");
   };
 
   const getAreaColor = (areaId: string) => {
@@ -2621,13 +2701,13 @@ function ComparisonView({
                     <div className="p-0">
                       <div className="px-3 py-1.5 bg-zenshin-teal/8 border-b border-gray-100 flex items-center gap-1.5">
                         <Target className="w-3.5 h-3.5 text-zenshin-teal" />
-                        <span className="text-xs font-bold text-zenshin-teal uppercase tracking-wider">Vision</span>
+                        <span className="text-xs font-bold text-zenshin-teal uppercase tracking-wider">{t("vision")}</span>
                       </div>
                       <div className="space-y-1 px-2 py-2 min-h-[40px]">
                         <SortableContext items={areaVisions} strategy={verticalListSortingStrategy}>
                           {areaVisions.length === 0 ? (
                             <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                              アイテムなし
+                              {t("noItems")}
                             </div>
                           ) : (
                             areaVisions.map((vision, index) => (
@@ -2668,7 +2748,7 @@ function ComparisonView({
                               return;
                             }
                           }}
-                          placeholder="＋ 新しいVisionを追加"
+                          placeholder={t("addNewVisionPlaceholder")}
                           className="text-sm h-7 flex-1"
                           disabled={isSubmittingVision}
                         />
@@ -2696,13 +2776,13 @@ function ComparisonView({
                     <div className="p-0">
                       <div className="px-3 py-1.5 bg-zenshin-orange/8 border-b border-gray-100 flex items-center gap-1.5">
                         <Search className="w-3.5 h-3.5 text-zenshin-orange" />
-                        <span className="text-xs font-bold text-zenshin-orange uppercase tracking-wider">Reality</span>
+                        <span className="text-xs font-bold text-zenshin-orange uppercase tracking-wider">{t("reality")}</span>
                       </div>
                       <div className="space-y-1 px-2 py-2 min-h-[40px]">
                         <SortableContext items={areaRealities} strategy={verticalListSortingStrategy}>
                           {areaRealities.length === 0 ? (
                             <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                              アイテムなし
+                              {t("noItems")}
                             </div>
                           ) : (
                             areaRealities.map((reality, index) => (
@@ -2742,7 +2822,7 @@ function ComparisonView({
                               return;
                             }
                           }}
-                          placeholder="＋ 新しいRealityを追加"
+                          placeholder={t("addNewRealityPlaceholder")}
                           className="text-sm h-7 flex-1"
                           disabled={isSubmittingReality}
                         />
@@ -2779,7 +2859,7 @@ function ComparisonView({
           <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-zenshin-navy" />
-              <h2 className="text-base font-bold text-zenshin-navy leading-tight">Tension & Action</h2>
+              <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("tensionAndAction")}</h2>
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -2791,7 +2871,7 @@ function ComparisonView({
                     : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                 }`}
                 onClick={() => setSortByStatus(!sortByStatus)}
-                title="ステータス順に並べ替え"
+                title={t("sortByStatusTitle")}
               >
                 <ArrowUpDown className="w-3 h-3" />
               </Button>
@@ -2804,7 +2884,7 @@ function ComparisonView({
                     : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                 }`}
                 onClick={() => setHideCompleted(!hideCompleted)}
-                title={hideCompleted ? "完了済みを表示" : "完了済みを非表示"}
+                title={hideCompleted ? t("showCompleted") : t("hideCompletedTitle")}
               >
                 {hideCompleted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
               </Button>
@@ -2818,6 +2898,23 @@ function ComparisonView({
                 collisionDetection={closestCenter}
                 onDragEnd={onTensionDragEnd}
               >
+                <TensionDragOverlay
+                  tensions={tensions}
+                  areas={areas}
+                  chartId={chartId}
+                  handleUpdateTension={handleUpdateTension}
+                  handleDeleteTension={handleDeleteTension}
+                  handleUpdateActionPlan={handleUpdateActionPlan}
+                  handleDeleteActionPlan={handleDeleteActionPlan}
+                  handleTelescopeClick={handleTelescopeClick}
+                  telescopingActionId={telescopingActionId}
+                  currentUser={currentUser}
+                  onOpenDetailPanel={onOpenDetailPanel}
+                  onAddAction={onAddAction}
+                  isSubmittingAction={isSubmittingAction}
+                  handleOptimisticMove={handleOptimisticMove}
+                  workspaceMembers={workspaceMembers}
+                />
                 <div className="space-y-4">
                   {(() => {
                     const allCompletedTensions: Tension[] = [];
@@ -2834,7 +2931,7 @@ function ComparisonView({
                       <>
                         {areaOrder.map((areaId) => {
                           const area = areaId ? areas.find((a) => a.id === areaId) : null;
-                          const areaName = area ? area.name : "未分類";
+                          const areaName = area ? area.name : tTags("untagged");
                           const areaColor = area ? area.color : "#9CA3AF";
                           const group = areaId
                             ? structuredData.categorized.find((g) => g.area.id === areaId)
@@ -2898,7 +2995,7 @@ function ComparisonView({
                               ) : (
                                 <ChevronRight className="w-3.5 h-3.5" />
                               )}
-                              完了済みTension（{allCompletedTensions.length}件）
+                              {t("completedTensions", { count: allCompletedTensions.length })}
                             </button>
                             {showCompletedTensions && (
                               <div className="opacity-60">

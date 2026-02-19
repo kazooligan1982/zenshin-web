@@ -1,22 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale } from "next-intl";
 import { format } from "date-fns";
-import { ja } from "date-fns/locale";
+import { ja, enUS } from "date-fns/locale";
+import { useTranslations } from "next-intl";
 import { Calendar, RefreshCcw, CheckCircle2 } from "lucide-react";
 import { DeleteChartButton } from "./delete-chart-button";
 import type { ChartWithMeta } from "./actions";
 
 export function ChartCard({ chart, isMaster = false, wsId }: { chart: ChartWithMeta; isMaster?: boolean; wsId?: string }) {
+  const locale = useLocale();
+  const t = useTranslations("home");
+  const dateLocale = locale === "ja" ? ja : enUS;
   const chartHref = wsId ? `/workspaces/${wsId}/charts/${chart.id}` : `/charts/${chart.id}`;
   const depthLabel =
     chart.depth === 1
-      ? "Master"
+      ? t("master")
       : chart.depth === 2
-        ? "2nd"
+        ? t("second")
         : chart.depth === 3
-          ? "3rd"
-          : `${chart.depth}th`;
+          ? t("third")
+          : t("nth", { n: chart.depth });
 
   const actionStatus = chart.actionStatusCounts ?? {
     total: 0,
@@ -50,7 +55,7 @@ export function ChartCard({ chart, isMaster = false, wsId }: { chart: ChartWithM
           {chart.status === "completed" && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full shrink-0">
               <CheckCircle2 className="w-3 h-3" />
-              完了
+              {t("completed")}
             </span>
           )}
         </div>
@@ -60,14 +65,14 @@ export function ChartCard({ chart, isMaster = false, wsId }: { chart: ChartWithM
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               {chart.due_date ? (
-                <span>期限: {format(new Date(chart.due_date), "MM/dd", { locale: ja })}</span>
+                <span>{t("dueDate")}: {format(new Date(chart.due_date), "MM/dd", { locale: dateLocale })}</span>
               ) : (
-                <span className="text-zenshin-orange/60">期限: 未設定</span>
+                <span className="text-zenshin-orange/60">{t("dueNotSet")}</span>
               )}
             </div>
             <div className="flex items-center gap-1">
               <RefreshCcw className="w-3 h-3" />
-              <span>更新: {format(new Date(chart.updated_at), "MM/dd", { locale: ja })}</span>
+              <span>{t("updated")}: {format(new Date(chart.updated_at), "MM/dd", { locale: dateLocale })}</span>
             </div>
           </div>
           {chart.assignees && chart.assignees.length > 0 ? (

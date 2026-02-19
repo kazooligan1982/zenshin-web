@@ -408,12 +408,8 @@ export async function updateListOrder(
   chartId?: string,
   tensionId?: string
 ) {
-  if (!supabase) {
-    console.error("[updateListOrder] Supabase client not initialized");
-    return false;
-  }
-
   try {
+    const supabase = await createClient();
     // 各アイテムのsort_orderを一括更新
     for (const item of items) {
       let query = supabase.from(table).update({ sort_order: item.sort_order }).eq("id", item.id);
@@ -503,7 +499,7 @@ export async function updateVisionArea(
 
     if (error) {
       console.error("❌ Supabase update error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "saveFailed" };
     }
 
     await recordChartHistory(projectId, "vision", visionId, "updated", "area_id", oldAreaId ?? null, areaId ?? null);
@@ -514,7 +510,7 @@ export async function updateVisionArea(
     console.error("❌❌❌ Server action exception:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -564,7 +560,7 @@ export async function updateRealityArea(
 
     if (error) {
       console.error("❌ Supabase update error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "saveFailed" };
     }
 
     await recordChartHistory(projectId, "reality", realityId, "updated", "area_id", oldAreaId ?? null, areaId ?? null);
@@ -574,7 +570,7 @@ export async function updateRealityArea(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -625,7 +621,7 @@ export async function updateTensionArea(
 
     if (error) {
       console.error("❌ Supabase update error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "saveFailed" };
     }
 
     await recordChartHistory(projectId, "tension", tensionId, "updated", "area_id", oldAreaId ?? null, areaId ?? null);
@@ -680,7 +676,7 @@ export async function updateTensionArea(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -736,7 +732,7 @@ export async function updateActionArea(
 
     if (error) {
       console.error("❌ Supabase update error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "saveFailed" };
     }
 
     const oldAreaId = actionMeta?.area_id ?? null;
@@ -792,7 +788,7 @@ export async function updateActionArea(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -826,7 +822,7 @@ export async function moveActionToTension(
 
     if (error) {
       console.error("❌ Supabase update error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "saveFailed" };
     }
 
     await recordChartHistory(chartId, "action", actionId, "moved", "tension_id", fromTensionId ?? null, tensionId ?? null);
@@ -836,7 +832,7 @@ export async function moveActionToTension(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -870,7 +866,7 @@ export async function createComment(actionId: string, content: string, chartId: 
     user = await getAuthenticatedUser();
   } catch (error) {
     console.error("[createComment] Auth Error:", error);
-    return { success: false, error: "認証が必要です" };
+    return { success: false, error: "authRequired" };
   }
   try {
     const { data: inserted, error } = await supabase
@@ -885,7 +881,7 @@ export async function createComment(actionId: string, content: string, chartId: 
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "saveFailed" };
     }
 
     if (inserted) {
@@ -897,7 +893,7 @@ export async function createComment(actionId: string, content: string, chartId: 
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -988,7 +984,7 @@ export async function updateComment(
       .eq("id", commentId);
     if (error) {
       console.error("❌ Supabase update error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "updateFailed" };
     }
     await recordChartHistory(chartId, "comment", commentId, "updated", "action", null, newContent);
     await revalidateChartPath(chartId);
@@ -997,7 +993,7 @@ export async function updateComment(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -1021,7 +1017,7 @@ export async function deleteComment(commentId: string, chartId: string) {
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to delete comment",
+      error: "deleteFailed",
     };
   }
 }
@@ -1060,7 +1056,7 @@ export async function createVisionComment(
     user = await getAuthenticatedUser();
   } catch (error) {
     console.error("[createVisionComment] Auth Error:", error);
-    return { success: false, error: "認証が必要です" };
+    return { success: false, error: "authRequired" };
   }
   try {
     const { data: inserted, error } = await supabase
@@ -1075,7 +1071,7 @@ export async function createVisionComment(
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "saveFailed" };
     }
 
     if (inserted) {
@@ -1087,7 +1083,7 @@ export async function createVisionComment(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -1106,7 +1102,7 @@ export async function updateVisionComment(
       .eq("id", commentId);
     if (error) {
       console.error("❌ Supabase update error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "updateFailed" };
     }
     await recordChartHistory(chartId, "comment", commentId, "updated", "vision", null, newContent);
     await revalidateChartPath(chartId);
@@ -1115,7 +1111,7 @@ export async function updateVisionComment(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -1139,7 +1135,7 @@ export async function deleteVisionComment(commentId: string, chartId: string) {
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to delete comment",
+      error: "deleteFailed",
     };
   }
 }
@@ -1178,7 +1174,7 @@ export async function createRealityComment(
     user = await getAuthenticatedUser();
   } catch (error) {
     console.error("[createRealityComment] Auth Error:", error);
-    return { success: false, error: "認証が必要です" };
+    return { success: false, error: "authRequired" };
   }
   try {
     const { data: inserted, error } = await supabase
@@ -1193,7 +1189,7 @@ export async function createRealityComment(
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "saveFailed" };
     }
 
     if (inserted) {
@@ -1205,7 +1201,7 @@ export async function createRealityComment(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -1224,7 +1220,7 @@ export async function updateRealityComment(
       .eq("id", commentId);
     if (error) {
       console.error("❌ Supabase update error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "updateFailed" };
     }
     await recordChartHistory(chartId, "comment", commentId, "updated", "reality", null, newContent);
     await revalidateChartPath(chartId);
@@ -1233,7 +1229,7 @@ export async function updateRealityComment(
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "error",
     };
   }
 }
@@ -1257,7 +1253,7 @@ export async function deleteRealityComment(commentId: string, chartId: string) {
     console.error("❌ Server action error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to delete comment",
+      error: "deleteFailed",
     };
   }
 }
@@ -1497,12 +1493,12 @@ export async function createSnapshot(
       user = await getAuthenticatedUser();
     } catch (error) {
       console.error("[createSnapshot] Auth Error:", error);
-      return { success: false, error: "認証が必要です" };
+      return { success: false, error: "authRequired" };
     }
 
     const snapshotData = await getChartDataRecursive(chartId, supabase, new Set());
     if (!snapshotData) {
-      return { success: false, error: "Chart not found" };
+      return { success: false, error: "chartNotFound" };
     }
 
     const { data: snapshot, error: insertError } = await supabase
@@ -1520,7 +1516,7 @@ export async function createSnapshot(
 
     if (insertError) {
       console.error("[createSnapshot] Error inserting snapshot:", insertError);
-      return { success: false, error: `Failed to save snapshot: ${insertError.message}` };
+      return { success: false, error: "saveFailed" };
     }
 
     revalidatePath(`/charts/${chartId}`);
@@ -1529,7 +1525,7 @@ export async function createSnapshot(
     console.error("[createSnapshot] Exception:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
+      error: "error",
     };
   }
 }

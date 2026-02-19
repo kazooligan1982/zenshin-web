@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import {
+  getOrCreateWorkspace,
+  getPreferredWorkspaceId,
+  getUserWorkspaces,
+} from "@/lib/workspace";
 
 export default async function ChartsRedirect() {
   const supabase = await createClient();
@@ -8,17 +13,16 @@ export default async function ChartsRedirect() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: members } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1);
+  const preferredId = await getPreferredWorkspaceId();
+  if (preferredId) {
+    redirect(`/workspaces/${preferredId}/charts`);
+  }
 
-  const workspaceId = members?.[0]?.workspace_id;
-  if (workspaceId) {
+  const workspaces = await getUserWorkspaces();
+  if (workspaces.length === 0) {
+    const workspaceId = await getOrCreateWorkspace();
     redirect(`/workspaces/${workspaceId}/charts`);
   }
 
-  redirect("/");
+  redirect("/workspaces");
 }

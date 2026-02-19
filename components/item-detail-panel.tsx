@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { X, Send, Clock, MessageSquare, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,6 +57,8 @@ export function ItemDetailPanel({
   onCommentCountChange,
   onAddHistory,
 }: ItemDetailPanelProps) {
+  const tEditor = useTranslations("editor");
+  const tAction = useTranslations("action");
   const [commentText, setCommentText] = useState("");
   const [updateMainContent, setUpdateMainContent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -217,10 +220,10 @@ export function ItemDetailPanel({
               {/* 現在の内容 */}
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                  現在の内容
+                  {tEditor("currentContent")}
                 </h3>
                 <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                  {itemContent || "（内容なし）"}
+                  {itemContent || tAction("noContent")}
                 </div>
               </div>
 
@@ -274,7 +277,7 @@ export function ItemDetailPanel({
                   </>
                 ) : history.length === 0 ? (
                   <div className="text-sm text-muted-foreground text-center py-8">
-                    履歴がありません
+                    {tAction("noHistory")}
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -294,7 +297,7 @@ export function ItemDetailPanel({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs font-medium text-muted-foreground">
-                                {item.type === "update" ? "更新" : "コメント"}
+                                {item.type === "update" ? tAction("update") : tAction("comments")}
                               </span>
                               <span className="text-xs text-muted-foreground">
                                 {formatDate(item.createdAt)}
@@ -328,7 +331,7 @@ export function ItemDetailPanel({
                 htmlFor="update-main"
                 className="text-sm font-medium cursor-pointer"
               >
-                メインのテキストも更新する
+                {tAction("updateMainContent")}
               </label>
             </div>
             <div className="flex gap-2">
@@ -337,8 +340,8 @@ export function ItemDetailPanel({
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder={
                   updateMainContent
-                    ? "更新内容を入力..."
-                    : "コメントを入力..."
+                    ? tAction("updateContentPlaceholder")
+                    : tAction("addComment")
                 }
                 className="min-h-[80px] resize-none"
                 onKeyDown={(e) => {

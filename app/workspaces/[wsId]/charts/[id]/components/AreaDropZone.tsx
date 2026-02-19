@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useDndContext, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { ReactNode } from "react";
@@ -28,6 +29,7 @@ export function AreaDropZone<T extends { id: string }>({
   topContent,
   showEmptyState = true,
 }: AreaDropZoneProps<T>) {
+  const t = useTranslations("editor");
   const { setNodeRef, isOver } = useDroppable({
     id: `${listType}-area-${areaId ?? "uncategorized"}`,
     data: {
@@ -64,7 +66,7 @@ export function AreaDropZone<T extends { id: string }>({
           />
         )}
         <h3 className="font-semibold text-sm text-gray-700">{areaName}</h3>
-        <span className="text-xs text-gray-400">({itemCount ?? items.length}件)</span>
+        <span className="text-xs text-gray-400">{t("itemCount", { count: itemCount ?? items.length })}</span>
       </div>
 
       {topContent}
@@ -84,7 +86,7 @@ export function AreaDropZone<T extends { id: string }>({
                       : "border-gray-300 text-gray-400"
                   )}
                 >
-                  <div className="text-sm font-medium">ここにドロップ</div>
+                  <div className="text-sm font-medium">{t("dropHere")}</div>
                 </div>
               )}
             </>

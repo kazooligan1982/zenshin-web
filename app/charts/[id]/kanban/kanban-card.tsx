@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ action, isDragging, onClick }: KanbanCardProps) {
+  const tc = useTranslations("common");
   const { attributes, listeners, setNodeRef, transform, isDragging: isDraggingState } = useDraggable({
     id: action.id,
   });
@@ -80,7 +82,7 @@ export function KanbanCard({ action, isDragging, onClick }: KanbanCardProps) {
           )}>
             {action.due_date
               ? format(new Date(action.due_date), "MM/dd", { locale: ja })
-              : "期限なし"}
+              : tc("noDate")}
           </span>
           {action.has_children && (
             <ChevronRight className="w-3 h-3 text-zenshin-navy/30" />
@@ -94,7 +96,10 @@ export function KanbanCard({ action, isDragging, onClick }: KanbanCardProps) {
             {action.assignee.charAt(0).toUpperCase()}
           </div>
         ) : (
-          <div className="w-5 h-5 rounded-full bg-zenshin-navy/5 shrink-0" />
+          <div
+            className="w-5 h-5 rounded-full bg-zenshin-navy/5 shrink-0"
+            title={tc("unassigned")}
+          />
         )}
       </div>
     </div>

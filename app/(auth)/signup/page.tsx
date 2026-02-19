@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { SignupForm } from "@/components/auth/signup-form";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const t = await getTranslations("auth");
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -13,7 +15,7 @@ export default function SignupPage() {
             beta
           </span>
         </div>
-        <p className="text-muted-foreground mt-2">アカウント作成</p>
+        <p className="text-muted-foreground mt-2">{t("signup")}</p>
       </div>
 
       <OAuthButtons />
@@ -23,16 +25,16 @@ export default function SignupPage() {
           <div className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-gray-50 px-2 text-muted-foreground">または</span>
+          <span className="bg-gray-50 px-2 text-muted-foreground">{t("or")}</span>
         </div>
       </div>
 
       <SignupForm />
 
       <p className="text-center text-sm text-muted-foreground">
-        すでにアカウントをお持ちの方は{" "}
+        {t("hasAccount")}{" "}
         <Link href="/login" className="text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium">
-          ログイン
+          {t("loginLink")}
         </Link>
       </p>
     </div>

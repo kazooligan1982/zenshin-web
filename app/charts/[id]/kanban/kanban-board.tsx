@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   DndContext,
   DragEndEvent,
@@ -13,7 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { updateActionStatus } from "../actions";
 import { KanbanCard } from "./kanban-card";
-import { ActionEditModal } from "./action-edit-modal";
+import { UnifiedDetailModal } from "@/components/unified-detail-modal/UnifiedDetailModal";
 import { TreeView } from "./tree-view";
 import { Input } from "@/components/ui/input";
 import {
@@ -66,14 +67,16 @@ interface KanbanBoardProps {
   currentUserId?: string;
   currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
   workspaceMembers?: WorkspaceMember[];
+  workspaceId?: string;
 }
 
-export function KanbanBoard({ projectId, currentUserId = "", currentUser = null, workspaceMembers = [] }: KanbanBoardProps) {
+export function KanbanBoard({ projectId, currentUserId = "", currentUser = null, workspaceMembers = [], workspaceId }: KanbanBoardProps) {
+  const t = useTranslations("kanban");
+  const tc = useTranslations("common");
   const [actions, setActions] = useState<Action[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [selectedAction, setSelectedAction] = useState<Action | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [unifiedModal, setUnifiedModal] = useState<{ itemType: "action"; itemId: string } | null>(null);
   const [viewMode, setViewMode] = useState<"kanban" | "tree">("kanban");
 
   // ドラッグセンサーの設定（8px以上動かさないとドラッグ開始しない）
@@ -197,7 +200,7 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
       if (!groups.has(key)) {
         groups.set(key, {
           id: key,
-          title: action.tension_title || "未分類",
+          title: action.tension_title || t("untagged"),
           vision_title: action.vision_title || null,
           area_name: action.tension_area_name || null,
           area_color: action.tension_area_color || null,
@@ -208,7 +211,7 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
     });
 
     return Array.from(groups.values());
-  }, [filteredActions]);
+  }, [filteredActions, t]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -249,16 +252,15 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
   };
 
   const handleCardClick = (action: Action) => {
-    setSelectedAction(action);
-    setIsEditModalOpen(true);
+    setUnifiedModal({ itemType: "action", itemId: action.id });
   };
 
   const columns = [
-    { id: "todo", title: "未着手", color: "bg-zenshin-navy/5", headerColor: "text-zenshin-navy", dotColor: "bg-zenshin-navy/40" },
-    { id: "in_progress", title: "進行中", color: "bg-blue-50/80", headerColor: "text-blue-600", dotColor: "bg-blue-500" },
-    { id: "done", title: "完了", color: "bg-emerald-50/80", headerColor: "text-emerald-600", dotColor: "bg-emerald-500" },
-    { id: "pending", title: "保留", color: "bg-amber-50/80", headerColor: "text-amber-600", dotColor: "bg-amber-500" },
-    { id: "canceled", title: "中止", color: "bg-zenshin-navy/5", headerColor: "text-zenshin-navy/50", dotColor: "bg-zenshin-navy/30" },
+    { id: "todo", titleKey: "todo" as const, color: "bg-zenshin-navy/5", headerColor: "text-zenshin-navy", dotColor: "bg-zenshin-navy/40" },
+    { id: "in_progress", titleKey: "inProgress" as const, color: "bg-blue-50/80", headerColor: "text-blue-600", dotColor: "bg-blue-500" },
+    { id: "done", titleKey: "done" as const, color: "bg-emerald-50/80", headerColor: "text-emerald-600", dotColor: "bg-emerald-500" },
+    { id: "pending", titleKey: "pending" as const, color: "bg-amber-50/80", headerColor: "text-amber-600", dotColor: "bg-amber-500" },
+    { id: "canceled", titleKey: "canceled" as const, color: "bg-zenshin-navy/5", headerColor: "text-zenshin-navy/50", dotColor: "bg-zenshin-navy/30" },
   ];
 
   const TensionSection = ({
@@ -383,9 +385,9 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
     <div className="flex flex-col h-full bg-zenshin-cream">
       {/* ヘッダー */}
       <div className="px-8 py-6 border-b bg-zenshin-cream">
-        <h1 className="text-2xl font-bold text-zenshin-navy mb-2">Views</h1>
+        <h1 className="text-2xl font-bold text-zenshin-navy mb-2">{t("viewsTitle")}</h1>
         <p className="text-sm text-zenshin-navy/50">
-          アクションを様々な視点で確認
+          {t("viewsDescription")}
         </p>
       </div>
 
@@ -399,11 +401,11 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
             <TabsList className="bg-zenshin-navy/5 p-0.5">
               <TabsTrigger value="kanban" className="flex items-center gap-2 text-zenshin-navy/60 data-[state=active]:bg-white data-[state=active]:text-zenshin-navy data-[state=active]:shadow-sm hover:text-zenshin-navy transition-colors">
                 <LayoutGrid className="w-4 h-4" />
-                カンバン
+                {t("kanbanTab")}
               </TabsTrigger>
               <TabsTrigger value="tree" className="flex items-center gap-2 text-zenshin-navy/60 data-[state=active]:bg-white data-[state=active]:text-zenshin-navy data-[state=active]:shadow-sm hover:text-zenshin-navy transition-colors">
                 <GitBranch className="w-4 h-4" />
-                ツリー
+                {t("treeTab")}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -412,25 +414,25 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
           <div className="flex items-center gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="h-7 w-auto gap-1 px-2.5 text-xs font-medium border-0 bg-transparent hover:bg-zenshin-navy/5 rounded-md shadow-none focus:ring-0 text-zenshin-navy/70">
-                  <SelectValue placeholder="ステータス" />
+                  <SelectValue placeholder={t("status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">ステータス</SelectItem>
-                  <SelectItem value="todo">未着手</SelectItem>
-                  <SelectItem value="in_progress">進行中</SelectItem>
-                  <SelectItem value="done">完了</SelectItem>
-                  <SelectItem value="pending">保留</SelectItem>
-                  <SelectItem value="canceled">中止</SelectItem>
+                  <SelectItem value="all">{t("status")}</SelectItem>
+                  <SelectItem value="todo">{t("todo")}</SelectItem>
+                  <SelectItem value="in_progress">{t("inProgress")}</SelectItem>
+                  <SelectItem value="done">{t("done")}</SelectItem>
+                  <SelectItem value="pending">{t("pending")}</SelectItem>
+                  <SelectItem value="canceled">{t("canceled")}</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                 <SelectTrigger className="h-7 w-auto gap-1 px-2.5 text-xs font-medium border-0 bg-transparent hover:bg-zenshin-navy/5 rounded-md shadow-none focus:ring-0 text-zenshin-navy/70">
-                  <SelectValue placeholder="担当者" />
+                  <SelectValue placeholder={t("assignee")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">担当者</SelectItem>
-                  <SelectItem value="unassigned">未割り当て</SelectItem>
+                  <SelectItem value="all">{t("assignee")}</SelectItem>
+                  <SelectItem value="unassigned">{tc("unassigned")}</SelectItem>
                   {assignees.map((a) => (
                     <SelectItem key={a} value={a}>
                       {a}
@@ -441,15 +443,15 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
 
               <Select value={dueDateFilter} onValueChange={setDueDateFilter}>
                 <SelectTrigger className="h-7 w-auto gap-1 px-2.5 text-xs font-medium border-0 bg-transparent hover:bg-zenshin-navy/5 rounded-md shadow-none focus:ring-0 text-zenshin-navy/70">
-                  <SelectValue placeholder="期限" />
+                  <SelectValue placeholder={t("dueDate")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">期限</SelectItem>
-                  <SelectItem value="overdue">期限切れ</SelectItem>
-                  <SelectItem value="today">今日</SelectItem>
-                  <SelectItem value="this_week">今週</SelectItem>
-                  <SelectItem value="this_month">今月</SelectItem>
-                  <SelectItem value="no_date">期限なし</SelectItem>
+                  <SelectItem value="all">{t("dueDate")}</SelectItem>
+                  <SelectItem value="overdue">{t("overdue")}</SelectItem>
+                  <SelectItem value="today">{t("today")}</SelectItem>
+                  <SelectItem value="this_week">{t("thisWeek")}</SelectItem>
+                  <SelectItem value="this_month">{t("thisMonth")}</SelectItem>
+                  <SelectItem value="no_date">{tc("noDate")}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -458,7 +460,7 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zenshin-navy/30" />
                 <Input
-                  placeholder="検索..."
+                  placeholder={t("searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-7 w-[160px] pl-7 text-xs border-0 bg-zenshin-navy/5 rounded-md shadow-none focus-visible:ring-1 focus-visible:ring-zenshin-navy/20 placeholder:text-zenshin-navy/30"
@@ -504,7 +506,7 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${column.dotColor}`} />
                           <h2 className={`font-semibold text-sm ${column.headerColor}`}>
-                            {column.title}
+                            {t(column.titleKey)}
                           </h2>
                           <span className="text-xs text-zenshin-navy/40 font-normal">
                             {totalActions}
@@ -522,7 +524,7 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
                           ))
                         ) : (
                           <div className="text-center text-zenshin-navy/40 text-sm py-8">
-                            No actions
+                            {t("noActions")}
                           </div>
                         )}
                       </div>
@@ -552,25 +554,22 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
             currentUserId={currentUserId}
             currentUser={currentUser}
             workspaceMembers={workspaceMembers}
+            workspaceId={workspaceId}
           />
         </TabsContent>
       </Tabs>
 
-      {/* 編集モーダル */}
-      <ActionEditModal
-        action={selectedAction}
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedAction(null);
-        }}
-        onSave={fetchActions}
-        onDataRefresh={fetchActions}
-        projectId={projectId}
-        currentUserId={currentUserId}
-        currentUser={currentUser}
-        workspaceMembers={workspaceMembers}
-      />
+      {/* UnifiedDetailModal（Phase 1: 骨格） */}
+      {unifiedModal && (
+        <UnifiedDetailModal
+          isOpen={true}
+          onClose={() => setUnifiedModal(null)}
+          itemType={unifiedModal.itemType}
+          itemId={unifiedModal.itemId}
+          chartId={projectId}
+          workspaceId={workspaceId}
+        />
+      )}
     </div>
   );
 }

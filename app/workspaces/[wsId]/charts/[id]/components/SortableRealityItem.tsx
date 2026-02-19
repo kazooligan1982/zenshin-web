@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, FileText, Tag, Plus, Trash2 } from "lucide-react";
@@ -52,6 +53,9 @@ export function SortableRealityItem({
   } | null;
   disabled?: boolean;
 }) {
+  const t = useTranslations("editor");
+  const tc = useTranslations("common");
+  const tTags = useTranslations("tags");
   const area = areas.find((a) => a.id === reality.area_id);
   const realityInput = useItemInput({
     initialValue: reality.content || "",
@@ -113,7 +117,7 @@ export function SortableRealityItem({
       <div className="flex-1 min-w-0 overflow-hidden">
         <Input
           {...realityInput.bind}
-          placeholder="今の現実を書く..."
+          placeholder={t("realityCurrentPlaceholder")}
           className="text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable"
           disabled={reality.isLocked}
           onKeyDown={(e) => {
@@ -137,7 +141,7 @@ export function SortableRealityItem({
           reality.created_by === currentUser.id && (
             <div
               className="flex items-center justify-center rounded-md p-1"
-              title={`記述者: ${currentUser.name || currentUser.email}`}
+              title={t("authorLabel", { name: currentUser.name || currentUser.email })}
             >
               {currentUser.avatar_url ? (
                 <img
@@ -163,7 +167,7 @@ export function SortableRealityItem({
               e.stopPropagation();
               onOpenDetail(reality);
             }}
-            title="詳細/履歴"
+            title={t("detailHistory")}
           >
             <FileText size={16} />
           </Button>
@@ -180,7 +184,7 @@ export function SortableRealityItem({
               variant="ghost"
               className={`${ICON_BTN_CLASS} opacity-0 group-hover:opacity-100 transition-opacity`}
               onClick={(e) => e.stopPropagation()}
-              title="タグを変更"
+              title={t("changeTag")}
             >
               <Tag size={16} />
             </Button>
@@ -206,7 +210,7 @@ export function SortableRealityItem({
                 className="w-full justify-start text-xs h-7 text-muted-foreground"
                 onClick={() => handleUpdateReality(reality.id, "areaId", null)}
               >
-                未分類
+                {tTags("untagged")}
               </Button>
               {onOpenAreaSettings && (
                 <div className="border-t border-gray-100 mt-1 pt-1">
@@ -218,7 +222,7 @@ export function SortableRealityItem({
                     }}
                   >
                     <Plus className="w-3 h-3" />
-                    新しいタグを追加
+                    {tTags("addNew")}
                   </button>
                 </div>
               )}
@@ -234,7 +238,7 @@ export function SortableRealityItem({
               e.stopPropagation();
               handleDeleteReality(reality.id);
             }}
-            title="削除"
+            title={tc("delete")}
           >
             <Trash2 size={16} />
           </Button>

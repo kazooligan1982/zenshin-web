@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ import {
   LogOut,
   ChevronsUpDown,
 } from "lucide-react";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +31,7 @@ type UserMenuProps = {
 
 export function UserMenu({ expanded, onOpenChange }: UserMenuProps) {
   const router = useRouter();
+  const t = useTranslations("account");
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -111,7 +114,7 @@ export function UserMenu({ expanded, onOpenChange }: UserMenuProps) {
             )}
           >
             <span className="text-sm font-medium text-white truncate w-full">
-              {user.user_metadata?.full_name || "ユーザー"}
+              {user.user_metadata?.full_name || t("user")}
             </span>
             <span className="text-xs text-gray-400 truncate w-full">
               {user.email}
@@ -128,7 +131,7 @@ export function UserMenu({ expanded, onOpenChange }: UserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium">
-              {user.user_metadata?.full_name || "ユーザー"}
+              {user.user_metadata?.full_name || t("user")}
             </p>
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
@@ -142,7 +145,7 @@ export function UserMenu({ expanded, onOpenChange }: UserMenuProps) {
             className="flex items-center gap-2 cursor-pointer"
           >
             <User className="w-4 h-4" />
-            プロフィール
+            {t("profile")}
           </Link>
         </DropdownMenuItem>
 
@@ -152,18 +155,25 @@ export function UserMenu({ expanded, onOpenChange }: UserMenuProps) {
             className="flex items-center gap-2 cursor-pointer"
           >
             <Settings className="w-4 h-4" />
-            アカウント設定
+            {t("settings")}
           </Link>
         </DropdownMenuItem>
+
+        <div className="px-2 py-1.5">
+          <LocaleSwitcher
+            expanded
+            className="flex items-center gap-2 cursor-pointer w-full justify-start text-sm text-foreground hover:text-foreground"
+          />
+        </div>
 
         <DropdownMenuItem
           disabled
           className="flex items-center gap-2 opacity-50"
         >
           <CreditCard className="w-4 h-4" />
-          プラン・お支払い
+          {t("plan")}
           <span className="ml-auto text-xs bg-gray-200 px-1.5 py-0.5 rounded">
-            soon
+            {t("soon")}
           </span>
         </DropdownMenuItem>
 
@@ -174,7 +184,7 @@ export function UserMenu({ expanded, onOpenChange }: UserMenuProps) {
           className="flex items-center gap-2 text-red-600 focus:text-red-600 cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
-          ログアウト
+          {t("logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

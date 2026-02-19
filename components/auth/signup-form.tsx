@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { toast } from "sonner";
 import { Mail } from "lucide-react";
 
 export function SignupForm() {
+  const t = useTranslations("auth");
+  const tt = useTranslations("toast");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,12 +22,12 @@ export function SignupForm() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("パスワードが一致しません", { duration: 5000 });
+      toast.error(tt("passwordMismatch"), { duration: 5000 });
       return;
     }
 
     if (password.length < 6) {
-      toast.error("パスワードは6文字以上で入力してください", { duration: 5000 });
+      toast.error(tt("passwordMinLength"), { duration: 5000 });
       return;
     }
 
@@ -42,7 +45,7 @@ export function SignupForm() {
 
     if (error) {
       console.error("Signup error:", error);
-      toast.error("サインアップに失敗しました: " + error.message, { duration: 5000 });
+      toast.error(tt("signupFailed") + ": " + error.message, { duration: 5000 });
       setIsLoading(false);
       return;
     }
@@ -57,17 +60,16 @@ export function SignupForm() {
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
           <Mail className="w-8 h-8 text-green-600" />
         </div>
-        <h2 className="text-xl font-bold">確認メールを送信しました</h2>
+        <h2 className="text-xl font-bold">{t("confirmEmailSent")}</h2>
         <p className="text-muted-foreground">
-          <span className="font-medium text-foreground">{email}</span> 宛に
-          確認メールを送信しました。
+          {t("confirmEmailSentTo", { email })}
         </p>
         <p className="text-sm text-muted-foreground">
-          メール内のリンクをクリックして、アカウントを有効化してください。
+          {t("confirmEmailInstruction")}
         </p>
         <div className="pt-4 border-t">
           <p className="text-xs text-muted-foreground">
-            メールが届かない場合は、迷惑メールフォルダをご確認ください。
+            {t("checkSpamFolder")}
           </p>
         </div>
       </div>
@@ -77,22 +79,22 @@ export function SignupForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">メールアドレス</Label>
+        <Label htmlFor="email">{t("email")}</Label>
         <Input
           id="email"
           type="email"
-          placeholder="you@example.com"
+          placeholder={t("emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">パスワード</Label>
+        <Label htmlFor="password">{t("password")}</Label>
         <Input
           id="password"
           type="password"
-          placeholder="6文字以上"
+          placeholder={t("passwordMinLength")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -100,18 +102,18 @@ export function SignupForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword">パスワード（確認）</Label>
+        <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
         <Input
           id="confirmPassword"
           type="password"
-          placeholder="もう一度入力"
+          placeholder={t("confirmPasswordPlaceholder")}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
         />
       </div>
       <Button type="submit" className="w-full bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm" disabled={isLoading}>
-        {isLoading ? "作成中..." : "アカウント作成"}
+        {isLoading ? t("creating") : t("signup")}
       </Button>
     </form>
   );

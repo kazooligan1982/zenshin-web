@@ -1,5 +1,6 @@
 import type { Tension, TensionStatus, ActionPlan, VisionItem, RealityItem, Area } from "@/types/chart";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   addTension,
@@ -34,6 +35,8 @@ export function useTensionHandlers({
   areas: Area[];
   router: ReturnType<typeof useRouter>;
 }) {
+  const tt = useTranslations("toast");
+  const tTags = useTranslations("tags");
   const handleAddTension = async (title: string, areaId?: string | null) => {
     if (!title.trim()) return;
     const titleToAdd = title.trim();
@@ -58,6 +61,7 @@ export function useTensionHandlers({
         setTensions((prev) =>
           prev.map((t) => (t.id === tempId ? newTension : t))
         );
+        toast.success(tt("tensionCreated"), { duration: 3000 });
       } else {
         // 失敗: ロールバック
         setTensions((prev) => prev.filter((t) => t.id !== tempId));
@@ -85,10 +89,31 @@ export function useTensionHandlers({
       const success = await updateTensionItem(tensionId, chartId, field, value);
       if (success) {
         if (field === "status") {
+          const prevStatus = (previousState.find((t) => t.id === tensionId)?.status ?? "active") as TensionStatus;
           if (value === "resolved") {
-            toast.success("Tensionを完了にしました", { duration: 3000 });
+            toast.success(tt("tensionCompleted"), {
+              duration: 15000,
+              action: {
+                label: tt("undo"),
+                onClick: async () => {
+                  setTensions(previousState);
+                  await updateTensionItem(tensionId, chartId, "status", prevStatus);
+                  router.refresh();
+                },
+              },
+            });
           } else if (value === "active") {
-            toast.success("Tensionを再開しました", { duration: 3000 });
+            toast.success(tt("tensionReopened"), {
+              duration: 15000,
+              action: {
+                label: tt("undo"),
+                onClick: async () => {
+                  setTensions(previousState);
+                  await updateTensionItem(tensionId, chartId, "status", prevStatus);
+                  router.refresh();
+                },
+              },
+            });
           }
         }
         router.refresh();
@@ -117,16 +142,27 @@ export function useTensionHandlers({
       if (result.success) {
         const areaName =
           targetAreaId !== null ? areas.find((a) => a.id === targetAreaId)?.name : "未分類";
-        toast.success(`${areaName ?? "未分類"} に移動しました`, { duration: 3000 });
+        const prevAreaId = tension.area_id;
+        toast.success(tt("movedToArea", { areaName: areaName ?? tTags("untagged") }), {
+          duration: 15000,
+          action: {
+            label: tt("undo"),
+            onClick: async () => {
+              setTensions(previousState);
+              await updateTensionArea(tensionId, prevAreaId ?? null, chartId, true);
+              router.refresh();
+            },
+          },
+        });
         router.refresh();
       } else {
         setTensions(previousState);
-        toast.error("移動に失敗しました", { duration: 5000 });
+        toast.error(tt("moveFailed"), { duration: 5000 });
       }
     } catch (error) {
       console.error("[handleMoveTensionArea] エラー:", error);
       setTensions(previousState);
-      toast.error("移動に失敗しました", { duration: 5000 });
+      toast.error(tt("moveFailed"), { duration: 5000 });
     }
   };
 
@@ -152,7 +188,7 @@ export function useTensionHandlers({
       } else {
         // 削除失敗時は元に戻す
         setTensions(originalTensions);
-        toast.error("削除に失敗しました", { duration: 5000 });
+        toast.error(tt("deleteFailed"), { duration: 5000 });
       }
       setPendingDeletions((prev: Record<string, any>) => {
         const next = { ...prev };
@@ -171,10 +207,10 @@ export function useTensionHandlers({
       },
     }));
 
-    toast.success("Tensionを削除しました", {
+    toast.success(tt("tensionDeleted"), {
       duration: 15000,
       action: {
-        label: "元に戻す",
+        label: tt("undo"),
         onClick: () => {
           clearTimeout(timeoutId);
           setTensions(originalTensions);

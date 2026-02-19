@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Mention from "@tiptap/extension-mention";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Send } from "lucide-react";
+import { toast } from "sonner";
 import { createComment, createRealityComment, createVisionComment } from "@/app/charts/[id]/actions";
 import { searchWorkspaceItems } from "@/lib/workspace-search";
 import type { TimelineComment } from "@/types/database";
@@ -159,6 +161,9 @@ export function CommentInput({
   onPersisted,
   onFailed,
 }: CommentInputProps) {
+  const t = useTranslations("timeline");
+  const tToast = useTranslations("toast");
+  const commentPlaceholder = t("commentPlaceholder");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
   const handleSubmitRef = useRef<() => Promise<void>>(() => Promise.resolve());
@@ -178,8 +183,7 @@ export function CommentInput({
         heading: false,
       }),
       Placeholder.configure({
-        placeholder:
-          "コメントを入力... (Cmd+Enterで送信、Markdownも使えます、@でメンション)",
+        placeholder: commentPlaceholder,
       }),
       Mention.configure({
         HTMLAttributes: {
@@ -216,7 +220,7 @@ export function CommentInput({
         return false;
       },
     },
-  }, [workspaceId, mentionSuggestion]);
+  }, [workspaceId, mentionSuggestion, commentPlaceholder]);
 
   const handleSubmit = async () => {
     if (!editor?.getHTML || editor.isEmpty || isSubmitting) return;
@@ -266,7 +270,7 @@ export function CommentInput({
     } else {
       onFailed?.(tempId);
       editor.commands.setContent(htmlContent);
-      alert("コメントの投稿に失敗しました");
+      toast.error(tToast("createFailed"), { duration: 5000 });
     }
     setTimeout(() => editor.commands.focus(), 0);
   };
@@ -284,7 +288,7 @@ export function CommentInput({
         onClick={() => void handleSubmit()}
         disabled={isEmpty || isSubmitting}
         className="shrink-0 px-4 bg-zenshin-teal text-white rounded-lg hover:bg-zenshin-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-        title="送信 (Cmd+Enter)"
+        title={t("sendTitle")}
       >
         <Send className="h-4 w-4" />
       </button>

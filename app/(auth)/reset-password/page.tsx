@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +13,8 @@ import { toast } from "sonner";
 const MIN_PASSWORD_LENGTH = 8;
 
 export default function ResetPasswordPage() {
+  const t = useTranslations("auth");
+  const tt = useTranslations("toast");
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -69,11 +72,11 @@ export default function ResetPasswordPage() {
     setError("");
 
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setError("パスワードは8文字以上で入力してください");
+      setError(t("passwordMinLength8Error"));
       return;
     }
     if (password !== confirmPassword) {
-      setError("パスワードが一致しません");
+      setError(tt("passwordMismatch"));
       return;
     }
 
@@ -84,17 +87,17 @@ export default function ResetPasswordPage() {
 
       if (updateError) {
         console.error("Password update error:", updateError);
-        toast.error("パスワードの変更に失敗しました: " + updateError.message, { duration: 5000 });
+        toast.error(tt("passwordChangeFailed") + ": " + updateError.message, { duration: 5000 });
         setError(updateError.message);
         return;
       }
 
-      toast.success("パスワードを変更しました", { duration: 3000 });
+      toast.success(tt("passwordChanged"), { duration: 3000 });
       router.push("/login");
       router.refresh();
     } catch (err) {
       console.error("Password update error:", err);
-      const message = err instanceof Error ? err.message : "パスワードの変更に失敗しました";
+      const message = err instanceof Error ? err.message : tt("passwordChangeFailed");
       toast.error(message, { duration: 5000 });
       setError(message);
     } finally {
@@ -114,7 +117,7 @@ export default function ResetPasswordPage() {
             </span>
           </div>
         </div>
-        <p className="text-center text-sm text-muted-foreground">確認中...</p>
+        <p className="text-center text-sm text-muted-foreground">{t("checking")}</p>
       </div>
     );
   }
@@ -134,8 +137,8 @@ export default function ResetPasswordPage() {
         <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-center">
           <p className="text-sm text-destructive font-medium">
             {authStatus === "invalid_link"
-              ? "無効または期限切れのリセットリンクです。再度パスワードリセットをリクエストしてください。"
-              : "このページに直接アクセスすることはできません。パスワードリセットのメールを送信してください。"}
+              ? t("invalidLink")
+              : t("directAccess")}
           </p>
         </div>
         <div className="flex flex-col gap-2 text-center">
@@ -143,13 +146,13 @@ export default function ResetPasswordPage() {
             href="/forgot-password"
             className="text-sm text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium"
           >
-            パスワードリセットをリクエスト
+            {t("requestReset")}
           </Link>
           <Link
             href="/login"
             className="text-sm text-muted-foreground hover:underline"
           >
-            ログインに戻る
+            {t("backToLogin")}
           </Link>
         </div>
       </div>
@@ -166,16 +169,16 @@ export default function ResetPasswordPage() {
             beta
           </span>
         </div>
-        <p className="text-muted-foreground mt-2">新しいパスワードを設定</p>
+        <p className="text-muted-foreground mt-2">{t("newPasswordTitle")}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="password">新しいパスワード</Label>
+          <Label htmlFor="password">{t("newPassword")}</Label>
           <Input
             id="password"
             type="password"
-            placeholder="8文字以上"
+            placeholder={t("passwordMinLength8")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={MIN_PASSWORD_LENGTH}
@@ -183,11 +186,11 @@ export default function ResetPasswordPage() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">パスワード（確認）</Label>
+          <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
           <Input
             id="confirmPassword"
             type="password"
-            placeholder="もう一度入力"
+            placeholder={t("confirmPasswordPlaceholder")}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={MIN_PASSWORD_LENGTH}
@@ -200,13 +203,13 @@ export default function ResetPasswordPage() {
           className="w-full bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm"
           disabled={isLoading}
         >
-          {isLoading ? "変更中..." : "パスワードを変更"}
+          {isLoading ? t("changing") : t("changePassword")}
         </Button>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
         <Link href="/login" className="text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium">
-          ログインに戻る
+          {t("backToLogin")}
         </Link>
       </p>
     </div>

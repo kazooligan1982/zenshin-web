@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,19 +21,24 @@ export const metadata: Metadata = {
   description: "理想(DO)と現実(CR)のギャップを埋め、前に進むためのツール",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="ja">
+    <html lang={locale}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TooltipProvider delayDuration={300}>
-          <main className="min-h-screen bg-background">{children}</main>
-        </TooltipProvider>
+        <NextIntlClientProvider messages={messages}>
+          <TooltipProvider delayDuration={300}>
+            <main className="min-h-screen bg-background">{children}</main>
+          </TooltipProvider>
+        </NextIntlClientProvider>
         <Toaster />
       </body>
     </html>

@@ -1,5 +1,6 @@
 import type { Tension, ActionPlan } from "@/types/chart";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   addActionPlan,
@@ -38,6 +39,7 @@ export function useActionHandlers({
   setTelescopingActionId: React.Dispatch<React.SetStateAction<string | null>>;
   router: ReturnType<typeof useRouter>;
 }) {
+  const tt = useTranslations("toast");
   const handleAddActionPlan = async (
     tensionId: string | null,
     title: string,
@@ -181,7 +183,7 @@ export function useActionHandlers({
         removeFromTension
       );
       if (!result.success) {
-        toast.error("移動に失敗しました", { duration: 5000 });
+        toast.error(tt("moveFailed"), { duration: 5000 });
       }
       return;
     }
@@ -270,7 +272,7 @@ export function useActionHandlers({
         // 削除失敗時は元に戻す
         setTensions(originalTensions);
         setLooseActions(originalLooseActions);
-        toast.error("削除に失敗しました", { duration: 5000 });
+        toast.error(tt("deleteFailed"), { duration: 5000 });
       }
       setPendingDeletions((prev: Record<string, any>) => {
         const next = { ...prev };
@@ -290,10 +292,10 @@ export function useActionHandlers({
       },
     }));
 
-    toast.success("Actionを削除しました", {
+    toast.success(tt("actionDeleted"), {
       duration: 15000,
       action: {
-        label: "元に戻す",
+        label: tt("undo"),
         onClick: () => {
           clearTimeout(timeoutId);
           setTensions(originalTensions);

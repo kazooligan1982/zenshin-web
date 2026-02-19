@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy, Check, Users, Crown, User, X, Loader2, Shield, Eye, Stethoscope, Mail } from "lucide-react";
@@ -28,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { canGenerateInviteLink, canInviteMembers, canRemoveMembers, ROLE_LABELS } from "@/lib/permissions";
+import { canGenerateInviteLink, canInviteMembers, canRemoveMembers } from "@/lib/permissions";
 
 interface Member {
   id: string;
@@ -60,6 +61,9 @@ export function MembersPageContent({
   initialMembers,
   initialPendingInvitations = [],
 }: MembersPageContentProps) {
+  const tMembers = useTranslations("members");
+  const tc = useTranslations("common");
+  const tt = useTranslations("toast");
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>(initialPendingInvitations);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
@@ -78,9 +82,9 @@ export function MembersPageContent({
     const result = await createInvitation(workspaceId);
     if (result) {
       setInviteUrl(result.url);
-      toast.success("招待リンクを生成しました", { duration: 3000 });
+      toast.success(tt("inviteLinkGenerated"), { duration: 3000 });
     } else {
-      toast.error("招待リンクの生成に失敗しました", { duration: 5000 });
+      toast.error(tt("inviteLinkFailed"), { duration: 5000 });
     }
     setIsGenerating(false);
   };
@@ -89,7 +93,7 @@ export function MembersPageContent({
     if (!inviteUrl) return;
     await navigator.clipboard.writeText(inviteUrl);
     setIsCopied(true);
-    toast.success("コピーしました", { duration: 3000 });
+    toast.success(tt("copied"), { duration: 3000 });
     setTimeout(() => setIsCopied(false), 2000);
   };
 
@@ -102,9 +106,9 @@ export function MembersPageContent({
 
     if (result.success) {
       setMembers((prev) => prev.filter((m) => m.id !== member.id));
-      toast.success("メンバーを削除しました", { duration: 3000 });
+      toast.success(tt("memberRemoved"), { duration: 3000 });
     } else {
-      toast.error(result.error || "削除に失敗しました", { duration: 5000 });
+      toast.error(tt(result.error ?? "deleteFailed"), { duration: 5000 });
     }
     setRemovingId(null);
   };
@@ -118,12 +122,12 @@ export function MembersPageContent({
     setIsSendingInvite(true);
     try {
       await inviteMember(workspaceId, inviteEmail.trim(), inviteRole);
-      toast.success("招待メールを送信しました", { duration: 3000 });
+      toast.success(tt("inviteEmailSent"), { duration: 3000 });
       setInviteEmail("");
       const updated = await getPendingInvitations(workspaceId);
       setPendingInvitations(updated);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "招待の送信に失敗しました", { duration: 5000 });
+      toast.error(error instanceof Error ? error.message : tt("inviteSendFailed"), { duration: 5000 });
     } finally {
       setIsSendingInvite(false);
     }
@@ -133,11 +137,11 @@ export function MembersPageContent({
     setRevokingId(invitationId);
     try {
       await revokeInvitation(workspaceId, invitationId);
-      toast.success("招待を取り消しました", { duration: 3000 });
+      toast.success(tt("inviteRevoked"), { duration: 3000 });
       const updated = await getPendingInvitations(workspaceId);
       setPendingInvitations(updated);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "取り消しに失敗しました", { duration: 5000 });
+      toast.error(error instanceof Error ? error.message : tt("inviteRevokeFailed"), { duration: 5000 });
     } finally {
       setRevokingId(null);
     }
@@ -152,14 +156,18 @@ export function MembersPageContent({
   };
 
   const getRoleLabel = (role: string) => {
-    return ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? "メンバー";
+    const key = role as "owner" | "consultant" | "editor" | "viewer";
+    if (["owner", "consultant", "editor", "viewer"].includes(role)) {
+      return tMembers(`role.${key}`);
+    }
+    return tMembers("role.member");
   };
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-6">
       <div className="flex items-center gap-3 mb-8">
         <Users className="w-7 h-7 text-zenshin-navy/40" />
-        <h1 className="text-2xl font-bold text-zenshin-navy">メンバー</h1>
+        <h1 className="text-2xl font-bold text-zenshin-navy">{tMembers("title")}</h1>
       </div>
 
       {/* メールで招待（ownerのみ） */}
@@ -167,10 +175,10 @@ export function MembersPageContent({
         <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6 mb-6">
           <h2 className="text-lg font-semibold text-zenshin-navy mb-1 flex items-center gap-2">
             <Mail className="h-5 w-5 text-zenshin-navy/40" />
-            メールで招待
+            {tMembers("inviteByEmailTitle")}
           </h2>
           <p className="text-sm text-zenshin-navy/40 mb-4">
-            メールアドレスを入力して、ワークスペースにメンバーを招待します。
+            {tMembers("inviteByEmailDesc")}
           </p>
           <div className="flex flex-wrap gap-2 items-end">
             <div className="flex-1 min-w-[200px]">
@@ -187,9 +195,9 @@ export function MembersPageContent({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="consultant">コンサルタント</SelectItem>
-                <SelectItem value="editor">編集者</SelectItem>
-                <SelectItem value="viewer">閲覧者</SelectItem>
+                <SelectItem value="consultant">{tMembers("role.consultant")}</SelectItem>
+                <SelectItem value="editor">{tMembers("role.editor")}</SelectItem>
+                <SelectItem value="viewer">{tMembers("role.viewer")}</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -197,7 +205,7 @@ export function MembersPageContent({
               disabled={!inviteEmail.trim() || isSendingInvite}
               className="bg-zenshin-orange hover:bg-zenshin-orange/90 text-white"
             >
-              {isSendingInvite ? "送信中..." : "招待を送信"}
+              {isSendingInvite ? tMembers("sending") : tMembers("sendInvite")}
             </Button>
           </div>
         </div>
@@ -206,9 +214,9 @@ export function MembersPageContent({
       {/* 招待リンク */}
       {canShowInviteLink && (
         <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-zenshin-navy mb-1">招待リンク</h2>
+          <h2 className="text-lg font-semibold text-zenshin-navy mb-1">{tMembers("inviteLinkTitle")}</h2>
           <p className="text-sm text-zenshin-navy/40 mb-4">
-            招待リンクを共有して、ワークスペースにメンバーを追加できます。
+            {tMembers("inviteLinkDesc")}
           </p>
           {inviteUrl ? (
             <div className="flex gap-2">
@@ -227,7 +235,7 @@ export function MembersPageContent({
               disabled={isGenerating}
               className="bg-zenshin-orange hover:bg-zenshin-orange/90 text-white"
             >
-              {isGenerating ? "生成中..." : "招待リンクを生成"}
+              {isGenerating ? tMembers("generating") : tMembers("inviteLink")}
             </Button>
           )}
         </div>
@@ -236,7 +244,7 @@ export function MembersPageContent({
       {/* 保留中の招待 */}
       {canShowEmailInvite && pendingInvitations.length > 0 && (
         <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-zenshin-navy mb-4">保留中の招待</h2>
+          <h2 className="text-lg font-semibold text-zenshin-navy mb-4">{tMembers("pendingInvites")}</h2>
           <div className="space-y-2">
             {pendingInvitations.map((inv) => (
               <div
@@ -246,7 +254,7 @@ export function MembersPageContent({
                 <div>
                   <span className="font-medium text-zenshin-navy">{inv.email}</span>
                   <span className="text-sm text-zenshin-navy/40 ml-2">
-                    （{ROLE_LABELS[inv.role as keyof typeof ROLE_LABELS] ?? inv.role}）
+                    （{getRoleLabel(inv.role)}）
                   </span>
                 </div>
                 <Button
@@ -259,7 +267,7 @@ export function MembersPageContent({
                   {revokingId === inv.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "取り消す"
+                    tMembers("revoke")
                   )}
                 </Button>
               </div>
@@ -272,7 +280,7 @@ export function MembersPageContent({
       <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6">
         <h2 className="text-lg font-semibold text-zenshin-navy flex items-center gap-2 mb-4">
           <Users className="h-5 w-5 text-zenshin-navy/40" />
-          メンバー一覧（{members.length}人）
+          {tMembers("memberList")}（{tMembers("memberCount", { count: members.length })}）
         </h2>
         <div className="space-y-1">
           {members.map((member) => {
@@ -347,22 +355,21 @@ export function MembersPageContent({
         <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
-              メンバーを削除しますか？
+              {tMembers("removeConfirm")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-gray-500">
-              {memberToRemove?.name || memberToRemove?.email}
-              をワークスペースから削除します。この操作は取り消せません。
+              {tMembers("removeConfirmDesc", { name: (memberToRemove?.name || memberToRemove?.email) ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
-              キャンセル
+              {tc("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="rounded-lg px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600"
               onClick={handleRemoveMember}
             >
-              削除する
+              {tc("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

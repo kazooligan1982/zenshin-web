@@ -1,5 +1,6 @@
 "use client";
 import { useState, Suspense } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ type OAuthButtonsProps = {
 };
 
 function OAuthButtonsInner({ redirectTo: propRedirectTo }: OAuthButtonsProps) {
+  const t = useTranslations("auth");
+  const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
 
@@ -26,6 +29,7 @@ function OAuthButtonsInner({ redirectTo: propRedirectTo }: OAuthButtonsProps) {
         redirectTo: callbackUrl,
         queryParams: {
           prompt: "select_account",
+          hl: locale,
         },
       },
     });
@@ -43,21 +47,24 @@ function OAuthButtonsInner({ redirectTo: propRedirectTo }: OAuthButtonsProps) {
       disabled={isLoading}
     >
       <Chrome className="w-5 h-5 mr-2" />
-      {isLoading ? "接続中..." : "Google でログイン"}
+      {isLoading ? t("connecting") : t("googleLogin")}
+    </Button>
+  );
+}
+
+function OAuthButtonsFallback() {
+  const t = useTranslations("auth");
+  return (
+    <Button variant="outline" className="w-full border-zenshin-navy/25 text-zenshin-navy/70" disabled>
+      <Chrome className="w-5 h-5 mr-2" />
+      {t("loading")}
     </Button>
   );
 }
 
 export function OAuthButtons(props: OAuthButtonsProps) {
   return (
-    <Suspense
-      fallback={
-        <Button variant="outline" className="w-full border-zenshin-navy/25 text-zenshin-navy/70" disabled>
-          <Chrome className="w-5 h-5 mr-2" />
-          読み込み中...
-        </Button>
-      }
-    >
+    <Suspense fallback={<OAuthButtonsFallback />}>
       <OAuthButtonsInner {...props} />
     </Suspense>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import {
   FolderOpen,
   Target,
@@ -27,14 +28,16 @@ export default async function DashboardPage({
   const to = resolvedParams?.to ?? null;
   const { stats, staleCharts, upcomingDeadlines, availableCharts } =
     await getDashboardData(wsId, selectedChartId, period, from, to);
+  const t = await getTranslations("dashboard");
+  const tKanban = await getTranslations("kanban");
 
   return (
     <div className="py-8 px-6 lg:px-10 min-h-screen">
       {/* ヘッダー */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-zenshin-navy">ダッシュボード</h1>
-          <p className="text-sm text-zenshin-navy/40 mt-1">チャートの状況を俯瞰する</p>
+          <h1 className="text-2xl font-bold text-zenshin-navy">{t("title")}</h1>
+          <p className="text-sm text-zenshin-navy/40 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-4 flex-wrap">
           <DashboardPeriodFilter period={period} from={from} to={to} />
@@ -49,7 +52,7 @@ export default async function DashboardPage({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-zenshin-navy/8 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zenshin-navy/50">チャート数</span>
+            <span className="text-sm text-zenshin-navy/50">{t("chartCount")}</span>
             <FolderOpen className="w-4 h-4 text-zenshin-navy/30" />
           </div>
           <div className="text-3xl font-bold text-zenshin-navy">{stats.totalCharts}</div>
@@ -57,7 +60,7 @@ export default async function DashboardPage({
 
         <div className="bg-white rounded-xl border border-zenshin-navy/8 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zenshin-navy/50">アクション数</span>
+            <span className="text-sm text-zenshin-navy/50">{t("actionCount")}</span>
             <Target className="w-4 h-4 text-zenshin-teal/60" />
           </div>
           <div className="text-3xl font-bold text-zenshin-navy">{stats.totalActions}</div>
@@ -65,7 +68,7 @@ export default async function DashboardPage({
 
         <div className="bg-white rounded-xl border border-zenshin-navy/8 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zenshin-navy/50">完了</span>
+            <span className="text-sm text-zenshin-navy/50">{t("completed")}</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-3xl font-bold text-emerald-600">{stats.completedActions}</div>
@@ -73,7 +76,7 @@ export default async function DashboardPage({
 
         <div className="bg-white rounded-xl border border-zenshin-navy/8 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-zenshin-navy/50">完了率</span>
+            <span className="text-sm text-zenshin-navy/50">{t("completionRate")}</span>
             <TrendingUp className="w-4 h-4 text-zenshin-orange/60" />
           </div>
           <div className="text-3xl font-bold text-zenshin-navy">{stats.completionRate}%</div>
@@ -88,13 +91,13 @@ export default async function DashboardPage({
 
       {/* ステータス分布 */}
       <div className="bg-white rounded-xl border border-zenshin-navy/8 p-5 mb-8">
-        <h2 className="text-sm font-medium text-zenshin-navy/50 mb-4">ステータス分布</h2>
+        <h2 className="text-sm font-medium text-zenshin-navy/50 mb-4">{t("statusDistribution")}</h2>
         <div className="flex gap-3 flex-wrap">
-          <StatusBadge label="未着手" count={stats.statusDistribution.todo} color="bg-zenshin-navy/8 text-zenshin-navy" />
-          <StatusBadge label="進行中" count={stats.statusDistribution.in_progress} color="bg-blue-50 text-blue-600" />
-          <StatusBadge label="完了" count={stats.statusDistribution.done} color="bg-emerald-50 text-emerald-600" />
-          <StatusBadge label="保留" count={stats.statusDistribution.pending} color="bg-amber-50 text-amber-600" />
-          <StatusBadge label="中止" count={stats.statusDistribution.canceled} color="bg-zenshin-navy/5 text-zenshin-navy/40" />
+          <StatusBadge label={tKanban("todo")} count={stats.statusDistribution.todo} color="bg-zenshin-navy/8 text-zenshin-navy" />
+          <StatusBadge label={tKanban("inProgress")} count={stats.statusDistribution.in_progress} color="bg-blue-50 text-blue-600" />
+          <StatusBadge label={tKanban("done")} count={stats.statusDistribution.done} color="bg-emerald-50 text-emerald-600" />
+          <StatusBadge label={tKanban("pending")} count={stats.statusDistribution.pending} color="bg-amber-50 text-amber-600" />
+          <StatusBadge label={tKanban("canceled")} count={stats.statusDistribution.canceled} color="bg-zenshin-navy/5 text-zenshin-navy/40" />
         </div>
       </div>
 
@@ -104,11 +107,11 @@ export default async function DashboardPage({
         <div className="bg-white rounded-xl border border-zenshin-navy/8 p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <h2 className="text-sm font-medium text-zenshin-navy/50">停滞しているチャート</h2>
+            <h2 className="text-sm font-medium text-zenshin-navy/50">{t("stalledCharts")}</h2>
           </div>
           {staleCharts.length === 0 ? (
             <p className="text-sm text-zenshin-navy/40 text-center py-6">
-              停滞しているチャートはありません 🎉
+              {t("noStalledCharts")}
             </p>
           ) : (
             <div className="space-y-1">
@@ -123,7 +126,7 @@ export default async function DashboardPage({
                     <span className="text-sm text-zenshin-navy truncate group-hover:text-zenshin-navy/80">{chart.title}</span>
                   </div>
                   <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0 ml-3">
-                    {chart.daysSinceUpdate}日前
+                    {t("daysAgo", { count: chart.daysSinceUpdate })}
                   </span>
                 </Link>
               ))}
@@ -135,11 +138,11 @@ export default async function DashboardPage({
         <div className="bg-white rounded-xl border border-zenshin-navy/8 p-5">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-4 h-4 text-red-500" />
-            <h2 className="text-sm font-medium text-zenshin-navy/50">期限切れ / 期限間近のアクション</h2>
+            <h2 className="text-sm font-medium text-zenshin-navy/50">{t("overdueActions")}</h2>
           </div>
           {upcomingDeadlines.length === 0 ? (
             <p className="text-sm text-zenshin-navy/40 text-center py-6">
-              期限間近のアクションはありません 🎉
+              {t("noOverdueActions")}
             </p>
           ) : (
             <div className="space-y-1">
@@ -161,12 +164,12 @@ export default async function DashboardPage({
                     {action.isOverdue ? (
                       <>
                         <AlertCircle className="w-3 h-3" />
-                        {Math.abs(action.daysUntilDue)}日超過
+                        {t("daysOverdue", { count: Math.abs(action.daysUntilDue) })}
                       </>
                     ) : action.daysUntilDue === 0 ? (
-                      "今日"
+                      t("today")
                     ) : (
-                      `あと${action.daysUntilDue}日`
+                      t("daysLeft", { count: action.daysUntilDue })
                     )}
                   </span>
                 </Link>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
   Home,
@@ -18,7 +19,6 @@ import {
   Plus,
   Check,
 } from "lucide-react";
-import { ROLE_LABELS } from "@/lib/permissions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,21 +32,22 @@ import { createClient } from "@/lib/supabase/client";
 
 const RECENT_CHARTS_KEY = "zenshin_recent_charts";
 
-function RoleBadge({ role }: { role?: string }) {
+function RoleBadge({ role, t }: { role?: string; t: ReturnType<typeof useTranslations<"sidebar">> }) {
   if (!role) return null;
-  const config: Record<string, { className: string; label: string }> = {
-    owner: { className: "bg-amber-500/20 text-amber-400", label: "オーナー" },
+  const config: Record<string, { className: string; labelKey: string }> = {
+    owner: { className: "bg-amber-500/20 text-amber-400", labelKey: "role.owner" },
     consultant: {
       className: "bg-violet-500/20 text-violet-400 min-w-[88px]",
-      label: "コンサルタント",
+      labelKey: "role.consultant",
     },
-    editor: { className: "bg-blue-500/20 text-blue-400", label: "編集者" },
-    viewer: { className: "bg-zenshin-charcoal/30 text-white/60", label: "閲覧者" },
+    editor: { className: "bg-blue-500/20 text-blue-400", labelKey: "role.editor" },
+    viewer: { className: "bg-zenshin-charcoal/30 text-white/60", labelKey: "role.viewer" },
   };
-  const { className, label } = config[role] ?? {
+  const { className, labelKey } = config[role] ?? {
     className: "bg-white/10 text-white/60",
-    label: ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? "メンバー",
+    labelKey: "role.member",
   };
+  const label = t(labelKey);
   return (
     <span
       className={cn(
@@ -70,7 +71,17 @@ type SidebarProps = {
   workspaces?: { id: string; name: string; role: string }[];
 };
 
+const DEFAULT_WS_NAMES = ["マイワークスペース", "My Workspace"];
+
 export function Sidebar(props?: SidebarProps) {
+  const t = useTranslations("sidebar");
+  const tc = useTranslations("common");
+  const tt = useTranslations("toast");
+
+  const getWorkspaceDisplayName = (name: string | null | undefined) => {
+    if (!name || DEFAULT_WS_NAMES.includes(name)) return t("defaultWorkspaceName");
+    return name;
+  };
   const pathname = usePathname();
   const params = useParams();
   const chartId = params?.id as string | undefined;
@@ -113,7 +124,7 @@ export function Sidebar(props?: SidebarProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newWsName.trim() }),
       });
-      if (!res.ok) throw new Error("作成に失敗しました");
+      if (!res.ok) throw new Error(tt("createFailed"));
       const workspace = await res.json();
       setIsCreatingWs(false);
       setNewWsName("");
@@ -215,21 +226,13 @@ export function Sidebar(props?: SidebarProps) {
                     </span>
                   )}
                 </div>
-                {isExpanded && (
-                  <span
-                    className="ml-1.5 self-start pt-0.5 text-[10px] font-light tracking-wider uppercase text-amber-400/70"
-                    title="β版"
-                  >
-                    beta
-                  </span>
-                )}
               </div>
               {isHovered && (
                 <>
                   <div className="flex-1 text-left min-w-0">
                     <p className="text-sm font-semibold text-white truncate flex items-center gap-2">
-                      {currentWorkspace?.name || "Workspace"}
-                      <RoleBadge role={currentWorkspace?.role} />
+                      {getWorkspaceDisplayName(currentWorkspace?.name)}
+                      <RoleBadge role={currentWorkspace?.role} t={t} />
                     </p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-white/30 shrink-0" />
@@ -249,17 +252,17 @@ export function Sidebar(props?: SidebarProps) {
               </div>
             )}
             <div className="px-2 py-1.5 text-xs text-muted-foreground">
-              Current Workspace
+              {t("currentWorkspace")}
             </div>
             <DropdownMenuItem className="gap-3 cursor-default" onSelect={(e) => e.preventDefault()}>
               <div className="w-8 h-8 bg-zenshin-navy rounded-lg flex items-center justify-center shrink-0 text-white text-sm font-semibold">
-                {(currentWorkspace?.name || "W").charAt(0).toUpperCase()}
+                {getWorkspaceDisplayName(currentWorkspace?.name).charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="font-medium truncate flex items-center gap-2 flex-wrap">
                   <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span className="truncate">{currentWorkspace?.name || "マイワークスペース"}</span>
-                  <RoleBadge role={currentWorkspace?.role} />
+                  <span className="truncate">{getWorkspaceDisplayName(currentWorkspace?.name)}</span>
+                  <RoleBadge role={currentWorkspace?.role} t={t} />
                 </p>
               </div>
             </DropdownMenuItem>
@@ -267,7 +270,7 @@ export function Sidebar(props?: SidebarProps) {
               <>
                 <DropdownMenuSeparator />
                 <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                  Other Workspaces
+                  {t("otherWorkspaces")}
                 </div>
                 {allWorkspaces
                   .filter((ws) => ws.id !== currentWorkspace?.id)
@@ -278,12 +281,12 @@ export function Sidebar(props?: SidebarProps) {
                         onSelect={(e) => e.preventDefault()}
                       >
                         <div className="w-8 h-8 bg-zenshin-charcoal rounded-lg flex items-center justify-center shrink-0 text-white text-sm font-semibold">
-                          {(ws.name || "W").charAt(0).toUpperCase()}
+                          {getWorkspaceDisplayName(ws.name).charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <p className="font-medium truncate flex items-center gap-2 flex-wrap">
-                            <span className="truncate">{ws.name}</span>
-                            <RoleBadge role={ws.role} />
+                            <span className="truncate">{getWorkspaceDisplayName(ws.name)}</span>
+                            <RoleBadge role={ws.role} t={t} />
                           </p>
                         </div>
                       </DropdownMenuItem>
@@ -295,7 +298,7 @@ export function Sidebar(props?: SidebarProps) {
             <Link href={wsId ? `/workspaces/${wsId}/settings/members` : "/settings/members"}>
               <DropdownMenuItem className="gap-2">
                 <Users className="w-4 h-4" />
-                メンバーを管理
+                {t("manageMembers")}
               </DropdownMenuItem>
             </Link>
             {isCreatingWs ? (
@@ -311,7 +314,7 @@ export function Sidebar(props?: SidebarProps) {
                       setNewWsName("");
                     }
                   }}
-                  placeholder="ワークスペース名"
+                  placeholder={t("workspaceNamePlaceholder")}
                   className="w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-zenshin-teal/50"
                   autoFocus
                 />
@@ -321,7 +324,7 @@ export function Sidebar(props?: SidebarProps) {
                     disabled={!newWsName.trim()}
                     className="flex-1 px-2 py-1 text-xs font-medium text-white bg-zenshin-teal rounded-md hover:bg-zenshin-teal/90 disabled:opacity-40"
                   >
-                    作成
+                    {tc("create")}
                   </button>
                   <button
                     onClick={() => {
@@ -330,7 +333,7 @@ export function Sidebar(props?: SidebarProps) {
                     }}
                     className="flex-1 px-2 py-1 text-xs font-medium text-zenshin-navy/60 bg-zenshin-navy/5 rounded-md hover:bg-zenshin-navy/10"
                   >
-                    キャンセル
+                    {tc("cancel")}
                   </button>
                 </div>
               </div>
@@ -343,7 +346,7 @@ export function Sidebar(props?: SidebarProps) {
                 }}
               >
                 <Plus className="w-4 h-4" />
-                新しいWorkspaceを作成
+                {t("createWorkspace")}
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -354,7 +357,7 @@ export function Sidebar(props?: SidebarProps) {
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
         <SidebarItem
           icon={Home}
-          label="Home"
+          label={t("home")}
           href={wsId ? `/workspaces/${wsId}/charts` : "/charts"}
           active={wsId ? pathname === `/workspaces/${wsId}/charts` : pathname === "/charts"}
           expanded={isExpanded}
@@ -368,21 +371,21 @@ export function Sidebar(props?: SidebarProps) {
 
             <SidebarItem
               icon={Edit3}
-              label="Editor"
+              label={t("editorLabel")}
               href={wsId ? `/workspaces/${wsId}/charts/${chartId}` : `/charts/${chartId}`}
               active={pathname === `/workspaces/${wsId}/charts/${chartId}` || pathname === `/charts/${chartId}`}
               expanded={isExpanded}
             />
             <SidebarItem
               icon={LayoutGrid}
-              label="Views"
+              label={t("views")}
               href={wsId ? `/workspaces/${wsId}/charts/${chartId}/kanban` : `/charts/${chartId}/kanban`}
               active={pathname?.includes("/kanban")}
               expanded={isExpanded}
             />
             <SidebarItem
               icon={Camera}
-              label="Snapshot"
+              label={t("snapshot")}
               href={wsId ? `/workspaces/${wsId}/charts/${chartId}/snapshots` : `/charts/${chartId}/snapshots`}
               active={pathname?.includes("/snapshots")}
               expanded={isExpanded}
@@ -396,21 +399,21 @@ export function Sidebar(props?: SidebarProps) {
 
         <SidebarItem
           icon={LayoutDashboard}
-          label="Dashboard"
+          label={t("dashboard")}
           href={wsId ? `/workspaces/${wsId}/dashboard` : "/dashboard"}
           active={wsId ? pathname === `/workspaces/${wsId}/dashboard` : pathname === "/dashboard"}
           expanded={isExpanded}
         />
         <SidebarItem
           icon={Users}
-          label="Members"
+          label={t("members")}
           href={wsId ? `/workspaces/${wsId}/settings/members` : "/settings/members"}
           active={wsId ? pathname === `/workspaces/${wsId}/settings/members` : pathname === "/settings/members"}
           expanded={isExpanded}
         />
         <SidebarItem
           icon={Settings}
-          label="Settings"
+          label={t("settings")}
           href={wsId ? `/workspaces/${wsId}/settings` : "/settings/archive"}
           active={
             wsId
@@ -435,7 +438,7 @@ export function Sidebar(props?: SidebarProps) {
               <>
                 <div className="px-3 py-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider flex items-center gap-2">
                   <Clock className="w-3 h-3" />
-                  Quick Access
+                  {t("quickAccess")}
                 </div>
 
                 {recentCharts.map((chart) => (
@@ -466,8 +469,8 @@ export function Sidebar(props?: SidebarProps) {
 
       {/* Tagline */}
       {isHovered && (
-        <div className="px-3 py-2.5 border-t border-white/5 text-[10px] text-white/20 text-center tracking-wide">
-          緊張構造で前進を生み出す
+        <div className="border-t border-white/5 px-3 py-2.5 text-[10px] text-white/20 text-center tracking-wide">
+          {t("tagline")}
         </div>
       )}
     </aside>

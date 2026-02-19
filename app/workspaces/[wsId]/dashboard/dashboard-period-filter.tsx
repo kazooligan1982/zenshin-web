@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -22,14 +23,14 @@ import {
 import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const PERIOD_OPTIONS = [
-  { value: "all", label: "全期間" },
-  { value: "this_month", label: "今月" },
-  { value: "last_month", label: "先月" },
-  { value: "this_quarter", label: "今四半期" },
-  { value: "last_quarter", label: "前四半期" },
-  { value: "this_year", label: "今年" },
-  { value: "custom", label: "カスタム" },
+const PERIOD_OPTION_KEYS = [
+  { value: "all", key: "allPeriod" },
+  { value: "this_month", key: "thisMonth" },
+  { value: "last_month", key: "lastMonth" },
+  { value: "this_quarter", key: "thisQuarter" },
+  { value: "last_quarter", key: "lastQuarter" },
+  { value: "this_year", key: "thisYear" },
+  { value: "custom", key: "custom" },
 ] as const;
 
 function formatDateRange(fromStr: string, toStr: string): string {
@@ -52,6 +53,8 @@ export function DashboardPeriodFilter({
   from,
   to,
 }: DashboardPeriodFilterProps) {
+  const t = useTranslations("dashboard");
+  const tDatePicker = useTranslations("datePicker");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -148,12 +151,12 @@ export function DashboardPeriodFilter({
       {!isCustom ? (
         <Select value={period || "all"} onValueChange={handlePeriodChange}>
           <SelectTrigger className="w-[180px] border-zenshin-navy/15 text-zenshin-navy [&>span]:truncate">
-            <SelectValue placeholder="全期間" />
+            <SelectValue placeholder={t("allPeriod")} />
           </SelectTrigger>
           <SelectContent>
-            {PERIOD_OPTIONS.map((opt) => (
+            {PERIOD_OPTION_KEYS.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(opt.key)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -171,7 +174,7 @@ export function DashboardPeriodFilter({
               >
                 <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="truncate">
-                  {hasCustomDates ? formatDateRange(from, to) : "日付を選択"}
+                  {hasCustomDates ? formatDateRange(from, to) : tDatePicker("placeholder")}
                 </span>
               </button>
             </PopoverTrigger>
@@ -189,8 +192,8 @@ export function DashboardPeriodFilter({
             type="button"
             onClick={handleClearCustom}
             className="flex h-full shrink-0 items-center justify-center px-2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            title="全期間に戻す"
-            aria-label="全期間に戻す"
+            title={t("resetToAll")}
+            aria-label={t("resetToAll")}
           >
             <X className="h-3.5 w-3.5" />
           </button>

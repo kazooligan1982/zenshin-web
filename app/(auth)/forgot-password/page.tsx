@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import { toast } from "sonner";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("auth");
+  const tt = useTranslations("toast");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -21,11 +24,11 @@ export default function ForgotPasswordPage() {
     setError("");
 
     if (!email.trim()) {
-      setError("メールアドレスを入力してください");
+      setError(t("emailRequired"));
       return;
     }
     if (!EMAIL_REGEX.test(email.trim())) {
-      setError("有効なメールアドレスを入力してください");
+      setError(t("emailInvalid"));
       return;
     }
 
@@ -39,16 +42,16 @@ export default function ForgotPasswordPage() {
 
       if (resetError) {
         console.error("Password reset error:", resetError);
-        toast.error("メール送信に失敗しました: " + resetError.message, { duration: 5000 });
+        toast.error(tt("emailSendFailed") + ": " + resetError.message, { duration: 5000 });
         setError(resetError.message);
         return;
       }
 
       setIsSent(true);
-      toast.success("パスワードリセットのメールを送信しました", { duration: 3000 });
+      toast.success(tt("passwordResetEmailSent"), { duration: 3000 });
     } catch (err) {
       console.error("Password reset error:", err);
-      const message = err instanceof Error ? err.message : "メール送信に失敗しました";
+      const message = err instanceof Error ? err.message : tt("emailSendFailed");
       toast.error(message, { duration: 5000 });
       setError(message);
     } finally {
@@ -70,9 +73,9 @@ export default function ForgotPasswordPage() {
         </div>
         <div className="rounded-lg border bg-muted/50 p-4 text-center">
           <p className="text-sm text-muted-foreground">
-            パスワードリセットのメールを送信しました。
+            {t("resetEmailSent")}
             <br />
-            メール内のリンクからパスワードを再設定してください。
+            {t("resetEmailInstruction")}
           </p>
         </div>
         <div className="text-center">
@@ -80,7 +83,7 @@ export default function ForgotPasswordPage() {
             href="/login"
             className="text-sm text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium"
           >
-            ログインに戻る
+            {t("backToLogin")}
           </Link>
         </div>
       </div>
@@ -97,16 +100,16 @@ export default function ForgotPasswordPage() {
             beta
           </span>
         </div>
-        <p className="text-muted-foreground mt-2">パスワードをリセット</p>
+        <p className="text-muted-foreground mt-2">{t("forgotPasswordTitle")}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">メールアドレス</Label>
+          <Label htmlFor="email">{t("email")}</Label>
           <Input
             id="email"
             type="email"
-            placeholder="you@example.com"
+            placeholder={t("emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={error ? "border-destructive" : ""}
@@ -118,13 +121,13 @@ export default function ForgotPasswordPage() {
           className="w-full bg-zenshin-orange hover:bg-zenshin-orange/90 text-white shadow-sm"
           disabled={isLoading}
         >
-          {isLoading ? "送信中..." : "リセットメールを送信"}
+          {isLoading ? t("sending") : t("sendResetEmail")}
         </Button>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
         <Link href="/login" className="text-zenshin-teal hover:text-zenshin-teal/80 hover:underline font-medium">
-          ログインに戻る
+          {t("backToLogin")}
         </Link>
       </p>
     </div>

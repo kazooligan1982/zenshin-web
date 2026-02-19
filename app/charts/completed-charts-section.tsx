@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import type { ChartWithMeta } from "./actions";
 import { ChartCard } from "./chart-card";
@@ -12,6 +13,7 @@ export function CompletedChartsSection({
   completedCharts: ChartWithMeta[];
   wsId?: string;
 }) {
+  const t = useTranslations("home");
   const [showCompletedCharts, setShowCompletedCharts] = useState(false);
 
   return (
@@ -26,7 +28,7 @@ export function CompletedChartsSection({
         ) : (
           <ChevronRight className="w-4 h-4" />
         )}
-        完了済みチャート（{completedCharts.length}件）
+        {t("completedCharts", { count: completedCharts.length })}
       </button>
       {showCompletedCharts && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-70">

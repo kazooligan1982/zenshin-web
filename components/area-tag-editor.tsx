@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,7 @@ export function AreaTagEditor({
   onCreateArea,
   size = "sm",
 }: AreaTagEditorProps) {
+  const tTags = useTranslations("tags");
   const [open, setOpen] = useState(false);
   const [newAreaName, setNewAreaName] = useState("");
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0].value);
@@ -133,7 +135,7 @@ export function AreaTagEditor({
             }}
           >
             <Plus className="w-3 h-3 mr-1" />
-            タグ追加
+            {tTags("addTag")}
           </Badge>
         )}
       </PopoverTrigger>
@@ -144,7 +146,7 @@ export function AreaTagEditor({
       >
         <Command>
           <CommandInput
-            placeholder="タグを検索または作成..."
+            placeholder={tTags("searchOrCreate")}
             value={newAreaName}
             onValueChange={setNewAreaName}
             onKeyDown={handleKeyDown}
@@ -160,12 +162,12 @@ export function AreaTagEditor({
                     disabled={isCreating}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    「{newAreaName}」を作成
+                    {tTags("createTagWithName", { name: newAreaName })}
                   </Button>
                 </div>
               ) : (
                 <div className="py-2 px-3 text-sm text-muted-foreground">
-                  タグが見つかりません
+                  {tTags("noTagsFound")}
                 </div>
               )}
             </CommandEmpty>
@@ -178,7 +180,7 @@ export function AreaTagEditor({
                 }}
                 className="flex items-center justify-between"
               >
-                <span className="text-muted-foreground">未分類</span>
+                <span className="text-muted-foreground">{tTags("untagged")}</span>
                 {!currentAreaId && <Check className="w-4 h-4" />}
               </CommandItem>
               {/* 既存のエリア */}
@@ -208,7 +210,7 @@ export function AreaTagEditor({
                 <div className="border-t p-2 space-y-2">
                   {/* 色選択 */}
                   <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground px-1">色を選択</div>
+                    <div className="text-xs text-muted-foreground px-1">{tTags("selectColor")}</div>
                     <div className="flex flex-wrap gap-1">
                       {PRESET_COLORS.map((color) => (
                         <button
@@ -237,7 +239,7 @@ export function AreaTagEditor({
                     disabled={isCreating}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    「{newAreaName}」を作成
+                    {tTags("createTagWithName", { name: newAreaName })}
                     {isCreating && "..."}
                   </Button>
                 </div>

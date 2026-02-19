@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, type MouseEvent } from "react";
+import { useTranslations } from "next-intl";
 import {
   ChevronRight,
   ChevronDown,
@@ -22,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { ActionEditModal } from "./action-edit-modal";
+import { UnifiedDetailModal } from "@/components/unified-detail-modal/UnifiedDetailModal";
 import {
   Select,
   SelectContent,
@@ -82,6 +83,7 @@ interface TreeViewProps {
   currentUserId?: string;
   currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
   workspaceMembers?: WorkspaceMember[];
+  workspaceId?: string;
 }
 
 export function TreeView({
@@ -93,12 +95,17 @@ export function TreeView({
   currentUserId = "",
   currentUser = null,
   workspaceMembers = [],
+  workspaceId,
 }: TreeViewProps) {
+  const t = useTranslations("tree");
+  const tk = useTranslations("kanban");
+  const tc = useTranslations("common");
+  const ta = useTranslations("action");
+  const te = useTranslations("editor");
   const [treeData, setTreeData] = useState<TreeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [selectedAction, setSelectedAction] = useState<TreeNode | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [unifiedModal, setUnifiedModal] = useState<{ itemType: "action"; itemId: string } | null>(null);
   const [sortConfig, setSortConfig] = useState<{
     key: "status" | "assignee" | "due_date" | null;
     direction: "asc" | "desc";
@@ -173,14 +180,8 @@ export function TreeView({
     }
 
     if (node.type === "action") {
-      setSelectedAction(node);
-      setIsModalOpen(true);
+      setUnifiedModal({ itemType: "action", itemId: node.id });
     }
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedAction(null);
   };
 
   const handleSaveAction = async (updatedAction?: {
@@ -191,7 +192,7 @@ export function TreeView({
     due_date?: string | null;
     is_completed?: boolean | null;
   }) => {
-    handleCloseModal();
+    setUnifiedModal(null);
 
     if (updatedAction && treeData) {
       setTreeData((prev) => {
@@ -528,11 +529,11 @@ export function TreeView({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">未着手</SelectItem>
-                  <SelectItem value="in_progress">進行中</SelectItem>
-                  <SelectItem value="done">完了</SelectItem>
-                  <SelectItem value="pending">保留</SelectItem>
-                  <SelectItem value="canceled">中止</SelectItem>
+                  <SelectItem value="todo">{tk("todo")}</SelectItem>
+                  <SelectItem value="in_progress">{tk("inProgress")}</SelectItem>
+                  <SelectItem value="done">{tk("done")}</SelectItem>
+                  <SelectItem value="pending">{tk("pending")}</SelectItem>
+                  <SelectItem value="canceled">{tk("canceled")}</SelectItem>
                 </SelectContent>
               </Select>
             )}
@@ -610,7 +611,7 @@ export function TreeView({
   if (!treeData) {
     return (
       <div className="text-center text-zenshin-navy/50 py-8">
-        データを取得できませんでした
+        {t("fetchError")}
       </div>
     );
   }
@@ -636,23 +637,23 @@ export function TreeView({
             onClick={expandAll}
             className="text-xs text-zenshin-navy/60 hover:text-zenshin-navy hover:underline"
           >
-            全て展開
+            {t("expandAll")}
           </button>
           <span className="text-zenshin-navy/20">|</span>
           <button
             onClick={collapseAll}
             className="text-xs text-zenshin-navy/60 hover:text-zenshin-navy hover:underline"
           >
-            全て折りたたむ
+            {t("collapseAll")}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-[1fr_100px_80px_80px] gap-2 items-center px-4 py-2 border-b bg-zenshin-cream/80 text-xs font-medium text-zenshin-navy/50 sticky top-0 z-10">
-        <span className="text-xs font-medium text-zenshin-navy/50">タイトル</span>
-        <SortableHeader label="ステータス" sortKey="status" />
-        <SortableHeader label="担当者" sortKey="assignee" />
-        <SortableHeader label="期限" sortKey="due_date" />
+        <span className="text-xs font-medium text-zenshin-navy/50">{t("title")}</span>
+        <SortableHeader label={t("status")} sortKey="status" />
+        <SortableHeader label={t("assignee")} sortKey="assignee" />
+        <SortableHeader label={t("dueDate")} sortKey="due_date" />
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -660,38 +661,19 @@ export function TreeView({
           sortedTree.map((node) => renderRow(node))
         ) : (
           <div className="text-center text-zenshin-navy/50 py-8">
-            データがありません
+            {t("noData")}
           </div>
         )}
       </div>
 
-      {selectedAction && (
-        <ActionEditModal
-          action={{
-            id: selectedAction.id,
-            title: selectedAction.title,
-            due_date: selectedAction.due_date || null,
-            assignee: selectedAction.assignee || null,
-            status: (selectedAction.status || null) as
-              | "todo"
-              | "in_progress"
-              | "done"
-              | "pending"
-              | "canceled"
-              | null,
-            is_completed: selectedAction.is_completed || false,
-            tension_id: selectedAction.tension_id || "",
-            description: selectedAction.description ?? null,
-            child_chart_id: selectedAction.child_chart_id || null,
-          }}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onSave={handleSaveAction}
-          onDataRefresh={fetchTreeData}
-          projectId={projectId}
-          currentUserId={currentUserId}
-          currentUser={currentUser}
-          workspaceMembers={workspaceMembers}
+      {unifiedModal && (
+        <UnifiedDetailModal
+          isOpen={true}
+          onClose={() => setUnifiedModal(null)}
+          itemType={unifiedModal.itemType}
+          itemId={unifiedModal.itemId}
+          chartId={projectId}
+          workspaceId={workspaceId}
         />
       )}
 
@@ -704,19 +686,18 @@ export function TreeView({
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-yellow-600">
                 <AlertTriangle className="w-5 h-5" />
-                未完了のアクションがあります
+                {ta("incompleteActionsTitle")}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                「{confirmDialog.actionTitle}」のテレスコープ先に、
-                <span className="font-bold text-red-600">
-                  {confirmDialog.incompleteCount}件
-                </span>
-                の未完了アクションがあります。
+                {ta("incompleteActionsDescription", {
+                  title: confirmDialog.actionTitle,
+                  count: confirmDialog.incompleteCount,
+                })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             {confirmDialog.incompleteActions.length > 0 && (
               <div className="bg-zenshin-cream/50 rounded-lg p-3">
-                <p className="text-xs text-zenshin-navy/50 mb-2">未完了のアクション:</p>
+                <p className="text-xs text-zenshin-navy/50 mb-2">{ta("incompleteActionsLabel")}</p>
                 <ul className="space-y-1">
                   {confirmDialog.incompleteActions.map((action) => (
                     <li
@@ -729,7 +710,7 @@ export function TreeView({
                   ))}
                   {confirmDialog.incompleteCount > 5 && (
                     <li className="text-xs text-zenshin-navy/50">
-                      他 {confirmDialog.incompleteCount - 5}件...
+                      {ta("moreActionsCount", { count: confirmDialog.incompleteCount - 5 })}
                     </li>
                   )}
                 </ul>
@@ -737,13 +718,13 @@ export function TreeView({
             )}
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setConfirmDialog(null)}>
-                キャンセル
+                {tc("cancel")}
               </AlertDialogCancel>
               <AlertDialogAction
                 className="bg-yellow-600 hover:bg-yellow-700"
                 onClick={handleConfirmStatusChange}
               >
-                完了にする
+                {te("markComplete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

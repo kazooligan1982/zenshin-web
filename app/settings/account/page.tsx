@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import type { User } from "@supabase/supabase-js";
 import { Shield, Mail, Key, Loader2 } from "lucide-react";
 
 export default function AccountPage() {
+  const t = useTranslations("account");
   const [user, setUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -31,12 +33,12 @@ export default function AccountPage() {
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
-      toast.error("パスワードが一致しません", { duration: 5000 });
+      toast.error(t("passwordMismatch"), { duration: 5000 });
       return;
     }
 
     if (newPassword.length < 6) {
-      toast.error("パスワードは6文字以上で入力してください", { duration: 5000 });
+      toast.error(t("passwordMinLength"), { duration: 5000 });
       return;
     }
 
@@ -48,9 +50,9 @@ export default function AccountPage() {
     });
 
     if (error) {
-      toast.error("パスワードの変更に失敗しました: " + error.message, { duration: 5000 });
+      toast.error(t("passwordChangeFailed") + ": " + error.message, { duration: 5000 });
     } else {
-      toast.success("パスワードを変更しました", { duration: 3000 });
+      toast.success(t("passwordChanged"), { duration: 3000 });
       setNewPassword("");
       setConfirmPassword("");
     }
@@ -71,7 +73,7 @@ export default function AccountPage() {
   if (!user) {
     return (
       <div className="max-w-4xl mx-auto py-10 px-6">
-        <p className="text-zenshin-navy/40">ユーザー情報を取得できませんでした</p>
+        <p className="text-zenshin-navy/40">{t("fetchUserFailed")}</p>
       </div>
     );
   }
@@ -85,8 +87,8 @@ export default function AccountPage() {
       <div className="flex items-center gap-3 mb-8">
         <Shield className="w-7 h-7 text-zenshin-navy/40" />
         <div>
-          <h1 className="text-2xl font-bold text-zenshin-navy">アカウント</h1>
-          <p className="text-sm text-zenshin-navy/40">アカウントのセキュリティ設定を管理します</p>
+          <h1 className="text-2xl font-bold text-zenshin-navy">{t("accountTitle")}</h1>
+          <p className="text-sm text-zenshin-navy/40">{t("accountDescription")}</p>
         </div>
       </div>
 
@@ -95,9 +97,9 @@ export default function AccountPage() {
         <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6">
           <h2 className="text-lg font-semibold text-zenshin-navy flex items-center gap-2 mb-1">
             <Shield className="w-5 h-5 text-zenshin-navy/40" />
-            認証方法
+            {t("authMethods")}
           </h2>
-          <p className="text-sm text-zenshin-navy/40 mb-4">このアカウントに紐付けられた認証方法</p>
+          <p className="text-sm text-zenshin-navy/40 mb-4">{t("authMethodsDesc")}</p>
           <div className="space-y-3">
             {hasGoogleAuth && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-zenshin-cream/50 border border-zenshin-navy/5">
@@ -109,7 +111,7 @@ export default function AccountPage() {
                 </svg>
                 <div>
                   <p className="font-medium text-zenshin-navy">Google</p>
-                  <p className="text-sm text-zenshin-navy/40">Google アカウントで認証済み</p>
+                  <p className="text-sm text-zenshin-navy/40">{t("googleAuthenticated")}</p>
                 </div>
               </div>
             )}
@@ -118,7 +120,7 @@ export default function AccountPage() {
               <div className="flex items-center gap-3 p-3 rounded-xl bg-zenshin-cream/50 border border-zenshin-navy/5">
                 <Mail className="w-5 h-5 text-zenshin-navy/30" />
                 <div>
-                  <p className="font-medium text-zenshin-navy">メールアドレス</p>
+                  <p className="font-medium text-zenshin-navy">{t("email")}</p>
                   <p className="text-sm text-zenshin-navy/40">{user.email}</p>
                 </div>
               </div>
@@ -130,29 +132,29 @@ export default function AccountPage() {
         <div className="bg-white rounded-2xl border border-zenshin-navy/8 p-6">
           <h2 className="text-lg font-semibold text-zenshin-navy flex items-center gap-2 mb-1">
             <Key className="w-5 h-5 text-zenshin-navy/40" />
-            パスワード変更
+            {t("passwordChange")}
           </h2>
-          <p className="text-sm text-zenshin-navy/40 mb-4">アカウントのパスワードを変更します</p>
+          <p className="text-sm text-zenshin-navy/40 mb-4">{t("passwordChangeDesc")}</p>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-zenshin-navy/70">新しいパスワード</Label>
+              <Label htmlFor="newPassword" className="text-zenshin-navy/70">{t("newPassword")}</Label>
               <Input
                 id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="6文字以上"
+                placeholder={t("passwordMinPlaceholder")}
                 className="border-zenshin-navy/10 focus-visible:ring-zenshin-orange/30"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-zenshin-navy/70">パスワード（確認）</Label>
+              <Label htmlFor="confirmPassword" className="text-zenshin-navy/70">{t("confirmPassword")}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="もう一度入力"
+                placeholder={t("passwordConfirmPlaceholder")}
                 className="border-zenshin-navy/10 focus-visible:ring-zenshin-orange/30"
               />
             </div>
@@ -165,10 +167,10 @@ export default function AccountPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    変更中...
+                    {t("changing")}
                   </>
                 ) : (
-                  "パスワードを変更"
+                  t("changePassword")
                 )}
               </Button>
             </div>
@@ -177,10 +179,10 @@ export default function AccountPage() {
 
         {/* 危険な操作 */}
         <div className="bg-white rounded-2xl border border-red-200 p-6">
-          <h2 className="text-lg font-semibold text-red-600 mb-1">危険な操作</h2>
-          <p className="text-sm text-zenshin-navy/40 mb-4">これらの操作は取り消せません</p>
+          <h2 className="text-lg font-semibold text-red-600 mb-1">{t("dangerZone")}</h2>
+          <p className="text-sm text-zenshin-navy/40 mb-4">{t("dangerZoneDesc")}</p>
           <Button variant="destructive" disabled>
-            アカウントを削除（準備中）
+            {t("deleteAccount")}
           </Button>
         </div>
       </div>

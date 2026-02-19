@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,9 @@ const INITIAL_DISPLAY_COUNT = 20;
 const LOAD_MORE_COUNT = 20;
 
 export default function SnapshotsPage() {
+  const t = useTranslations("snapshot");
+  const tCommon = useTranslations("common");
+  const tDashboard = useTranslations("dashboard");
   const params = useParams();
   const projectId = params?.id as string;
 
@@ -167,7 +171,7 @@ export default function SnapshotsPage() {
 
     if (!compareSnapshot1 || !compareSnapshot2) {
       console.error("[saveComparison] Missing snapshots");
-      alert("比較するSnapshotが選択されていません");
+      alert(t("saveComparisonSelectSnapshots"));
       return;
     }
 
@@ -207,7 +211,7 @@ export default function SnapshotsPage() {
 
       if (error) {
         console.error("[saveComparison] Error:", error);
-        alert("保存に失敗しました: " + error.message);
+        alert(t("saveComparisonFailed") + ": " + error.message);
         return;
       }
 
@@ -216,11 +220,11 @@ export default function SnapshotsPage() {
         setSaveComparisonDialog(false);
         setComparisonTitle("");
         setComparisonDescription("");
-        alert("比較結果を保存しました！");
+        alert(t("saveComparisonSuccess"));
       }
     } catch (err) {
       console.error("[saveComparison] Exception:", err);
-      alert("エラーが発生しました");
+      alert(t("errorOccurred"));
     }
   };
 
@@ -295,7 +299,7 @@ export default function SnapshotsPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <Camera className="w-6 h-6" />
-          <h1 className="text-2xl font-bold">Snapshots</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -303,17 +307,17 @@ export default function SnapshotsPage() {
             <>
               <Button variant="outline" onClick={exitCompareMode}>
                 <X className="w-4 h-4 mr-2" />
-                キャンセル
+                {tCommon("cancel")}
               </Button>
               <Button onClick={calculateDiffs} disabled={!compareSnapshot1 || !compareSnapshot2}>
                 <GitCompare className="w-4 h-4 mr-2" />
-                比較する
+                {t("compare")}
               </Button>
             </>
           ) : (
             <Button variant="outline" onClick={() => setCompareMode(true)}>
               <GitCompare className="w-4 h-4 mr-2" />
-              比較モード
+              {t("comparisonMode")}
             </Button>
           )}
         </div>
@@ -323,8 +327,8 @@ export default function SnapshotsPage() {
         <Card className="mb-6 bg-blue-50 border-blue-200">
           <CardContent className="py-4">
             <p className="text-sm text-blue-800">
-              比較したい2つのSnapshotをクリックして選択してください
-              {compareSnapshot1 && !compareSnapshot2 && " - あと1つ選択"}
+              {t("compareSelectHint")}
+              {compareSnapshot1 && !compareSnapshot2 && t("oneMoreSelect")}
             </p>
           </CardContent>
         </Card>
@@ -337,7 +341,7 @@ export default function SnapshotsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div>
-                    <p className="text-xs text-gray-500">Before</p>
+                    <p className="text-xs text-gray-500">{t("before")}</p>
                     <p className="font-medium">
                       {format(new Date(compareSnapshot1!.created_at), "yyyy/MM/dd HH:mm", {
                         locale: ja,
@@ -346,7 +350,7 @@ export default function SnapshotsPage() {
                   </div>
                   <ArrowRight className="w-5 h-5 text-gray-400" />
                   <div>
-                    <p className="text-xs text-gray-500">After</p>
+                    <p className="text-xs text-gray-500">{t("after")}</p>
                     <p className="font-medium">
                       {format(new Date(compareSnapshot2!.created_at), "yyyy/MM/dd HH:mm", {
                         locale: ja,
@@ -356,7 +360,7 @@ export default function SnapshotsPage() {
                 </div>
                 <Button onClick={() => setSaveComparisonDialog(true)} size="sm">
                   <Save className="w-4 h-4 mr-2" />
-                  比較結果を保存
+                  {t("saveComparison")}
                 </Button>
               </div>
             </CardContent>
@@ -367,15 +371,15 @@ export default function SnapshotsPage() {
               <div className="flex gap-6">
                 <div className="flex items-center gap-2">
                   <Plus className="w-5 h-5 text-green-600" />
-                  <span className="font-medium">{diffs.filter((d) => d.type === "added").length} 追加</span>
+                  <span className="font-medium">{diffs.filter((d) => d.type === "added").length} {t("added")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Edit className="w-5 h-5 text-yellow-600" />
-                  <span className="font-medium">{diffs.filter((d) => d.type === "modified").length} 変更</span>
+                  <span className="font-medium">{diffs.filter((d) => d.type === "modified").length} {t("modified")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Minus className="w-5 h-5 text-red-600" />
-                  <span className="font-medium">{diffs.filter((d) => d.type === "removed").length} 削除</span>
+                  <span className="font-medium">{diffs.filter((d) => d.type === "removed").length} {t("removed")}</span>
                 </div>
               </div>
             </CardContent>
@@ -404,7 +408,7 @@ export default function SnapshotsPage() {
                           {diff.category}
                         </Badge>
                         <p className="text-sm">
-                          {diff.item?.content || diff.item?.title || "(内容なし)"}
+                          {diff.item?.content || diff.item?.title || t("noContent")}
                         </p>
                       </div>
                     </div>
@@ -414,12 +418,12 @@ export default function SnapshotsPage() {
             </div>
           ) : (
             <Card>
-              <CardContent className="py-8 text-center text-gray-500">差分はありません</CardContent>
+              <CardContent className="py-8 text-center text-gray-500">{t("noDiffs")}</CardContent>
             </Card>
           )}
 
           <Button variant="outline" onClick={() => setShowDiffs(false)} className="w-full">
-            差分を閉じる
+            {t("closeDiffs")}
           </Button>
         </div>
       )}
@@ -429,18 +433,18 @@ export default function SnapshotsPage() {
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="snapshots" className="flex items-center gap-2">
               <Camera className="w-4 h-4" />
-              Snapshots ({snapshots.length})
+              {t("title")} ({snapshots.length})
             </TabsTrigger>
             <TabsTrigger value="comparisons" className="flex items-center gap-2">
               <GitCompare className="w-4 h-4" />
-              比較履歴 ({comparisons.length})
+              {t("comparisonHistory")} ({comparisons.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="snapshots" className="space-y-3">
             {snapshots.length === 0 ? (
               <Card>
-                <CardContent className="py-8 text-center text-gray-500">Snapshotがありません</CardContent>
+                <CardContent className="py-8 text-center text-gray-500">{t("noSnapshots")}</CardContent>
               </Card>
             ) : (
               <>
@@ -471,7 +475,7 @@ export default function SnapshotsPage() {
                                   variant={snapshot.snapshot_type === "manual" ? "default" : "secondary"}
                                   className="text-xs"
                                 >
-                                  {snapshot.snapshot_type === "manual" ? "手動" : "自動"}
+                                  {snapshot.snapshot_type === "manual" ? t("manual") : t("auto")}
                                 </Badge>
                               </div>
                               {editingId === snapshot.id ? (
@@ -479,7 +483,7 @@ export default function SnapshotsPage() {
                                   <Input
                                     value={editDescription}
                                     onChange={(e) => setEditDescription(e.target.value)}
-                                    placeholder="説明を入力..."
+                                    placeholder={t("descriptionPlaceholder")}
                                     className="flex-1 h-8 text-sm"
                                     autoFocus
                                     onClick={(e) => e.stopPropagation()}
@@ -509,7 +513,7 @@ export default function SnapshotsPage() {
                                 </div>
                               ) : (
                                 <p className="text-sm text-gray-500 truncate">
-                                  {snapshot.description || "クリックして説明を追加..."}
+                                  {snapshot.description || t("addDescription")}
                                 </p>
                               )}
                             </div>
@@ -572,7 +576,7 @@ export default function SnapshotsPage() {
                     onClick={() => setDisplayCount((prev) => prev + LOAD_MORE_COUNT)}
                   >
                     <ChevronDown className="w-4 h-4 mr-2" />
-                    もっと見る（残り {snapshots.length - displayCount} 件）
+                    {tDashboard("loadMore", { count: snapshots.length - displayCount })}
                   </Button>
                 )}
               </>
@@ -584,9 +588,9 @@ export default function SnapshotsPage() {
               <Card>
                 <CardContent className="py-8 text-center text-gray-500">
                   <GitCompare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  <p>保存された比較がありません</p>
+                  <p>{t("noComparisons")}</p>
                   <p className="text-sm mt-1">
-                    「比較モード」で2つのSnapshotを選択して比較を保存できます
+                    {t("comparisonHint")}
                   </p>
                 </CardContent>
               </Card>
@@ -628,11 +632,11 @@ export default function SnapshotsPage() {
       <Dialog open={saveComparisonDialog} onOpenChange={setSaveComparisonDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>比較結果を保存</DialogTitle>
+            <DialogTitle>{t("saveComparisonTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium">タイトル</label>
+              <label className="text-sm font-medium">{t("titleLabel")}</label>
               <Input
                 value={comparisonTitle}
                 onChange={(e) => setComparisonTitle(e.target.value)}
@@ -642,16 +646,16 @@ export default function SnapshotsPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">メモ（任意）</label>
+              <label className="text-sm font-medium">{t("memoLabel")}</label>
               <Textarea
                 value={comparisonDescription}
                 onChange={(e) => setComparisonDescription(e.target.value)}
-                placeholder="この比較についてのメモ..."
+                placeholder={t("memoPlaceholder")}
                 rows={3}
               />
             </div>
             <Button onClick={saveComparison} className="w-full">
-              保存する
+              {tCommon("save")}
             </Button>
           </div>
         </DialogContent>
@@ -661,21 +665,21 @@ export default function SnapshotsPage() {
         <AlertDialogContent className="rounded-2xl border-gray-200 shadow-xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base font-bold text-zenshin-navy">
-              このSnapshotを削除しますか？
+              {t("deleteConfirm")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-gray-500">
-              この操作は取り消せません。
+              {t("deleteConfirmDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel className="rounded-lg px-4 py-2 text-sm">
-              キャンセル
+              {tCommon("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="rounded-lg px-4 py-2 text-sm bg-red-500 text-white hover:bg-red-600"
               onClick={() => deleteTargetId && deleteSnapshot(deleteTargetId)}
             >
-              削除する
+              {t("deleteAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
