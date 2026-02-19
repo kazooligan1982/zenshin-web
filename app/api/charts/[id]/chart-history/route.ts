@@ -52,7 +52,7 @@ export async function GET(
     }
 
     const userIds = [...new Set((rows ?? []).map((r) => r.user_id).filter(Boolean))] as string[];
-    let nameMap: Record<string, string> = {};
+    const nameMap: Record<string, string> = {};
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
@@ -72,7 +72,7 @@ export async function GET(
       ),
     ] as string[];
 
-    let areaNameMap: Record<string, string> = {};
+    const areaNameMap: Record<string, string> = {};
     if (areaIds.length > 0) {
       const { data: areaRows } = await supabase
         .from("areas")

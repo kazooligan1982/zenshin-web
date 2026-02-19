@@ -91,20 +91,21 @@ export function ChangeHistorySummary({
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
-    fetch(
-      `/api/charts/${chartId}/chart-history?entityType=${entityType}&entityId=${itemId}&limit=${displayLimit}`
-    )
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: ChartHistoryEntry[]) => {
+    const run = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(
+          `/api/charts/${chartId}/chart-history?entityType=${entityType}&entityId=${itemId}&limit=${displayLimit}`
+        );
+        const data: ChartHistoryEntry[] = res.ok ? await res.json() : [];
         if (!cancelled) setHistory(data);
-      })
-      .catch((e) => {
+      } catch (e) {
         if (!cancelled) console.error("[ChangeHistorySummary] fetch error:", e);
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setIsLoading(false);
-      });
+      }
+    };
+    void run();
     return () => {
       cancelled = true;
     };

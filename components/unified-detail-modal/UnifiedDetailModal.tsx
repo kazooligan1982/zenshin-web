@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { ModalHeader, type ItemType } from "./ModalHeader";
 import { LeftPane, type ModalItem } from "./LeftPane";
@@ -48,6 +48,18 @@ export function UnifiedDetailModal({
   items = [],
   onNavigate,
 }: UnifiedDetailModalProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [leftWidth, setLeftWidth] = useState(60);
+  const isDesktop = useSyncExternalStore(
+    (callback) => {
+      const mq = window.matchMedia("(min-width: 800px)");
+      mq.addEventListener("change", callback);
+      return () => mq.removeEventListener("change", callback);
+    },
+    () => window.matchMedia("(min-width: 800px)").matches,
+    () => false
+  );
+
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -71,18 +83,6 @@ export function UnifiedDetailModal({
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [leftWidth, setLeftWidth] = useState(60);
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 800px)");
-    setIsDesktop(mq.matches);
-    const handler = () => setIsDesktop(mq.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
 
   const handleResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();

@@ -26,6 +26,7 @@ export function FocusModeModal({
 }: FocusModeProps) {
   const [content, setContent] = useState(initialContent);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const t = useTranslations("editor");
 
   const handleSaveAndClose = () => {
     onSave(content);
@@ -63,7 +64,6 @@ export function FocusModeModal({
     tension: "border-yellow-500/50",
   };
 
-  const t = useTranslations("editor");
   const sectionLabels = {
     vision: t("vision"),
     reality: t("reality"),
