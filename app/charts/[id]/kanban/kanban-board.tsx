@@ -559,17 +559,65 @@ export function KanbanBoard({ projectId, currentUserId = "", currentUser = null,
         </TabsContent>
       </Tabs>
 
-      {/* UnifiedDetailModal（Phase 1: 骨格） */}
-      {unifiedModal && (
-        <UnifiedDetailModal
-          isOpen={true}
-          onClose={() => setUnifiedModal(null)}
-          itemType={unifiedModal.itemType}
-          itemId={unifiedModal.itemId}
-          chartId={projectId}
-          workspaceId={workspaceId}
-        />
-      )}
+      {/* UnifiedDetailModal（Phase 2: 左ペイン完成） */}
+      {unifiedModal && (() => {
+        const action = actions.find((a) => a.id === unifiedModal.itemId);
+        const item: import("@/types/chart").ActionPlan | null = action
+          ? {
+              id: action.id,
+              title: action.title || "",
+              dueDate: action.due_date ?? undefined,
+              assignee: action.assignee ?? undefined,
+              status: (action.status || (action.is_completed ? "done" : "todo")) as "todo" | "in_progress" | "done" | "pending" | "canceled" | null,
+              isCompleted: action.is_completed ?? action.status === "done",
+              tension_id: action.tension_id ?? null,
+              childChartId: action.child_chart_id ?? undefined,
+              description: (action as { description?: string | null }).description ?? null,
+              area_id: (action as { area_id?: string | null }).area_id ?? null,
+            }
+          : null;
+        const handleUpdate = async (field: string, value: string | boolean | null) => {
+          if (!action) return;
+          const supportedFields = ["title", "status", "assignee", "dueDate", "description"];
+          if (!supportedFields.includes(field)) return;
+          try {
+            const res = await fetch(`/api/charts/${projectId}/actions`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                actionId: action.id,
+                tensionId: action.tension_id || null,
+                field,
+                value: value === null ? null : String(value),
+              }),
+            });
+            if (res.ok) {
+              await fetchActions();
+            } else {
+              const data = await res.json().catch(() => ({}));
+              throw new Error(data.error || "Update failed");
+            }
+          } catch (e) {
+            console.error("Update failed:", e);
+          }
+        };
+        return (
+          <UnifiedDetailModal
+            isOpen={true}
+            onClose={() => setUnifiedModal(null)}
+            itemType={unifiedModal.itemType}
+            itemId={unifiedModal.itemId}
+            chartId={projectId}
+            workspaceId={workspaceId}
+            item={item}
+            areas={[]}
+            members={workspaceMembers}
+            currentUser={currentUser}
+            tensions={[]}
+            onUpdate={handleUpdate}
+          />
+        );
+      })()}
     </div>
   );
 }

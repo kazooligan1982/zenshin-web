@@ -2465,17 +2465,61 @@ export function ProjectEditor({
         );
       })()}
 
-      {/* UnifiedDetailModal（Phase 1: 骨格） */}
-      {unifiedModal && (
-        <UnifiedDetailModal
-          isOpen={unifiedModal.isOpen}
-          onClose={closeUnifiedModal}
-          itemType={unifiedModal.itemType}
-          itemId={unifiedModal.itemId}
-          chartId={chartId}
-          workspaceId={workspaceId}
-        />
-      )}
+      {/* UnifiedDetailModal（Phase 2: 左ペイン完成） */}
+      {unifiedModal && (() => {
+        const item =
+          unifiedModal.itemType === "vision"
+            ? visions.find((v) => v.id === unifiedModal.itemId)
+            : unifiedModal.itemType === "reality"
+              ? realities.find((r) => r.id === unifiedModal.itemId)
+              : looseActions.find((a) => a.id === unifiedModal.itemId) ??
+                tensions.flatMap((t) => t.actionPlans).find((a) => a.id === unifiedModal.itemId);
+        const actionItem = unifiedModal.itemType === "action" ? item as ActionPlan | undefined : undefined;
+        const childChartTitle = null;
+        const handleItemUpdate = (field: string, value: string | boolean | null) => {
+          if (unifiedModal.itemType === "vision") {
+            void handleUpdateVision(unifiedModal.itemId, field as "content" | "assignee" | "dueDate" | "areaId", value);
+          } else if (unifiedModal.itemType === "reality") {
+            void handleUpdateReality(unifiedModal.itemId, field as "content" | "areaId" | "dueDate", value);
+          } else if (unifiedModal.itemType === "action" && actionItem) {
+            const tensionId = actionItem.tension_id ?? null;
+            void handleUpdateActionPlan(tensionId, unifiedModal.itemId, field as Parameters<typeof handleUpdateActionPlan>[2], value);
+          }
+        };
+        const actionItems = [
+          ...looseActions.map((a) => ({ id: a.id, type: "action" as const })),
+          ...tensions.flatMap((t) =>
+            t.actionPlans.map((a) => ({ id: a.id, type: "action" as const }))
+          ),
+        ];
+        const navigationItems =
+          unifiedModal.itemType === "vision"
+            ? visions.map((v) => ({ id: v.id, type: "vision" as const }))
+            : unifiedModal.itemType === "reality"
+              ? realities.map((r) => ({ id: r.id, type: "reality" as const }))
+              : actionItems;
+        return (
+          <UnifiedDetailModal
+            isOpen={unifiedModal.isOpen}
+            onClose={closeUnifiedModal}
+            itemType={unifiedModal.itemType}
+            itemId={unifiedModal.itemId}
+            chartId={chartId}
+            workspaceId={workspaceId}
+            item={item ?? null}
+            areas={chart.areas ?? []}
+            members={workspaceMembers}
+            currentUser={currentUser}
+            tensions={tensions}
+            childChartTitle={childChartTitle}
+            onUpdate={handleItemUpdate}
+            items={navigationItems}
+            onNavigate={(nextType, nextId) =>
+              setUnifiedModal({ isOpen: true, itemType: nextType, itemId: nextId })
+            }
+          />
+        );
+      })()}
 
       {/* 詳細サイドパネル（Vision/Reality用）※Phase 4 で削除 */}
       {detailPanel && detailPanel.itemType !== "action" && (

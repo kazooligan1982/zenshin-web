@@ -11,7 +11,7 @@ interface RightPaneProps {
 export function RightPane({ itemType, itemId }: RightPaneProps) {
   const t = useTranslations("modal");
   return (
-    <div className="md:w-[40%] border-l overflow-y-auto p-6 min-w-0">
+    <div className="w-full min-w-0">
       <h3 className="font-semibold mb-4">{t("activity")}</h3>
       <p className="text-muted-foreground text-sm">
         {/* Phase 3 で実装 */}
