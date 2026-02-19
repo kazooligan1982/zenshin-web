@@ -14,7 +14,7 @@ type TensionDragOverlayProps = {
   handleUpdateActionPlan: (
     tensionId: string | null,
     actionId: string,
-    field: string,
+    field: "title" | "dueDate" | "assignee" | "status" | "hasSubChart" | "subChartId" | "childChartId" | "isCompleted" | "description" | "areaId",
     value: string | boolean | null,
     options?: { removeFromTension?: boolean }
   ) => Promise<void>;
@@ -38,7 +38,7 @@ export function TensionDragOverlay(props: TensionDragOverlayProps) {
       const id = String(event.active.id);
       if (id.startsWith("tension-")) {
         setActiveId(id);
-        const rect = event.active.rect.current;
+        const rect = event.active.rect.current.initial;
         if (rect) {
           setOverlayWidth(rect.width);
         }
