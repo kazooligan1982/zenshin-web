@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { ModalHeader, type ItemType } from "./ModalHeader";
-import { LeftPane } from "./LeftPane";
+import { LeftPane, type ModalItem } from "./LeftPane";
 import { RightPane } from "./RightPane";
 import { cn } from "@/lib/utils";
+import type { Area, Tension } from "@/types/chart";
 
 export interface UnifiedDetailModalProps {
   isOpen: boolean;
@@ -14,6 +15,19 @@ export interface UnifiedDetailModalProps {
   itemId: string;
   chartId: string;
   workspaceId?: string;
+  /** Phase 2: 既存データを渡す */
+  item?: ModalItem | null;
+  areas?: Area[];
+  members?: { id: string; email: string; name?: string; avatar_url?: string }[];
+  currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
+  tensions?: Tension[];
+  childChartTitle?: string | null;
+  onUpdate?: (field: string, value: string | boolean | null) => void;
+  locale?: string;
+  /** 同タイプのアイテム一覧（▲▼ナビ用） */
+  items?: Array<{ id: string; type: ItemType }>;
+  /** ナビで別アイテムを開く時のコールバック */
+  onNavigate?: (itemType: ItemType, itemId: string) => void;
 }
 
 export function UnifiedDetailModal({
@@ -23,7 +37,29 @@ export function UnifiedDetailModal({
   itemId,
   chartId,
   workspaceId,
+  item = null,
+  areas = [],
+  members = [],
+  currentUser = null,
+  tensions = [],
+  childChartTitle = null,
+  onUpdate = () => {},
+  locale,
+  items = [],
+  onNavigate,
 }: UnifiedDetailModalProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [leftWidth, setLeftWidth] = useState(60);
+  const isDesktop = useSyncExternalStore(
+    (callback) => {
+      const mq = window.matchMedia("(min-width: 800px)");
+      mq.addEventListener("change", callback);
+      return () => mq.removeEventListener("change", callback);
+    },
+    () => window.matchMedia("(min-width: 800px)").matches,
+    () => false
+  );
+
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -48,6 +84,31 @@ export function UnifiedDetailModal({
     if (e.target === e.currentTarget) onClose();
   };
 
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const containerWidth = containerRef.current?.offsetWidth || 1;
+    const startLeftPx = (leftWidth / 100) * containerWidth;
+    const minLeftPx = 500;
+    const minRightPx = 500;
+    const maxLeftPx = containerWidth - minRightPx;
+
+    function onMouseMove(ev: MouseEvent) {
+      const newLeftPx = startLeftPx + (ev.clientX - startX);
+      const clampedLeftPx = Math.min(Math.max(newLeftPx, minLeftPx), maxLeftPx);
+      const newPercent = (clampedLeftPx / containerWidth) * 100;
+      setLeftWidth(newPercent);
+    }
+
+    function onMouseUp() {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  };
+
   const content = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200"
@@ -59,17 +120,92 @@ export function UnifiedDetailModal({
       <div
         className={cn(
           "flex flex-col bg-white rounded-xl shadow-2xl",
-          "w-[95vw] md:w-[80vw] md:max-w-[1200px] md:min-w-[800px]",
+          "w-[95vw] md:w-[90vw] md:max-w-[1400px] md:min-w-[900px]",
           "h-[85vh] max-h-[90vh]",
           "animate-in zoom-in-95 fade-in duration-200",
           "overflow-hidden"
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <ModalHeader itemType={itemType} onClose={onClose} />
-        <div className="flex flex-1 min-h-0 md:flex-row flex-col">
-          <LeftPane itemType={itemType} itemId={itemId} />
-          <RightPane itemType={itemType} itemId={itemId} />
+        <ModalHeader
+          itemType={itemType}
+          onClose={onClose}
+          onPrevious={
+            items.length > 0 && onNavigate
+              ? () => {
+                  const idx = items.findIndex((i) => i.id === itemId);
+                  if (idx > 0) {
+                    const prev = items[idx - 1];
+                    onNavigate(prev.type, prev.id);
+                  }
+                }
+              : undefined
+          }
+          onNext={
+            items.length > 0 && onNavigate
+              ? () => {
+                  const idx = items.findIndex((i) => i.id === itemId);
+                  if (idx >= 0 && idx < items.length - 1) {
+                    const next = items[idx + 1];
+                    onNavigate(next.type, next.id);
+                  }
+                }
+              : undefined
+          }
+          hasPrevious={
+            items.length > 0 ? items.findIndex((i) => i.id === itemId) > 0 : false
+          }
+          hasNext={
+            items.length > 0
+              ? items.findIndex((i) => i.id === itemId) < items.length - 1 &&
+                items.findIndex((i) => i.id === itemId) >= 0
+              : false
+          }
+        />
+        <div
+          ref={containerRef}
+          className="flex flex-1 min-h-0 md:flex-row flex-col overflow-hidden"
+        >
+          <div
+            style={isDesktop ? { width: `${leftWidth}%`, minWidth: 500 } : undefined}
+            className="flex-1 md:flex-initial md:min-w-0 min-h-0 overflow-y-auto overflow-x-hidden outline-none focus:outline-none focus-visible:outline-none"
+            tabIndex={-1}
+          >
+            <div className="px-6 py-4 w-full">
+              <LeftPane
+            itemType={itemType}
+            itemId={itemId}
+            item={item}
+            areas={areas}
+            members={members}
+            currentUser={currentUser}
+            tensions={tensions}
+            chartId={chartId}
+            workspaceId={workspaceId}
+            childChartTitle={childChartTitle}
+            onUpdate={onUpdate}
+            locale={locale}
+          />
+            </div>
+          </div>
+          <div
+            className="hidden md:flex shrink-0 cursor-col-resize relative items-stretch"
+            style={{ width: 9 }}
+            onMouseDown={handleResizeMouseDown}
+            role="separator"
+            aria-orientation="vertical"
+          >
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-border" />
+          </div>
+          <div
+            style={isDesktop ? { width: `${100 - leftWidth}%`, minWidth: 500 } : undefined}
+            className="flex-1 md:flex-initial md:min-w-0 min-h-0 overflow-y-auto overflow-x-hidden border-l border-border outline-none focus:outline-none focus-visible:outline-none"
+            tabIndex={-1}
+          >
+            <div className="p-6 min-w-0">
+              <RightPane itemType={itemType} itemId={itemId} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

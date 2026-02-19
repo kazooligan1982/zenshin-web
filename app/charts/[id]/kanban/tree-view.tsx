@@ -666,16 +666,65 @@ export function TreeView({
         )}
       </div>
 
-      {unifiedModal && (
-        <UnifiedDetailModal
-          isOpen={true}
-          onClose={() => setUnifiedModal(null)}
-          itemType={unifiedModal.itemType}
-          itemId={unifiedModal.itemId}
-          chartId={projectId}
-          workspaceId={workspaceId}
-        />
-      )}
+      {unifiedModal && (() => {
+        const findNode = (nodes: TreeNode[], id: string): TreeNode | null => {
+          for (const node of nodes) {
+            if (node.id === id) return node;
+            const found = findNode(node.children, id);
+            if (found) return found;
+          }
+          return null;
+        };
+        const node = treeData ? findNode(treeData.tree, unifiedModal.itemId) : null;
+        const item: import("@/types/chart").ActionPlan | null = node
+          ? {
+              id: node.id,
+              title: node.title || "",
+              dueDate: node.due_date ?? undefined,
+              assignee: node.assignee ?? undefined,
+              status: (node.status || (node.is_completed ? "done" : "todo")) as "todo" | "in_progress" | "done" | "pending" | "canceled" | null,
+              isCompleted: node.is_completed ?? node.status === "done",
+              tension_id: node.tension_id ?? null,
+              childChartId: node.child_chart_id ?? undefined,
+              description: node.description ?? null,
+            }
+          : null;
+        const handleUpdate = async (field: string, value: string | boolean | null) => {
+          const supportedFields = ["title", "status", "assignee", "dueDate", "description"];
+          if (!supportedFields.includes(field)) return;
+          try {
+            const res = await fetch(`/api/charts/${projectId}/actions`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                actionId: unifiedModal.itemId,
+                tensionId: node?.tension_id || null,
+                field,
+                value: value === null ? null : String(value),
+              }),
+            });
+            if (res.ok) void fetchTreeData(false);
+          } catch (e) {
+            console.error("Update failed:", e);
+          }
+        };
+        return (
+          <UnifiedDetailModal
+            isOpen={true}
+            onClose={() => setUnifiedModal(null)}
+            itemType={unifiedModal.itemType}
+            itemId={unifiedModal.itemId}
+            chartId={projectId}
+            workspaceId={workspaceId}
+            item={item}
+            areas={[]}
+            members={workspaceMembers}
+            currentUser={currentUser}
+            tensions={[]}
+            onUpdate={handleUpdate}
+          />
+        );
+      })()}
 
       {confirmDialog && (
         <AlertDialog

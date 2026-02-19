@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { X, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +26,7 @@ export function FocusModeModal({
 }: FocusModeProps) {
   const [content, setContent] = useState(initialContent);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const t = useTranslations("editor");
 
   const handleSaveAndClose = () => {
     onSave(content);
@@ -63,9 +65,9 @@ export function FocusModeModal({
   };
 
   const sectionLabels = {
-    vision: "Vision",
-    reality: "Reality",
-    tension: "Tension & Action",
+    vision: t("vision"),
+    reality: t("reality"),
+    tension: t("tensionAndAction"),
   };
 
   return (
