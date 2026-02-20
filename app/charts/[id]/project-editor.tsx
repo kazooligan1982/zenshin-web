@@ -81,6 +81,8 @@ import {
   addArea,
   updateAreaItem,
   removeArea,
+  moveActionToTension,
+  moveActionToLoose,
 } from "./actions";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -2482,22 +2484,37 @@ export function ProjectEditor({
           } else if (unifiedModal.itemType === "reality") {
             void handleUpdateReality(unifiedModal.itemId, field as "content" | "areaId" | "dueDate", value);
           } else if (unifiedModal.itemType === "action" && actionItem) {
+            if (field === "tensionId") {
+              const newTensionId = value as string | null;
+              if (newTensionId) {
+                void moveActionToTension(unifiedModal.itemId, newTensionId, chartId).then((r) => {
+                  if (r?.success) router.refresh();
+                });
+              } else {
+                void moveActionToLoose(unifiedModal.itemId, chartId).then((r) => {
+                  if (r?.success) router.refresh();
+                });
+              }
+              return;
+            }
             const tensionId = actionItem.tension_id ?? null;
             void handleUpdateActionPlan(tensionId, unifiedModal.itemId, field as Parameters<typeof handleUpdateActionPlan>[2], value);
           }
         };
-        const actionItems = [
+        const activeActionItems = [
           ...looseActions.map((a) => ({ id: a.id, type: "action" as const })),
-          ...tensions.flatMap((t) =>
-            t.actionPlans.map((a) => ({ id: a.id, type: "action" as const }))
-          ),
+          ...tensions
+            .filter((t) => !isTensionCompleted(t))
+            .flatMap((t) =>
+              t.actionPlans.map((a) => ({ id: a.id, type: "action" as const }))
+            ),
         ];
         const navigationItems =
           unifiedModal.itemType === "vision"
             ? visions.map((v) => ({ id: v.id, type: "vision" as const }))
             : unifiedModal.itemType === "reality"
               ? realities.map((r) => ({ id: r.id, type: "reality" as const }))
-              : actionItems;
+              : activeActionItems;
         return (
           <UnifiedDetailModal
             isOpen={unifiedModal.isOpen}
