@@ -38,6 +38,7 @@ async function recordChartHistory(
 }
 
 import { getAuthenticatedUser } from "@/lib/auth";
+import { detectService, SERVICE_LABELS } from "@/lib/link-utils";
 import {
   getChartById,
   createVision,
@@ -1642,5 +1643,142 @@ export async function addItemHistoryEntry(
     revalidatePath(`/charts/${chartId}`);
   }
   return result;
+}
+
+// Linked Resources
+export interface ItemLink {
+  id: string;
+  chart_id: string;
+  item_type: string;
+  item_id: string;
+  url: string;
+  title: string | null;
+  service: string | null;
+  created_at: string;
+}
+
+export async function getItemLinks(
+  itemType: string,
+  itemId: string
+): Promise<ItemLink[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("item_links")
+      .select("id, chart_id, item_type, item_id, url, title, service, created_at")
+      .eq("item_type", itemType)
+      .eq("item_id", itemId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("[getItemLinks] Error:", error);
+      return [];
+    }
+    return data ?? [];
+  } catch (error) {
+    console.error("[getItemLinks] Exception:", error);
+    return [];
+  }
+}
+
+export async function addItemLink(
+  chartId: string,
+  itemType: string,
+  itemId: string,
+  url: string,
+  title?: string
+) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    const service = detectService(url);
+
+    const { data, error } = await supabase
+      .from("item_links")
+      .insert({
+        chart_id: chartId,
+        item_type: itemType,
+        item_id: itemId,
+        url: url.trim(),
+        title: title?.trim() || null,
+        service,
+        created_by: user.id,
+      })
+      .select("id, chart_id, item_type, item_id, url, title, service, created_at")
+      .single();
+
+    if (error) {
+      console.error("[addItemLink] Error:", error);
+      throw new Error(error.message);
+    }
+
+    const entityType = itemType as "vision" | "reality" | "tension" | "action";
+    const linkDisplayValue = `${SERVICE_LABELS[service]} ${url.trim()}`;
+    await recordChartHistory(chartId, entityType, itemId, "updated", "link", null, linkDisplayValue);
+
+    revalidatePath(`/charts/${chartId}`);
+    const { data: chart } = await supabase.from("charts").select("workspace_id").eq("id", chartId).single();
+    if (chart?.workspace_id) {
+      revalidatePath(`/workspaces/${chart.workspace_id}/charts/${chartId}`);
+      revalidatePath(`/workspaces/${chart.workspace_id}/charts`);
+    }
+    return data;
+  } catch (error) {
+    console.error("[addItemLink] Exception:", error);
+    throw error;
+  }
+}
+
+export async function deleteItemLink(linkId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    const { data: link } = await supabase
+      .from("item_links")
+      .select("chart_id, item_type, item_id, url, service")
+      .eq("id", linkId)
+      .single();
+
+    const { error } = await supabase
+      .from("item_links")
+      .delete()
+      .eq("id", linkId)
+      .eq("created_by", user.id);
+
+    if (error) {
+      console.error("[deleteItemLink] Error:", error);
+      throw new Error(error.message);
+    }
+
+    if (link?.chart_id) {
+      const entityType = (link as { item_type?: string }).item_type as "vision" | "reality" | "tension" | "action";
+      const url = (link as { url?: string }).url ?? "";
+      const service = (link as { service?: string }).service ?? "other";
+      const linkDisplayValue = `${SERVICE_LABELS[service as keyof typeof SERVICE_LABELS]} ${url}`;
+      await recordChartHistory(
+        link.chart_id,
+        entityType,
+        (link as { item_id?: string }).item_id ?? "",
+        "updated",
+        "link",
+        linkDisplayValue,
+        null
+      );
+      revalidatePath(`/charts/${link.chart_id}`);
+      const { data: chart } = await supabase.from("charts").select("workspace_id").eq("id", link.chart_id).single();
+      if (chart?.workspace_id) {
+        revalidatePath(`/workspaces/${chart.workspace_id}/charts/${link.chart_id}`);
+        revalidatePath(`/workspaces/${chart.workspace_id}/charts`);
+      }
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("[deleteItemLink] Exception:", error);
+    throw error;
+  }
 }
 

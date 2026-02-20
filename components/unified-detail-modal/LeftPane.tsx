@@ -5,6 +5,7 @@ import { TitleEditor } from "./TitleEditor";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { DetailsEditor } from "./DetailsEditor";
 import { ChildChartLink } from "./ChildChartLink";
+import { LinkedResources } from "./LinkedResources";
 import { ChangeHistorySummary } from "./ChangeHistorySummary";
 import type { ItemType } from "./ModalHeader";
 import type { VisionItem, RealityItem, ActionPlan, Area, Tension } from "@/types/chart";
@@ -94,6 +95,12 @@ export function LeftPane({
         locale={locale}
       />
 
+      <LinkedResources
+        chartId={chartId}
+        itemType={itemType}
+        itemId={itemId}
+      />
+
       {/* Action のみ「詳細」セクションを表示。Vision/Reality は description がないため非表示 */}
       {itemType === "action" && (
         <div className="w-full max-w-[800px]">
@@ -117,6 +124,8 @@ export function LeftPane({
         chartId={chartId}
         itemType={itemType}
         itemId={itemId}
+        tensions={tensions}
+        areas={areas}
         locale={locale}
       />
     </div>

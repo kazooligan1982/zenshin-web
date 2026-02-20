@@ -7,6 +7,7 @@ import { ja } from "date-fns/locale";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ItemType } from "./ModalHeader";
+import type { Tension, Area } from "@/types/chart";
 
 interface ChartHistoryEntry {
   id: string;
@@ -25,6 +26,8 @@ interface ChangeHistorySummaryProps {
   chartId: string;
   itemType: ItemType;
   itemId: string;
+  tensions?: Tension[];
+  areas?: Area[];
   locale?: string;
 }
 
@@ -44,7 +47,12 @@ function formatHistoryValue(field: string, value: string): string {
   return value;
 }
 
-function formatHistorySummary(entry: ChartHistoryEntry, t: (key: string, params?: Record<string, string>) => string): string {
+function formatHistorySummary(
+  entry: ChartHistoryEntry,
+  t: (key: string, params?: Record<string, string>) => string,
+  tensionMap: Map<string, string>,
+  areaMap: Map<string, string>
+): string {
   if (entry.event_type === "created") {
     return t("itemCreated");
   }
@@ -57,7 +65,20 @@ function formatHistorySummary(entry: ChartHistoryEntry, t: (key: string, params?
   const newVal = formatHistoryValue(field, rawNew) || rawNew;
   const oldVal = formatHistoryValue(field, rawOld) || rawOld;
   const fallback = "—";
+
+  if (field === "tension_id") {
+    if (rawNew) {
+      const newTitle = tensionMap.get(rawNew) ?? rawNew;
+      return rawOld
+        ? t("historyMovedToTension", { title: newTitle })
+        : t("historySetTension", { title: newTitle });
+    }
+    return t("historyRemovedFromTension");
+  }
   if (field === "content" || field === "description" || field === "title") {
+    if (rawOld && rawNew) {
+      return t("historyTitleChanged", { old: oldVal || fallback, new: newVal || fallback });
+    }
     return t("contentChanged");
   }
   if (field === "assignee") {
@@ -68,10 +89,20 @@ function formatHistorySummary(entry: ChartHistoryEntry, t: (key: string, params?
     return t("statusChanged", { old: oldVal || fallback, new: newVal || fallback });
   }
   if (field === "dueDate" || field === "due_date") {
+    if (rawOld && rawNew) {
+      return t("historyDueDateChanged", { old: oldVal || fallback, new: newVal || fallback });
+    }
     return t("dueDateChanged", { date: newVal || fallback });
   }
   if (field === "areaId" || field === "area_id") {
-    return t("categoryChanged", { name: newVal || fallback });
+    const areaName = rawNew ? (areaMap.get(rawNew) ?? newVal) : newVal;
+    return t("categoryChanged", { name: areaName || fallback });
+  }
+  if (field === "link") {
+    if (rawNew) {
+      return t("historyLinkAdded", { value: newVal || fallback });
+    }
+    return t("historyLinkRemoved", { value: oldVal || fallback });
   }
   return `${field}: ${oldVal || fallback} → ${newVal || fallback}`;
 }
@@ -80,6 +111,8 @@ export function ChangeHistorySummary({
   chartId,
   itemType,
   itemId,
+  tensions = [],
+  areas = [],
   locale = "ja",
 }: ChangeHistorySummaryProps) {
   const t = useTranslations("modal");
@@ -88,6 +121,9 @@ export function ChangeHistorySummary({
   const [isLoading, setIsLoading] = useState(false);
   const entityType = itemType;
   const displayLimit = isExpanded ? 50 : 5;
+
+  const tensionMap = new Map(tensions.map((t) => [t.id, t.title || "(無題)"]));
+  const areaMap = new Map(areas.map((a) => [a.id, a.name || a.id]));
 
   useEffect(() => {
     let cancelled = false;
@@ -124,7 +160,7 @@ export function ChangeHistorySummary({
         <div className="space-y-1">
           {history.map((entry) => {
             const changedByName = entry.changed_by_name ?? t("unknownUser");
-            const description = formatHistorySummary(entry, t);
+            const description = formatHistorySummary(entry, t, tensionMap, areaMap);
             return (
               <div
                 key={entry.id}

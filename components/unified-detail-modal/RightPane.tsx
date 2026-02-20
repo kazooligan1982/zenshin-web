@@ -83,7 +83,9 @@ function formatHistorySummary(
   if (field === "tension_id") {
     if (rawNew) {
       const newTitle = tensionMap.get(rawNew) ?? rawNew;
-      return t("historyMovedToTension", { title: newTitle });
+      return rawOld
+        ? t("historyMovedToTension", { title: newTitle })
+        : t("historySetTension", { title: newTitle });
     }
     return t("historyRemovedFromTension");
   }
@@ -109,6 +111,12 @@ function formatHistorySummary(
   if (field === "areaId" || field === "area_id") {
     const areaName = rawNew ? (areaMap.get(rawNew) ?? newVal) : newVal;
     return t("categoryChanged", { name: areaName || fallback });
+  }
+  if (field === "link") {
+    if (rawNew) {
+      return t("historyLinkAdded", { value: newVal || fallback });
+    }
+    return t("historyLinkRemoved", { value: oldVal || fallback });
   }
   return `${field}: ${oldVal || fallback} → ${newVal || fallback}`;
 }
