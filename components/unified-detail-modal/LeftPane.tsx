@@ -6,6 +6,7 @@ import { PropertiesPanel } from "./PropertiesPanel";
 import { DetailsEditor } from "./DetailsEditor";
 import { ChildChartLink } from "./ChildChartLink";
 import { LinkedResources } from "./LinkedResources";
+import { ItemRelations } from "./ItemRelations";
 import { ChangeHistorySummary } from "./ChangeHistorySummary";
 import type { ItemType } from "./ModalHeader";
 import type { VisionItem, RealityItem, ActionPlan, Area, Tension } from "@/types/chart";
@@ -25,6 +26,7 @@ interface LeftPaneProps {
   childChartTitle?: string | null;
   onUpdate: (field: string, value: string | boolean | null) => void;
   locale?: string;
+  onNavigate?: (itemType: ItemType, itemId: string) => void;
 }
 
 export function LeftPane({
@@ -40,6 +42,7 @@ export function LeftPane({
   childChartTitle,
   onUpdate,
   locale,
+  onNavigate,
 }: LeftPaneProps) {
   const t = useTranslations("modal");
 
@@ -99,6 +102,13 @@ export function LeftPane({
         chartId={chartId}
         itemType={itemType}
         itemId={itemId}
+      />
+
+      <ItemRelations
+        chartId={chartId}
+        itemType={itemType}
+        itemId={itemId}
+        onNavigate={onNavigate}
       />
 
       {/* Action のみ「詳細」セクションを表示。Vision/Reality は description がないため非表示 */}

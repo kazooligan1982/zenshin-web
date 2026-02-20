@@ -39,6 +39,7 @@ async function recordChartHistory(
 
 import { getAuthenticatedUser } from "@/lib/auth";
 import { detectService, SERVICE_LABELS } from "@/lib/link-utils";
+import { parseMentionsFromHtml } from "@/lib/mention-utils";
 import {
   getChartById,
   createVision,
@@ -896,6 +897,53 @@ export async function fetchActionComments(actionId: string) {
   }
 }
 
+async function recordItemRelationsFromMentions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  chartId: string,
+  sourceType: "action" | "vision" | "reality",
+  sourceId: string,
+  content: string
+) {
+  const mentions = parseMentionsFromHtml(content);
+  console.log("[Relations] commentContent:", content);
+  console.log("[Relations] parsed mentions:", mentions);
+  console.log("[Relations] chartId:", chartId, "sourceType:", sourceType, "sourceId:", sourceId);
+  const validTypes = ["action", "vision", "reality", "tension"];
+  for (const m of mentions) {
+    if (!validTypes.includes(m.type) || m.chartId !== chartId) {
+      console.log("[Relations] skip (type/chartId):", m);
+      continue;
+    }
+    if (m.type === sourceType && m.id === sourceId) {
+      console.log("[Relations] skip (self-ref):", m);
+      continue;
+    }
+    if (m.id === sourceId) {
+      console.log("[Relations] skip (same id):", m);
+      continue;
+    }
+    try {
+      console.log("[Relations] inserting:", { sourceType, sourceId, targetType: m.type, targetId: m.id });
+      const { error } = await supabase.from("item_relations").upsert(
+        {
+          chart_id: chartId,
+          source_item_type: sourceType,
+          source_item_id: sourceId,
+          target_item_type: m.type,
+          target_item_id: m.id,
+        },
+        {
+          onConflict: "source_item_type,source_item_id,target_item_type,target_item_id",
+          ignoreDuplicates: true,
+        }
+      );
+      if (error) console.error("[Relations] upsert error:", error);
+    } catch (e) {
+      console.error("[recordItemRelations] insert error:", e);
+    }
+  }
+}
+
 export async function createComment(actionId: string, content: string, chartId: string) {
   const supabase = await createClient();
   let user;
@@ -923,6 +971,7 @@ export async function createComment(actionId: string, content: string, chartId: 
 
     if (inserted) {
       await recordChartHistory(chartId, "comment", inserted.id, "created", "action", actionId, content);
+      await recordItemRelationsFromMentions(supabase, chartId, "action", actionId, content);
     }
     await revalidateChartPath(chartId);
     return { success: true };
@@ -1113,6 +1162,7 @@ export async function createVisionComment(
 
     if (inserted) {
       await recordChartHistory(chartId, "comment", inserted.id, "created", "vision", visionId, content);
+      await recordItemRelationsFromMentions(supabase, chartId, "vision", visionId, content);
     }
     await revalidateChartPath(chartId);
     return { success: true };
@@ -1231,6 +1281,7 @@ export async function createRealityComment(
 
     if (inserted) {
       await recordChartHistory(chartId, "comment", inserted.id, "created", "reality", realityId, content);
+      await recordItemRelationsFromMentions(supabase, chartId, "reality", realityId, content);
     }
     await revalidateChartPath(chartId);
     return { success: true };
@@ -1655,6 +1706,74 @@ export interface ItemLink {
   title: string | null;
   service: string | null;
   created_at: string;
+}
+
+export type ItemRelation = { type: string; id: string; title: string };
+
+async function resolveItemTitles(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  items: { type: string; id: string }[]
+): Promise<ItemRelation[]> {
+  if (items.length === 0) return [];
+  const byType = { vision: [] as string[], reality: [] as string[], tension: [] as string[], action: [] as string[] };
+  for (const { type, id } of items) {
+    if (type in byType) (byType as Record<string, string[]>)[type].push(id);
+  }
+  const titleMap = new Map<string, string>();
+  const tables: { type: string; table: string; titleCol: string }[] = [
+    { type: "vision", table: "visions", titleCol: "content" },
+    { type: "reality", table: "realities", titleCol: "content" },
+    { type: "tension", table: "tensions", titleCol: "title" },
+    { type: "action", table: "actions", titleCol: "title" },
+  ];
+  await Promise.all(
+    tables.map(async ({ type, table, titleCol }) => {
+      const ids = (byType as Record<string, string[]>)[type];
+      if (!ids?.length) return;
+      const { data } = await supabase.from(table).select("id, " + titleCol).in("id", ids);
+      for (const r of data ?? []) {
+        const row = r as unknown as Record<string, string>;
+        titleMap.set(`${type}:${row.id}`, (row[titleCol] || "").slice(0, 200));
+      }
+    })
+  );
+  return items.map(({ type, id }) => ({
+    type,
+    id,
+    title: titleMap.get(`${type}:${id}`) ?? "(無題)",
+  }));
+}
+
+export async function getItemRelations(
+  chartId: string,
+  itemType: string,
+  itemId: string
+): Promise<{ references: ItemRelation[]; referencedBy: ItemRelation[] }> {
+  try {
+    const supabase = await createClient();
+    const { data: refs } = await supabase
+      .from("item_relations")
+      .select("target_item_type, target_item_id")
+      .eq("chart_id", chartId)
+      .eq("source_item_type", itemType)
+      .eq("source_item_id", itemId);
+    const { data: refBy } = await supabase
+      .from("item_relations")
+      .select("source_item_type, source_item_id")
+      .eq("chart_id", chartId)
+      .eq("target_item_type", itemType)
+      .eq("target_item_id", itemId);
+    const refItems = (refs ?? []).map((r) => ({ type: (r as { target_item_type: string }).target_item_type, id: (r as { target_item_id: string }).target_item_id }));
+    const refByItems = (refBy ?? []).map((r) => ({ type: (r as { source_item_type: string }).source_item_type, id: (r as { source_item_id: string }).source_item_id }));
+    const [references, referencedBy] = await Promise.all([
+      resolveItemTitles(supabase, refItems),
+      resolveItemTitles(supabase, refByItems),
+    ]);
+    return { references, referencedBy };
+  } catch (error) {
+    console.error("[getItemRelations] Error:", error);
+    return { references: [], referencedBy: [] };
+  }
 }
 
 export async function getItemLinks(

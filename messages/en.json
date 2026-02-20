@@ -604,6 +604,11 @@
     "removeLink": "Remove link",
     "linkAdded": "Link added",
     "linkRemoved": "Link removed",
-    "addLinkButton": "Add"
+    "addLinkButton": "Add",
+    "relations": "Relations",
+    "references": "References",
+    "referencedBy": "Referenced by",
+    "noRelations": "No relations yet",
+    "noRelationsHint": "Use @mention in comments to link items"
   }
 }

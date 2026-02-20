@@ -42,6 +42,7 @@ async function recordChartHistory(
 }
 
 import { getAuthenticatedUser } from "@/lib/auth";
+import { parseMentionsFromHtml } from "@/lib/mention-utils";
 import {
   getChartById,
   createVision,
@@ -900,6 +901,41 @@ export async function fetchActionComments(actionId: string) {
   }
 }
 
+async function recordItemRelationsFromMentions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  chartId: string,
+  sourceType: "action" | "vision" | "reality",
+  sourceId: string,
+  content: string
+) {
+  const mentions = parseMentionsFromHtml(content);
+  console.log("[Relations] commentContent:", content);
+  console.log("[Relations] parsed mentions:", mentions);
+  const validTypes = ["action", "vision", "reality", "tension"];
+  for (const m of mentions) {
+    if (!validTypes.includes(m.type) || m.chartId !== chartId) continue;
+    if (m.type === sourceType && m.id === sourceId) continue;
+    if (m.id === sourceId) continue;
+    try {
+      await supabase.from("item_relations").upsert(
+        {
+          chart_id: chartId,
+          source_item_type: sourceType,
+          source_item_id: sourceId,
+          target_item_type: m.type,
+          target_item_id: m.id,
+        },
+        {
+          onConflict: "source_item_type,source_item_id,target_item_type,target_item_id",
+          ignoreDuplicates: true,
+        }
+      );
+    } catch (e) {
+      console.error("[recordItemRelations] insert error:", e);
+    }
+  }
+}
+
 export async function createComment(actionId: string, content: string, chartId: string) {
   const supabase = await createClient();
   let user;
@@ -927,6 +963,7 @@ export async function createComment(actionId: string, content: string, chartId: 
 
     if (inserted) {
       await recordChartHistory(chartId, "comment", inserted.id, "created", "action", actionId, content);
+      await recordItemRelationsFromMentions(supabase, chartId, "action", actionId, content);
     }
     await revalidateChartPath(chartId);
     return { success: true };
@@ -1117,6 +1154,7 @@ export async function createVisionComment(
 
     if (inserted) {
       await recordChartHistory(chartId, "comment", inserted.id, "created", "vision", visionId, content);
+      await recordItemRelationsFromMentions(supabase, chartId, "vision", visionId, content);
     }
     await revalidateChartPath(chartId);
     return { success: true };
@@ -1235,6 +1273,7 @@ export async function createRealityComment(
 
     if (inserted) {
       await recordChartHistory(chartId, "comment", inserted.id, "created", "reality", realityId, content);
+      await recordItemRelationsFromMentions(supabase, chartId, "reality", realityId, content);
     }
     await revalidateChartPath(chartId);
     return { success: true };
@@ -1649,15 +1688,20 @@ export async function addItemHistoryEntry(
   return result;
 }
 
-// Linked Resources (wrapper - charts actions handles both paths revalidation)
+// Linked Resources & Item Relations (wrapper - charts actions handles both paths revalidation)
 import {
   getItemLinks as _getItemLinks,
   addItemLink as _addItemLink,
   deleteItemLink as _deleteItemLink,
+  getItemRelations as _getItemRelations,
 } from "@/app/charts/[id]/actions";
 
 export async function getItemLinks(itemType: string, itemId: string) {
   return _getItemLinks(itemType, itemId);
+}
+
+export async function getItemRelations(chartId: string, itemType: string, itemId: string) {
+  return _getItemRelations(chartId, itemType, itemId);
 }
 
 export async function addItemLink(
