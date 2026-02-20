@@ -188,6 +188,7 @@ export function UnifiedDetailModal({
             childChartTitle={childChartTitle}
             onUpdate={onUpdate}
             locale={locale}
+            onNavigate={onNavigate}
           />
             </div>
           </div>

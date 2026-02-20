@@ -604,6 +604,11 @@
     "removeLink": "リンクを削除",
     "linkAdded": "リンクを追加しました",
     "linkRemoved": "リンクを削除しました",
-    "addLinkButton": "追加"
+    "addLinkButton": "追加",
+    "relations": "リレーション",
+    "references": "参照先",
+    "referencedBy": "参照元",
+    "noRelations": "リレーションはまだありません",
+    "noRelationsHint": "コメントで@メンションするとリンクされます"
   }
 }
