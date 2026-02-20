@@ -5,6 +5,7 @@ import { TitleEditor } from "./TitleEditor";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { DetailsEditor } from "./DetailsEditor";
 import { ChildChartLink } from "./ChildChartLink";
+import { ActionDependencies } from "./ActionDependencies";
 import { LinkedResources } from "./LinkedResources";
 import { ItemRelations } from "./ItemRelations";
 import { ChangeHistorySummary } from "./ChangeHistorySummary";
@@ -97,6 +98,14 @@ export function LeftPane({
         onUpdate={onUpdate}
         locale={locale}
       />
+
+      {itemType === "action" && (
+        <ActionDependencies
+          chartId={chartId}
+          actionId={itemId}
+          onNavigate={onNavigate}
+        />
+      )}
 
       <LinkedResources
         chartId={chartId}

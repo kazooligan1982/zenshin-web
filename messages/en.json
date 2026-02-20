@@ -609,6 +609,19 @@
     "references": "References",
     "referencedBy": "Referenced by",
     "noRelations": "No relations yet",
-    "noRelationsHint": "Use @mention in comments to link items"
+    "noRelationsHint": "Use @mention in comments to link items",
+    "dependencies": "Dependencies",
+    "blockedBy": "Blocked by",
+    "blocking": "Blocking",
+    "addDependency": "Add dependency",
+    "selectAction": "Search actions...",
+    "noDependencies": "No dependencies",
+    "dependencyAdded": "Dependency added",
+    "dependencyRemoved": "Dependency removed",
+    "statusTodo": "To Do",
+    "statusInProgress": "In Progress",
+    "statusDone": "Done",
+    "statusPending": "Pending",
+    "statusCanceled": "Canceled"
   }
 }

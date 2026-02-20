@@ -609,6 +609,19 @@
     "references": "参照先",
     "referencedBy": "参照元",
     "noRelations": "リレーションはまだありません",
-    "noRelationsHint": "コメントで@メンションするとリンクされます"
+    "noRelationsHint": "コメントで@メンションするとリンクされます",
+    "dependencies": "依存関係",
+    "blockedBy": "ブロッカー",
+    "blocking": "ブロック先",
+    "addDependency": "依存関係を追加",
+    "selectAction": "Actionを検索...",
+    "noDependencies": "依存関係なし",
+    "dependencyAdded": "依存関係を追加しました",
+    "dependencyRemoved": "依存関係を削除しました",
+    "statusTodo": "未着手",
+    "statusInProgress": "進行中",
+    "statusDone": "完了",
+    "statusPending": "保留",
+    "statusCanceled": "キャンセル"
   }
 }

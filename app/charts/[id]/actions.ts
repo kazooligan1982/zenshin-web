@@ -1776,6 +1776,159 @@ export async function getItemRelations(
   }
 }
 
+// Action Dependencies (blocking/blocked by)
+export type ActionDependencyItem = {
+  id: string;
+  actionId: string;
+  title: string;
+  status: string | null;
+  isCompleted: boolean | null;
+};
+
+export async function getActionDependencies(
+  chartId: string,
+  actionId: string
+): Promise<{ blockedBy: ActionDependencyItem[]; blocking: ActionDependencyItem[] }> {
+  try {
+    const supabase = await createClient();
+    const { data: blockedByRows } = await supabase
+      .from("action_dependencies")
+      .select("id, blocker_action_id")
+      .eq("chart_id", chartId)
+      .eq("blocked_action_id", actionId);
+    const { data: blockingRows } = await supabase
+      .from("action_dependencies")
+      .select("id, blocked_action_id")
+      .eq("chart_id", chartId)
+      .eq("blocker_action_id", actionId);
+
+    const blockerIds = (blockedByRows ?? []).map((r) => (r as { blocker_action_id: string }).blocker_action_id);
+    const blockedIds = (blockingRows ?? []).map((r) => (r as { blocked_action_id: string }).blocked_action_id);
+
+    const fetchActions = async (ids: string[]) => {
+      if (ids.length === 0) return [];
+      const { data } = await supabase
+        .from("actions")
+        .select("id, title, status, is_completed")
+        .in("id", ids);
+      return (data ?? []).map((a) => ({
+        id: (a as { id: string }).id,
+        title: ((a as { title: string }).title || "").slice(0, 200),
+        status: (a as { status: string | null }).status,
+        isCompleted: (a as { is_completed: boolean | null }).is_completed,
+      }));
+    };
+
+    const [blockedByActions, blockingActions] = await Promise.all([
+      fetchActions(blockerIds),
+      fetchActions(blockedIds),
+    ]);
+
+    const depId = (rows: { id: string }[], idx: number) => (rows ?? [])[idx]?.id ?? "";
+    const blockedBy = blockedByActions.map((a, i) => ({
+      ...a,
+      depId: (blockedByRows ?? [])[i]?.id ?? "",
+      actionId: a.id,
+    }));
+    const blocking = blockingActions.map((a, i) => ({
+      ...a,
+      depId: (blockingRows ?? [])[i]?.id ?? "",
+      actionId: a.id,
+    }));
+
+    return {
+      blockedBy: blockedBy.map(({ depId: d, ...rest }) => ({ ...rest, id: d })),
+      blocking: blocking.map(({ depId: d, ...rest }) => ({ ...rest, id: d })),
+    };
+  } catch (error) {
+    console.error("[getActionDependencies] Error:", error);
+    return { blockedBy: [], blocking: [] };
+  }
+}
+
+export async function searchChartActions(chartId: string, query: string): Promise<{ id: string; title: string; status: string | null }[]> {
+  try {
+    const supabase = await createClient();
+    let q = supabase
+      .from("actions")
+      .select("id, title, status")
+      .eq("chart_id", chartId)
+      .order("title");
+    if (query.trim()) {
+      q = q.ilike("title", `%${query.trim()}%`);
+    }
+    const { data } = await q.limit(20);
+    return (data ?? []).map((a) => ({
+      id: (a as { id: string }).id,
+      title: ((a as { title: string }).title || "").slice(0, 200),
+      status: (a as { status: string | null }).status,
+    }));
+  } catch (error) {
+    console.error("[searchChartActions] Error:", error);
+    return [];
+  }
+}
+
+export async function addActionDependency(
+  chartId: string,
+  actionId: string,
+  relatedActionId: string,
+  relationType: "blocked_by" | "blocking"
+) {
+  try {
+    const supabase = await createClient();
+    const blocked = relationType === "blocked_by" ? actionId : relatedActionId;
+    const blocker = relationType === "blocked_by" ? relatedActionId : actionId;
+    if (blocked === blocker) throw new Error("Cannot add self-dependency");
+
+    const { error } = await supabase.from("action_dependencies").insert({
+      chart_id: chartId,
+      blocked_action_id: blocked,
+      blocker_action_id: blocker,
+    });
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/charts/${chartId}`);
+    const { data: chart } = await supabase.from("charts").select("workspace_id").eq("id", chartId).single();
+    if (chart?.workspace_id) {
+      revalidatePath(`/workspaces/${chart.workspace_id}/charts/${chartId}`);
+      revalidatePath(`/workspaces/${chart.workspace_id}/charts`);
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("[addActionDependency] Error:", error);
+    throw error;
+  }
+}
+
+export async function removeActionDependency(dependencyId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: dep } = await supabase
+      .from("action_dependencies")
+      .select("chart_id")
+      .eq("id", dependencyId)
+      .single();
+
+    const { error } = await supabase.from("action_dependencies").delete().eq("id", dependencyId);
+    if (error) throw new Error(error.message);
+
+    if (dep?.chart_id) {
+      revalidatePath(`/charts/${dep.chart_id}`);
+      const { data: chart } = await supabase.from("charts").select("workspace_id").eq("id", dep.chart_id).single();
+      if (chart?.workspace_id) {
+        revalidatePath(`/workspaces/${chart.workspace_id}/charts/${dep.chart_id}`);
+        revalidatePath(`/workspaces/${chart.workspace_id}/charts`);
+      }
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("[removeActionDependency] Error:", error);
+    throw error;
+  }
+}
+
 export async function getItemLinks(
   itemType: string,
   itemId: string

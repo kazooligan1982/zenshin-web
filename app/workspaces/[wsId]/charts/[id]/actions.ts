@@ -1688,12 +1688,16 @@ export async function addItemHistoryEntry(
   return result;
 }
 
-// Linked Resources & Item Relations (wrapper - charts actions handles both paths revalidation)
+// Linked Resources, Item Relations, Action Dependencies (wrapper - charts actions handles both paths revalidation)
 import {
   getItemLinks as _getItemLinks,
   addItemLink as _addItemLink,
   deleteItemLink as _deleteItemLink,
   getItemRelations as _getItemRelations,
+  getActionDependencies as _getActionDependencies,
+  searchChartActions as _searchChartActions,
+  addActionDependency as _addActionDependency,
+  removeActionDependency as _removeActionDependency,
 } from "@/app/charts/[id]/actions";
 
 export async function getItemLinks(itemType: string, itemId: string) {
@@ -1702,6 +1706,27 @@ export async function getItemLinks(itemType: string, itemId: string) {
 
 export async function getItemRelations(chartId: string, itemType: string, itemId: string) {
   return _getItemRelations(chartId, itemType, itemId);
+}
+
+export async function getActionDependencies(chartId: string, actionId: string) {
+  return _getActionDependencies(chartId, actionId);
+}
+
+export async function searchChartActions(chartId: string, query: string) {
+  return _searchChartActions(chartId, query);
+}
+
+export async function addActionDependency(
+  chartId: string,
+  actionId: string,
+  relatedActionId: string,
+  relationType: "blocked_by" | "blocking"
+) {
+  return _addActionDependency(chartId, actionId, relatedActionId, relationType);
+}
+
+export async function removeActionDependency(dependencyId: string) {
+  return _removeActionDependency(dependencyId);
 }
 
 export async function addItemLink(
