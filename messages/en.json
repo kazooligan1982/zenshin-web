@@ -237,6 +237,7 @@
     "created": "Created",
     "updated": "Updated",
     "error": "An error occurred",
+    "invalidUrl": "Please enter a valid URL",
     "copied": "Copied!",
     "createFailed": "Failed to create",
     "updateFailed": "Update failed",
@@ -592,8 +593,17 @@
     "unknownUser": "Unknown",
     "showOlderHistory": "Show older history ({count} more)",
     "historyMovedToTension": "Moved to Tension \"{title}\"",
+    "historySetTension": "Set Tension to \"{title}\"",
     "historyRemovedFromTension": "Removed from Tension",
     "historyTitleChanged": "Changed title from \"{old}\" to \"{new}\"",
-    "historyDueDateChanged": "Changed due date from {old} to {new}"
+    "historyDueDateChanged": "Changed due date from {old} to {new}",
+    "historyLinkAdded": "Link added: {value}",
+    "historyLinkRemoved": "Link removed: {value}",
+    "linkedResources": "Linked Resources",
+    "addLink": "Paste URL...",
+    "removeLink": "Remove link",
+    "linkAdded": "Link added",
+    "linkRemoved": "Link removed",
+    "addLinkButton": "Add"
   }
 }

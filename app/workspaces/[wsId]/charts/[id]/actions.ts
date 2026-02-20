@@ -1649,3 +1649,28 @@ export async function addItemHistoryEntry(
   return result;
 }
 
+// Linked Resources (wrapper - charts actions handles both paths revalidation)
+import {
+  getItemLinks as _getItemLinks,
+  addItemLink as _addItemLink,
+  deleteItemLink as _deleteItemLink,
+} from "@/app/charts/[id]/actions";
+
+export async function getItemLinks(itemType: string, itemId: string) {
+  return _getItemLinks(itemType, itemId);
+}
+
+export async function addItemLink(
+  chartId: string,
+  itemType: string,
+  itemId: string,
+  url: string,
+  title?: string
+) {
+  return _addItemLink(chartId, itemType, itemId, url, title);
+}
+
+export async function deleteItemLink(linkId: string) {
+  return _deleteItemLink(linkId);
+}
+

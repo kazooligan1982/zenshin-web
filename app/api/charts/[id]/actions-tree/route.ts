@@ -60,16 +60,20 @@ async function getTensionsWithActions(
   const { data: tensions, error: tensionError } = await supabase
     .from("tensions")
     .select(
-      "id, title, description, area_id, areas (id, name, color)"
+      "id, title, description, area_id, status, areas (id, name, color)"
     )
     .eq("chart_id", chartId)
     .order("created_at", { ascending: true });
+
+  const activeTensions = (tensions || []).filter(
+    (t: { status?: string }) => t.status !== "resolved"
+  );
 
   if (tensionError) {
     console.error(`[getTensionsWithActions] Tension error:`, tensionError);
   }
 
-  if (!tensions || tensions.length === 0) {
+  if (!activeTensions || activeTensions.length === 0) {
     const { data: actions, error: actionError } = await supabase
       .from("actions")
       .select(
@@ -99,7 +103,7 @@ async function getTensionsWithActions(
 
   const tensionNodes: TreeNode[] = [];
 
-  for (const tension of tensions) {
+  for (const tension of activeTensions) {
     const { data: actions, error: actionError } = await supabase
       .from("actions")
       .select(

@@ -100,11 +100,15 @@ async function getActionsWithHierarchy(
 
   const { data: tensions } = await supabase
     .from("tensions")
-    .select("id, title, description, area_id, areas (name, color)")
+    .select("id, title, description, area_id, status, areas (name, color)")
     .eq("chart_id", chartId)
     .order("created_at", { ascending: true });
 
-  const tensionIds = (tensions || []).map((t: any) => t.id);
+  const activeTensions = (tensions || []).filter(
+    (t: { status?: string }) => t.status !== "resolved"
+  );
+
+  const tensionIds = activeTensions.map((t: any) => t.id);
   const { tensionVisions, visionIndexMap, tensionVisionTitleMap } =
     await getVisionTagMap(supabase, chartId, tensionIds);
 
@@ -164,7 +168,7 @@ async function getActionsWithHierarchy(
   }
 
   const tensionActionResults = await Promise.all(
-    (tensions || []).map((tension: any) =>
+    activeTensions.map((tension: any) =>
       supabase
         .from("actions")
         .select("*")
@@ -173,8 +177,8 @@ async function getActionsWithHierarchy(
     )
   );
 
-  for (let i = 0; i < (tensions || []).length; i++) {
-    const tension = (tensions || [])[i];
+  for (let i = 0; i < activeTensions.length; i++) {
+    const tension = activeTensions[i];
     const { data: actions } = tensionActionResults[i];
     const actionsList = actions || [];
     const currentTensionInfo = {

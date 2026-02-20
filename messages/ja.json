@@ -237,6 +237,7 @@
     "created": "作成しました",
     "updated": "更新しました",
     "error": "エラーが発生しました",
+    "invalidUrl": "有効なURLを入力してください",
     "copied": "コピーしました",
     "createFailed": "作成に失敗しました",
     "updateFailed": "更新に失敗しました",
@@ -592,8 +593,17 @@
     "unknownUser": "不明",
     "showOlderHistory": "過去の履歴を表示（残り{count}件）",
     "historyMovedToTension": "Tension を「{title}」に移動",
+    "historySetTension": "Tension を「{title}」に設定",
     "historyRemovedFromTension": "Tension から解除",
     "historyTitleChanged": "タイトルを「{old}」→「{new}」に変更",
-    "historyDueDateChanged": "期限を {old} → {new} に変更"
+    "historyDueDateChanged": "期限を {old} → {new} に変更",
+    "historyLinkAdded": "リンクを追加: {value}",
+    "historyLinkRemoved": "リンクを削除: {value}",
+    "linkedResources": "外部リンク",
+    "addLink": "URLを貼り付け...",
+    "removeLink": "リンクを削除",
+    "linkAdded": "リンクを追加しました",
+    "linkRemoved": "リンクを削除しました",
+    "addLinkButton": "追加"
   }
 }
