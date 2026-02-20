@@ -14,7 +14,8 @@ const LIMIT_PER_TABLE = 20;
 
 export async function searchWorkspaceItems(
   workspaceId: string,
-  query: string
+  query: string,
+  chartId?: string
 ): Promise<SearchResult[]> {
   try {
     const supabase = await createClient();
@@ -29,7 +30,14 @@ export async function searchWorkspaceItems(
       return [];
     }
 
-    const chartIds = chartsInWorkspace.map((c: { id: string; title: string | null }) => c.id);
+    const chartIds = chartId
+      ? chartsInWorkspace.some((c: { id: string }) => c.id === chartId)
+        ? [chartId]
+        : []
+      : chartsInWorkspace.map((c: { id: string; title: string | null }) => c.id);
+
+    if (chartIds.length === 0) return [];
+
     const chartTitleMap = new Map<string, string>(
       chartsInWorkspace.map((c: { id: string; title: string | null }) => [
         c.id,
@@ -105,15 +113,17 @@ export async function searchWorkspaceItems(
 
     const results: SearchResult[] = [];
 
-    (chartsData || []).forEach((row: { id: string; title: string | null }) => {
-      results.push({
-        type: "chart",
-        id: row.id,
-        title: row.title?.trim() || "(無題)",
-        chartTitle: row.title?.trim() || "(無題)",
-        chartId: row.id,
+    if (!chartId) {
+      (chartsData || []).forEach((row: { id: string; title: string | null }) => {
+        results.push({
+          type: "chart",
+          id: row.id,
+          title: row.title?.trim() || "(無題)",
+          chartTitle: row.title?.trim() || "(無題)",
+          chartId: row.id,
+        });
       });
-    });
+    }
 
     (visionsData || []).forEach(
       (row: { id: string; content: string | null; chart_id: string }) => {

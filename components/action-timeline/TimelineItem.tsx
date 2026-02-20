@@ -132,7 +132,9 @@ export function TimelineItem({
       router.refresh()
     }
 
+    toast.dismiss();
     toast(t("commentDeleted"), {
+      id: `comment-delete-${comment.id}`,
       duration: 15000,
       action: {
         label: t("restore"),

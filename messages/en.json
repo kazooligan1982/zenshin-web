@@ -546,6 +546,8 @@
   },
   "modal": {
     "activity": "Activity",
+    "activityTitle": "Activity",
+    "noActivity": "No activity yet",
     "vision": "Vision",
     "reality": "Reality",
     "action": "Action",
@@ -587,6 +589,11 @@
     "noDueDate": "No due date",
     "loading": "Loading...",
     "noHistory": "No history",
-    "unknownUser": "Unknown"
+    "unknownUser": "Unknown",
+    "showOlderHistory": "Show older history ({count} more)",
+    "historyMovedToTension": "Moved to Tension \"{title}\"",
+    "historyRemovedFromTension": "Removed from Tension",
+    "historyTitleChanged": "Changed title from \"{old}\" to \"{new}\"",
+    "historyDueDateChanged": "Changed due date from {old} to {new}"
   }
 }

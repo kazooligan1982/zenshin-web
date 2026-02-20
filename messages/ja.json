@@ -546,6 +546,8 @@
   },
   "modal": {
     "activity": "アクティビティ",
+    "activityTitle": "アクティビティ",
+    "noActivity": "まだアクティビティがありません",
     "vision": "ビジョン",
     "reality": "リアリティ",
     "action": "アクション",
@@ -587,6 +589,11 @@
     "noDueDate": "期限なし",
     "loading": "読み込み中...",
     "noHistory": "履歴がありません",
-    "unknownUser": "不明"
+    "unknownUser": "不明",
+    "showOlderHistory": "過去の履歴を表示（残り{count}件）",
+    "historyMovedToTension": "Tension を「{title}」に移動",
+    "historyRemovedFromTension": "Tension から解除",
+    "historyTitleChanged": "タイトルを「{old}」→「{new}」に変更",
+    "historyDueDateChanged": "期限を {old} → {new} に変更"
   }
 }

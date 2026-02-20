@@ -24,13 +24,37 @@ interface CommentInputProps {
   onFailed?: (tempId: string) => void;
 }
 
-function createMentionSuggestion(workspaceId: string) {
+// Editor パネルヘッダーと統一: Vision=Target(teal), Reality=Search(orange), Tension=Zap(navy), Action=Zap(blue)
+const MENTION_ICONS: Record<string, { svg: string; color: string }> = {
+  vision: {
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+    color: "#23967F",
+  },
+  reality: {
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+    color: "#F5853F",
+  },
+  tension: {
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    color: "#154665",
+  },
+  action: {
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg>',
+    color: "#3b82f6",
+  },
+  chart: {
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
+    color: "#64748b",
+  },
+};
+
+function createMentionSuggestion(workspaceId: string, chartId: string) {
   return {
     char: "@",
     items: async ({ query }: { query: string }) => {
-      if (!workspaceId) return [];
-      const results = await searchWorkspaceItems(workspaceId, query);
-      return results.slice(0, 10).map((item) => ({
+      if (!workspaceId || !chartId) return [];
+      const results = await searchWorkspaceItems(workspaceId, query, chartId);
+      const mapped = results.map((item) => ({
         id: `${item.type}:${item.chartId}:${item.id}`,
         label: item.title,
         type: item.type,
@@ -38,6 +62,10 @@ function createMentionSuggestion(workspaceId: string) {
         chartTitle: item.chartTitle,
         chartId: item.chartId,
       }));
+      const uniqueItems = Array.from(
+        new Map(mapped.map((item) => [item.id, item])).values()
+      );
+      return uniqueItems.slice(0, 10);
     },
     render: () => {
       let component: HTMLDivElement | null = null;
@@ -58,26 +86,24 @@ function createMentionSuggestion(workspaceId: string) {
         }
         confirmedEmpty = false;
         if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
-        const typeLabels: Record<string, string> = {
-          chart: "📊",
-          vision: "🎯",
-          reality: "📍",
-          tension: "⚡",
-          action: "✅",
-        };
-        component.innerHTML =
-          items
-                .map(
-                  (item, index) =>
-                    `<div class="px-3 py-1.5 text-sm rounded cursor-pointer flex items-center gap-2 ${
-                      index === selectedIndex ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"
-                    }" data-index="${index}">
-  <span>${typeLabels[item.type] || ""}</span>
-  <span class="truncate">${item.title}</span>
-  <span class="text-xs text-gray-400 ml-auto shrink-0">${item.chartTitle}</span>
-</div>`
-                )
-                .join("");
+        const iconConfig = (type: string) =>
+          MENTION_ICONS[type] || MENTION_ICONS.chart;
+        const getItemType = (item: { type?: string; id?: string }) =>
+          item.type || (item.id || "").split(":")[0] || "chart";
+        component.innerHTML = items
+          .map(
+            (item, index) => {
+              const itemType = getItemType(item);
+              const { svg, color } = iconConfig(itemType);
+              return `<div class="px-3 py-2 text-sm rounded cursor-pointer flex items-center gap-3 min-w-[350px] ${
+                index === selectedIndex ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"
+              }" data-index="${index}">
+  <span class="flex items-center justify-center shrink-0 w-6 h-6 rounded" style="background:${color}20;color:${color}">${svg}</span>
+  <span class="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title="${(item.title || "").replace(/"/g, "&quot;")}">${(item.title || "").replace(/</g, "&lt;")}</span>
+</div>`;
+            }
+          )
+          .join("");
 
         component.querySelectorAll("[data-index]").forEach((el) => {
           el.addEventListener("click", () => {
@@ -97,14 +123,15 @@ function createMentionSuggestion(workspaceId: string) {
 
           component = document.createElement("div");
           component.className =
-            "mention-dropdown bg-white border rounded-lg shadow-lg p-1 max-h-[200px] overflow-y-auto z-[9999]";
+            "mention-dropdown bg-white border rounded-lg shadow-lg p-1 max-h-[280px] overflow-y-auto z-[9999] min-w-[350px]";
           updateDropdown();
 
           const { view } = props.editor;
           const coords = view.coordsAtPos(props.range.from);
           component.style.position = "fixed";
           component.style.left = `${coords.left}px`;
-          component.style.top = `${coords.bottom + 4}px`;
+          component.style.top = "auto";
+          component.style.bottom = `${window.innerHeight - coords.top + 4}px`;
           document.body.appendChild(component);
         },
         onUpdate: (props: any) => {
@@ -169,8 +196,8 @@ export function CommentInput({
   const handleSubmitRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const mentionSuggestion = useMemo(
-    () => createMentionSuggestion(workspaceId),
-    [workspaceId]
+    () => createMentionSuggestion(workspaceId, chartId),
+    [workspaceId, chartId]
   );
 
   const editor = useEditor({
