@@ -2527,6 +2527,7 @@ export function ProjectEditor({
             areas={chart.areas ?? []}
             members={workspaceMembers}
             currentUser={currentUser}
+            currentUserId={currentUserId || currentUser?.id}
             tensions={tensions}
             childChartTitle={childChartTitle}
             onUpdate={handleItemUpdate}

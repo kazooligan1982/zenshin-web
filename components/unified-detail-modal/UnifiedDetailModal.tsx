@@ -20,6 +20,8 @@ export interface UnifiedDetailModalProps {
   areas?: Area[];
   members?: { id: string; email: string; name?: string; avatar_url?: string }[];
   currentUser?: { id?: string; email: string; name?: string; avatar_url?: string | null } | null;
+  /** ログインユーザーID（currentUser?.id のフォールバック用） */
+  currentUserId?: string;
   tensions?: Tension[];
   childChartTitle?: string | null;
   onUpdate?: (field: string, value: string | boolean | null) => void;
@@ -41,6 +43,7 @@ export function UnifiedDetailModal({
   areas = [],
   members = [],
   currentUser = null,
+  currentUserId,
   tensions = [],
   childChartTitle = null,
   onUpdate = () => {},
@@ -199,11 +202,20 @@ export function UnifiedDetailModal({
           </div>
           <div
             style={isDesktop ? { width: `${100 - leftWidth}%`, minWidth: 500 } : undefined}
-            className="flex-1 md:flex-initial md:min-w-0 min-h-0 overflow-y-auto overflow-x-hidden border-l border-border outline-none focus:outline-none focus-visible:outline-none"
+            className="flex-1 md:flex-initial md:min-w-0 min-h-0 flex flex-col overflow-hidden border-l border-border outline-none focus:outline-none focus-visible:outline-none"
             tabIndex={-1}
           >
-            <div className="p-6 min-w-0">
-              <RightPane itemType={itemType} itemId={itemId} />
+            <div className="p-6 min-w-0 flex-1 flex flex-col min-h-0">
+              <RightPane
+                itemType={itemType}
+                itemId={itemId}
+                chartId={chartId}
+                workspaceId={workspaceId}
+                currentUser={currentUser}
+                currentUserId={currentUserId}
+                tensions={tensions}
+                areas={areas}
+              />
             </div>
           </div>
         </div>
