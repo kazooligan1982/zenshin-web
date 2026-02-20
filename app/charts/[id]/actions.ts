@@ -837,6 +837,42 @@ export async function moveActionToTension(
   }
 }
 
+/** Action を loose（未割り当て）に移動 */
+export async function moveActionToLoose(
+  actionId: string,
+  chartId: string
+) {
+  try {
+    const supabase = await createClient();
+    const { data: actionBefore } = await supabase
+      .from("actions")
+      .select("tension_id")
+      .eq("id", actionId)
+      .single();
+    const fromTensionId = actionBefore?.tension_id ?? null;
+
+    const { error } = await supabase
+      .from("actions")
+      .update({ tension_id: null })
+      .eq("id", actionId);
+
+    if (error) {
+      console.error("❌ Supabase update error:", error);
+      return { success: false, error: "saveFailed" };
+    }
+
+    await recordChartHistory(chartId, "action", actionId, "moved", "tension_id", fromTensionId ?? null, null);
+    await revalidateChartPath(chartId);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Server action error:", error);
+    return {
+      success: false,
+      error: "error",
+    };
+  }
+}
+
 export async function fetchActionComments(actionId: string) {
   try {
     const supabase = await createClient();

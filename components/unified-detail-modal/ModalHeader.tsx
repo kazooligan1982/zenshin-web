@@ -36,9 +36,10 @@ export function ModalHeader({
   const typeLabel = t(itemType);
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3 border-b bg-white shrink-0">
+    <div className="flex items-center justify-between px-6 py-3 border-b bg-white shrink-0">
       <div className="flex items-center gap-2 min-w-0">
-        <div className="flex flex-col">
+        {/* ▲▼ ナビ */}
+        <div className="flex flex-col shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -60,6 +61,8 @@ export function ModalHeader({
             <ChevronDown className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* バッジ */}
         <span
           className={cn(
             "px-2.5 py-1 rounded-md text-sm font-semibold shrink-0",
@@ -70,7 +73,7 @@ export function ModalHeader({
           {typeLabel}
         </span>
       </div>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1 shrink-0 ml-4">
         <Button
           variant="ghost"
           size="icon"

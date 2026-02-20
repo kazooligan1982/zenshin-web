@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { FolderOpen, User, Calendar, CircleDot, Link2, Check } from "lucide-react";
+import { FolderOpen, User, Calendar, CircleDot, Zap, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -59,20 +59,33 @@ export function PropertiesPanel({
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [assigneeOpen, setAssigneeOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [tensionOpen, setTensionOpen] = useState(false);
 
   const areaId = "area_id" in item ? item.area_id : null;
   const assignee = "assignee" in item ? (item as VisionItem | ActionPlan).assignee : null;
   const dueDate = "dueDate" in item ? item.dueDate : null;
   const createdAt = "createdAt" in item ? (item as VisionItem | RealityItem).createdAt : null;
   const status = itemType === "action" ? (item as ActionPlan).status : null;
-  const tensionId = itemType === "action" ? (item as ActionPlan).tension_id : null;
 
   const area = areas.find((a) => a.id === areaId);
   const assigneeMember =
     members.find((m) => m.email === assignee) ??
     (currentUser && assignee === currentUser.email ? currentUser : null);
   const membersList = members.length > 0 ? members : currentUser ? [currentUser] : [];
-  const tension = tensions.find((t) => t.id === tensionId);
+
+  // Action の所属テンション（tensions から直接検索）
+  const currentTensionId =
+    itemType === "action"
+      ? tensions.find((t) => t.actionPlans.some((a) => a.id === item.id))?.id ?? null
+      : null;
+  const currentTensionName =
+    itemType === "action"
+      ? tensions.find((t) => t.actionPlans.some((a) => a.id === item.id))?.title ?? null
+      : null;
+  const isTensionCompleted = (t: Tension) =>
+    t.status === "resolved" ||
+    (t.actionPlans.length > 0 &&
+      t.actionPlans.every((a) => a.status === "done" || a.isCompleted));
 
   return (
     <div className="space-y-0">
@@ -106,6 +119,39 @@ export function PropertiesPanel({
           </SelectContent>
         </Select>
       </PropertyRow>
+
+      {/* テンション - Action のみ（カテゴリの下） */}
+      {itemType === "action" && (
+        <PropertyRow icon={<Zap className="h-4 w-4" />} label={t("parentTension")}>
+          <Select
+            value={currentTensionId ?? "__none__"}
+            onValueChange={(v) => {
+              onUpdate("tensionId", v === "__none__" ? null : v);
+              setTensionOpen(false);
+            }}
+            open={tensionOpen}
+            onOpenChange={setTensionOpen}
+          >
+            <SelectTrigger className="h-auto min-h-0 py-0 px-0 border-0 shadow-none ring-0 bg-transparent hover:bg-transparent focus:ring-0 w-auto max-w-full [&>svg]:hidden">
+              <SelectValue placeholder={t("noTension")}>
+                {currentTensionName || t("noTension")}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">{t("noTension")}</SelectItem>
+              {tensions
+                .filter((t) => !isTensionCompleted(t))
+                .map((tension) => (
+                  <SelectItem key={tension.id} value={tension.id}>
+                    <span className="truncate max-w-[300px] block">
+                      {tension.title || tAction("noTitle")}
+                    </span>
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </PropertyRow>
+      )}
 
       {/* 担当者 - Vision, Action のみ */}
       {(itemType === "vision" || itemType === "action") && (
@@ -228,13 +274,6 @@ export function PropertiesPanel({
               ))}
             </SelectContent>
           </Select>
-        </PropertyRow>
-      )}
-
-      {/* 親 Tension - Action のみ */}
-      {itemType === "action" && tension && (
-        <PropertyRow icon={<Link2 className="h-4 w-4" />} label={t("parentTension")}>
-          <span className="text-sm truncate pl-0">{tension.title || tAction("noTitle")}</span>
         </PropertyRow>
       )}
     </div>
