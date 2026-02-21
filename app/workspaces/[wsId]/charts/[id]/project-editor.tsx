@@ -2689,7 +2689,9 @@ function ComparisonView({
     const areaIds = new Set<string>();
     visions.forEach((v) => areaIds.add(v.area_id || "uncategorized"));
     realities.forEach((r) => areaIds.add(r.area_id || "uncategorized"));
-    return Array.from(areaIds);
+    const result = Array.from(areaIds);
+    // 空のチャートでも最低1セクション（uncategorized）を表示
+    return result.length > 0 ? result : ["uncategorized"];
   }, [visions, realities]);
 
   const getAreaName = (areaId: string) => {
@@ -2732,7 +2734,6 @@ function ComparisonView({
               const areaRealities = realities.filter((r) => (r.area_id || "uncategorized") === areaId);
 
               if (selectedAreaFilter !== "all" && selectedAreaFilter !== areaId) return null;
-              if (areaVisions.length === 0 && areaRealities.length === 0) return null;
 
               const visionInput = visionInputByArea[areaId] ?? "";
               const realityInput = realityInputByArea[areaId] ?? "";
