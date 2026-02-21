@@ -212,8 +212,8 @@ export function ProjectEditor({
     localStorage.setItem("zenshin_recent_charts", JSON.stringify(updated));
     window.dispatchEvent(new Event("recentChartsUpdated"));
   }, [chart?.id, chart?.title]);
-  const [visions, setVisions] = useState<VisionItem[]>(chart.visions);
-  const [realities, setRealities] = useState<RealityItem[]>(chart.realities);
+  const [visions, setVisions] = useState<VisionItem[]>(chart.visions ?? []);
+  const [realities, setRealities] = useState<RealityItem[]>(chart.realities ?? []);
   const [tensions, setTensions] = useState<Tension[]>(chart.tensions);
   const [breadcrumbs] = useState<BreadcrumbItem[]>(chart.breadcrumbs || []);
   const [hoveredSection, setHoveredSection] = useState<
@@ -2686,9 +2686,11 @@ function ComparisonView({
   const [realityInputByArea, setRealityInputByArea] = useState<Record<string, string>>({});
 
   const allAreaIds = useMemo(() => {
+    const v = Array.isArray(visions) ? visions : [];
+    const r = Array.isArray(realities) ? realities : [];
     const areaIds = new Set<string>();
-    visions.forEach((v) => areaIds.add(v.area_id || "uncategorized"));
-    realities.forEach((r) => areaIds.add(r.area_id || "uncategorized"));
+    v.forEach((item) => areaIds.add(item.area_id || "uncategorized"));
+    r.forEach((item) => areaIds.add(item.area_id || "uncategorized"));
     const result = Array.from(areaIds);
     // 空のチャートでも最低1セクション（uncategorized）を表示
     return result.length > 0 ? result : ["uncategorized"];
@@ -2714,7 +2716,8 @@ function ComparisonView({
         : [selectedAreaFilter];
 
   const handleVrDragEnd = (event: DragEndEvent) => {
-    const isVision = visions.some((v) => v.id === event.active.id);
+    const v = Array.isArray(visions) ? visions : [];
+    const isVision = v.some((item) => item.id === event.active.id);
     onVisionRealityDragEnd(event, isVision ? "visions" : "realities");
   };
 
@@ -2730,8 +2733,10 @@ function ComparisonView({
         >
           <div className="space-y-6">
             {allAreaIds.map((areaId) => {
-              const areaVisions = visions.filter((v) => (v.area_id || "uncategorized") === areaId);
-              const areaRealities = realities.filter((r) => (r.area_id || "uncategorized") === areaId);
+              const v = Array.isArray(visions) ? visions : [];
+              const r = Array.isArray(realities) ? realities : [];
+              const areaVisions = v.filter((item) => (item.area_id || "uncategorized") === areaId);
+              const areaRealities = r.filter((item) => (item.area_id || "uncategorized") === areaId);
 
               if (selectedAreaFilter !== "all" && selectedAreaFilter !== areaId) return null;
 
