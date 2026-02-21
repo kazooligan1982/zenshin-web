@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { Target, Search, Zap, Play } from "lucide-react";
+import { Target, Search, Zap, Play, GitBranch } from "lucide-react";
 import { getItemRelations, type ItemRelation } from "@/app/charts/[id]/actions";
 import type { ItemType } from "./ModalHeader";
 
@@ -60,7 +60,7 @@ function RelationItem({
       <button
         type="button"
         onClick={handleClick}
-        className="w-full text-left px-2.5 py-1.5 rounded-md hover:bg-zenshin-navy/5 text-sm flex items-center gap-2 transition-colors cursor-pointer"
+        className="w-full text-left p-1.5 rounded-md hover:bg-gray-100 text-sm flex items-center gap-2 transition-colors cursor-pointer"
       >
         {content}
       </button>
@@ -68,7 +68,7 @@ function RelationItem({
   }
 
   return (
-    <div className="px-2.5 py-1.5 text-sm flex items-center gap-2 text-muted-foreground">
+    <div className="p-1.5 text-sm flex items-center gap-2 text-muted-foreground">
       {content}
     </div>
   );
@@ -105,13 +105,16 @@ export function ItemRelations({
 
   return (
     <div className="w-full space-y-2">
-      <h3 className="text-sm font-medium text-muted-foreground">{t("relations")}</h3>
+      <div className="flex items-center gap-2 mb-2">
+        <GitBranch className="w-4 h-4 text-gray-400" />
+        <h3 className="text-sm font-medium text-gray-500">{t("relations")}</h3>
+      </div>
 
-      <div className="rounded-lg border border-zenshin-navy/10 bg-zenshin-cream/30 p-3 space-y-3">
+      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t("loading")}</p>
         ) : !hasAny ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-gray-400 italic">
             {t("noRelations")} — {t("noRelationsHint")}
           </p>
         ) : (

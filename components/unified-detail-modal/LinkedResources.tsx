@@ -139,12 +139,12 @@ export function LinkedResources({
 
   return (
     <div className="w-full space-y-2">
-      <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-        <Link2 className="w-4 h-4" />
-        {t("linkedResources")}
-      </h3>
+      <div className="flex items-center gap-2 mb-2">
+        <Link2 className="w-4 h-4 text-gray-400" />
+        <h3 className="text-sm font-medium text-gray-500">{t("linkedResources")}</h3>
+      </div>
 
-      <div className="rounded-lg border border-zenshin-navy/10 bg-zenshin-cream/30 p-3 space-y-3">
+      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t("loading")}</p>
         ) : (
@@ -160,7 +160,7 @@ export function LinkedResources({
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 min-w-0 flex items-center gap-2 truncate hover:text-zenshin-teal transition-colors"
+                      className="flex-1 min-w-0 flex items-center gap-2 p-1.5 rounded-md hover:bg-gray-100 hover:text-zenshin-teal transition-colors cursor-pointer"
                     >
                       <span className="text-zenshin-navy/60 shrink-0">
                         {getServiceIcon(link.service)}

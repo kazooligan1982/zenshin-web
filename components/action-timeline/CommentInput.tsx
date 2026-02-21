@@ -429,11 +429,11 @@ export function CommentInput({
     <div className="flex gap-2">
       <div className="flex-1 border border-zenshin-navy/15 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 disabled:opacity-50 overflow-hidden">
         <EditorContent editor={editor} />
-        <div className="flex items-center gap-1 px-2 py-1.5 border-t border-zenshin-navy/10 bg-zenshin-cream/20">
+        <div className="flex items-center gap-1 px-2 py-1.5 border-t border-gray-100">
           <button
             type="button"
             disabled
-            className="p-1.5 rounded hover:bg-zenshin-navy/5 text-zenshin-navy/40 cursor-not-allowed"
+            className="p-1.5 rounded hover:bg-zenshin-navy/5 text-zenshin-navy/40 cursor-not-allowed opacity-40"
             title={tMention("attachFile")}
           >
             <Paperclip className="w-4 h-4" />
@@ -503,7 +503,7 @@ export function CommentInput({
           <button
             type="button"
             disabled
-            className="p-1.5 rounded hover:bg-zenshin-navy/5 text-zenshin-navy/40 cursor-not-allowed"
+            className="p-1.5 rounded hover:bg-zenshin-navy/5 text-zenshin-navy/40 cursor-not-allowed opacity-40"
             title={tMention("askAI")}
           >
             <Bot className="w-4 h-4" />

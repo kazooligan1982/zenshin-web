@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ItemType } from "./ModalHeader";
 import type { Tension, Area } from "@/types/chart";
@@ -150,14 +150,17 @@ export function ChangeHistorySummary({
   const dateFnsLocale = locale === "ja" ? ja : undefined;
 
   return (
-    <div className="mt-4 w-full">
-      <h3 className="text-sm font-medium text-muted-foreground mb-2">{t("changeHistory")}</h3>
+    <div className="w-full">
+      <div className="flex items-center gap-2 mb-2">
+        <Clock className="w-4 h-4 text-gray-400" />
+        <h3 className="text-sm font-medium text-gray-500">{t("changeHistory")}</h3>
+      </div>
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("loading")}</p>
+        <p className="text-sm text-gray-400 italic">{t("loading")}</p>
       ) : history.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("noHistory")}</p>
+        <p className="text-sm text-gray-400 italic">{t("noHistory")}</p>
       ) : (
-        <div className="space-y-1">
+        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
           {history.map((entry) => {
             const changedByName = entry.changed_by_name ?? t("unknownUser");
             const description = formatHistorySummary(entry, t, tensionMap, areaMap);
@@ -180,7 +183,7 @@ export function ChangeHistorySummary({
             <Button
               variant="ghost"
               size="sm"
-              className="mt-2 h-8 text-muted-foreground"
+              className="mt-2 h-8 text-xs text-gray-400 hover:text-gray-600"
               onClick={() => setIsExpanded(true)}
             >
               <ChevronDown className="h-4 w-4 mr-1" />
@@ -191,7 +194,7 @@ export function ChangeHistorySummary({
             <Button
               variant="ghost"
               size="sm"
-              className="mt-2 h-8 text-muted-foreground"
+              className="mt-2 h-8 text-xs text-gray-400 hover:text-gray-600"
               onClick={() => setIsExpanded(false)}
             >
               <ChevronUp className="h-4 w-4 mr-1" />

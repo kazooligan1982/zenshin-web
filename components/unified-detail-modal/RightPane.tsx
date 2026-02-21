@@ -277,7 +277,7 @@ export function RightPane({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <h3 className="font-semibold mb-4 shrink-0">{t("activity")}</h3>
+      <h3 className="text-sm font-medium text-gray-500 mb-4 shrink-0">{t("activity")}</h3>
 
       <div
         ref={scrollRef}
@@ -294,7 +294,7 @@ export function RightPane({
               <button
                 type="button"
                 onClick={handleShowOlder}
-                className="w-full py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+                className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
               >
                 {t("showOlderHistory", { count: olderCount })}
               </button>
