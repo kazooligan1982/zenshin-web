@@ -34,6 +34,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.0",
+    "@tiptap/extension-link": "^3.20.0",
     "@tiptap/extension-mention": "^3.19.0",
     "@tiptap/extension-placeholder": "^3.19.0",
     "@tiptap/pm": "^3.19.0",
