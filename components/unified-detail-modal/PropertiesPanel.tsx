@@ -88,9 +88,9 @@ export function PropertiesPanel({
       t.actionPlans.every((a) => a.status === "done" || a.isCompleted));
 
   return (
-    <div className="space-y-0">
-      {/* カテゴリ - 全タイプ共通 */}
-      <PropertyRow icon={<FolderOpen className="h-4 w-4" />} label={t("category")}>
+    <div className="grid grid-cols-2 gap-x-4 gap-y-0">
+      {/* カテゴリ — 1列 */}
+      <PropertyRow icon={<FolderOpen className="h-4 w-4" />} label={t("category")} className="col-span-1">
         <Select
           value={areaId ?? "untagged"}
           onValueChange={(v) => {
@@ -120,42 +120,22 @@ export function PropertiesPanel({
         </Select>
       </PropertyRow>
 
-      {/* テンション - Action のみ（カテゴリの下） */}
-      {itemType === "action" && (
-        <PropertyRow icon={<Zap className="h-4 w-4" />} label={t("parentTension")}>
-          <Select
-            value={currentTensionId ?? "__none__"}
-            onValueChange={(v) => {
-              onUpdate("tensionId", v === "__none__" ? null : v);
-              setTensionOpen(false);
-            }}
-            open={tensionOpen}
-            onOpenChange={setTensionOpen}
-          >
-            <SelectTrigger className="h-auto min-h-0 py-0 px-0 border-0 shadow-none ring-0 bg-transparent hover:bg-transparent focus:ring-0 w-auto max-w-full [&>svg]:hidden">
-              <SelectValue placeholder={t("noTension")}>
-                {currentTensionName || t("noTension")}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">{t("noTension")}</SelectItem>
-              {tensions
-                .filter((t) => !isTensionCompleted(t))
-                .map((tension) => (
-                  <SelectItem key={tension.id} value={tension.id}>
-                    <span className="truncate max-w-[300px] block">
-                      {tension.title || tAction("noTitle")}
-                    </span>
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+      {/* 作成日 — 1列（Reality のみ） */}
+      {itemType === "reality" && createdAt && (
+        <PropertyRow icon={<Calendar className="h-4 w-4" />} label={t("createdAt")} className="col-span-1">
+          <span className="text-sm pl-0">
+            {new Date(createdAt).toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            })}
+          </span>
         </PropertyRow>
       )}
 
-      {/* 担当者 - Vision, Action のみ */}
+      {/* 担当者 — 1列（Vision, Action のみ） */}
       {(itemType === "vision" || itemType === "action") && (
-        <PropertyRow icon={<User className="h-4 w-4" />} label={t("assignee")}>
+        <PropertyRow icon={<User className="h-4 w-4" />} label={t("assignee")} className="col-span-1">
           <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
             <PopoverTrigger asChild>
               <button
@@ -227,9 +207,9 @@ export function PropertiesPanel({
         </PropertyRow>
       )}
 
-      {/* 期限 - Vision, Action のみ（Reality には期限なし） */}
+      {/* 期限 — 1列（Vision, Action のみ） */}
       {itemType !== "reality" && (
-        <PropertyRow icon={<Calendar className="h-4 w-4" />} label={t("dueDate")}>
+        <PropertyRow icon={<Calendar className="h-4 w-4" />} label={t("dueDate")} className="col-span-1">
           <DatePicker
             value={dueDate ?? null}
             onChange={(date) => onUpdate("dueDate", date)}
@@ -238,22 +218,9 @@ export function PropertiesPanel({
         </PropertyRow>
       )}
 
-      {/* 作成日 - Reality のみ */}
-      {itemType === "reality" && createdAt && (
-        <PropertyRow icon={<Calendar className="h-4 w-4" />} label={t("createdAt")}>
-          <span className="text-sm pl-0">
-            {new Date(createdAt).toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })}
-          </span>
-        </PropertyRow>
-      )}
-
-      {/* ステータス - Action のみ */}
+      {/* ステータス — 1列（Action のみ） */}
       {itemType === "action" && (
-        <PropertyRow icon={<CircleDot className="h-4 w-4" />} label={t("status")}>
+        <PropertyRow icon={<CircleDot className="h-4 w-4" />} label={t("status")} className="col-span-1">
           <Select
             value={(status || "todo") as string}
             onValueChange={(v) => {
@@ -269,9 +236,57 @@ export function PropertiesPanel({
             <SelectContent>
               {STATUS_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
-                  {tk(opt.labelKey as "todo" | "inProgress" | "done" | "pending" | "canceled")}
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{
+                        backgroundColor:
+                          {
+                            todo: "#94a3b8",
+                            in_progress: "#3b82f6",
+                            done: "#22c55e",
+                            pending: "#f59e0b",
+                            canceled: "#ef4444",
+                          }[opt.value] ?? "#94a3b8",
+                      }}
+                    />
+                    {tk(opt.labelKey as "todo" | "inProgress" | "done" | "pending" | "canceled")}
+                  </span>
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </PropertyRow>
+      )}
+
+      {/* テンション — 2列幅（Action のみ、値が長文になるため） */}
+      {itemType === "action" && (
+        <PropertyRow icon={<Zap className="h-4 w-4" />} label={t("parentTension")} className="col-span-2">
+          <Select
+            value={currentTensionId ?? "__none__"}
+            onValueChange={(v) => {
+              onUpdate("tensionId", v === "__none__" ? null : v);
+              setTensionOpen(false);
+            }}
+            open={tensionOpen}
+            onOpenChange={setTensionOpen}
+          >
+            <SelectTrigger className="h-auto min-h-0 py-0 px-0 border-0 shadow-none ring-0 bg-transparent hover:bg-transparent focus:ring-0 w-auto max-w-full [&>svg]:hidden">
+              <SelectValue placeholder={t("noTension")}>
+                {currentTensionName || t("noTension")}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">{t("noTension")}</SelectItem>
+              {tensions
+                .filter((t) => !isTensionCompleted(t))
+                .map((tension) => (
+                  <SelectItem key={tension.id} value={tension.id}>
+                    <span className="truncate max-w-[300px] block">
+                      {tension.title || tAction("noTitle")}
+                    </span>
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </PropertyRow>

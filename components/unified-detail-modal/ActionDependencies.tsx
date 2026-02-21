@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, X, Check, Search } from "lucide-react";
+import { Plus, X, Check, Search, Workflow } from "lucide-react";
 import {
   getActionDependencies,
   searchChartActions,
@@ -72,7 +72,7 @@ function DependencyItem({
       <button
         type="button"
         onClick={() => onNavigate?.("action", item.actionId)}
-        className="flex-1 min-w-0 text-left px-2.5 py-1.5 rounded-md hover:bg-zenshin-navy/5 text-sm flex items-center gap-2 transition-colors cursor-pointer"
+        className="flex-1 min-w-0 text-left p-1.5 rounded-md hover:bg-gray-100 text-sm flex items-center gap-2 transition-colors cursor-pointer"
       >
         {content}
       </button>
@@ -171,8 +171,9 @@ export function ActionDependencies({
 
   return (
     <div className="w-full space-y-2">
-      <div className="flex items-center gap-2">
-        <h3 className="text-sm font-medium text-muted-foreground">{t("dependencies")}</h3>
+      <div className="flex items-center gap-2 mb-2">
+        <Workflow className="w-4 h-4 text-gray-400" />
+        <h3 className="text-sm font-medium text-gray-500">{t("dependencies")}</h3>
         {hasIncompleteBlockers && (
           <span
             className="w-2 h-2 rounded-full bg-orange-500 shrink-0"
@@ -181,7 +182,7 @@ export function ActionDependencies({
         )}
       </div>
 
-      <div className="rounded-lg border border-zenshin-navy/10 bg-zenshin-cream/30 p-3 space-y-3">
+      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t("loading")}</p>
         ) : (
@@ -220,7 +221,7 @@ export function ActionDependencies({
             </div>
 
             {!hasAny && (
-              <p className="text-sm text-muted-foreground">{t("noDependencies")}</p>
+              <p className="text-sm text-gray-400 italic">{t("noDependencies")}</p>
             )}
 
             <Popover open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setAddMode(null); }}>
