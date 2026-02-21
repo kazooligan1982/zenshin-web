@@ -4,12 +4,22 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import LinkExtension from "@tiptap/extension-link";
 import Mention from "@tiptap/extension-mention";
 import Placeholder from "@tiptap/extension-placeholder";
-import { Send } from "lucide-react";
+import { Send, Paperclip, AtSign, Link, Bot } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from "sonner";
 import { createComment, createRealityComment, createVisionComment } from "@/app/charts/[id]/actions";
-import { searchWorkspaceItems } from "@/lib/workspace-search";
+import {
+  searchWorkspaceItems,
+  searchWorkspaceMembers,
+  searchWorkspaceCharts,
+} from "@/lib/workspace-search";
 import type { TimelineComment } from "@/types/database";
 
 interface CommentInputProps {
@@ -24,7 +34,7 @@ interface CommentInputProps {
   onFailed?: (tempId: string) => void;
 }
 
-// Editor パネルヘッダーと統一: Vision=Target(teal), Reality=Search(orange), Tension=Zap(navy), Action=Zap(blue)
+// Editor パネルヘッダーと統一: Vision=Target(teal), Reality=Search(orange), Tension=Zap(navy), Action=Play(blue)
 const MENTION_ICONS: Record<string, { svg: string; color: string }> = {
   vision: {
     svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
@@ -46,84 +56,160 @@ const MENTION_ICONS: Record<string, { svg: string; color: string }> = {
     svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
     color: "#64748b",
   },
+  user: {
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    color: "#64748b",
+  },
 };
 
-function createMentionSuggestion(workspaceId: string, chartId: string) {
+type MentionTab = "people" | "items" | "charts";
+
+type MentionItem = {
+  id: string;
+  label: string;
+  type: string;
+  title: string;
+  chartTitle?: string;
+  chartId?: string;
+};
+
+function createMentionSuggestion(
+  workspaceId: string,
+  chartId: string,
+  t: (key: string) => string
+) {
   return {
     char: "@",
     items: async ({ query }: { query: string }) => {
-      if (!workspaceId || !chartId) return [];
-      const results = await searchWorkspaceItems(workspaceId, query, chartId);
-      const mapped = results.map((item) => ({
+      if (!chartId) return [];
+      const results = await searchWorkspaceItems(workspaceId || "none", query, chartId);
+      return results.map((item) => ({
         id: `${item.type}:${item.chartId}:${item.id}`,
         label: item.title,
         type: item.type,
         title: item.title,
         chartTitle: item.chartTitle,
         chartId: item.chartId,
-      }));
-      const uniqueItems = Array.from(
-        new Map(mapped.map((item) => [item.id, item])).values()
-      );
-      return uniqueItems.slice(0, 10);
+      })).slice(0, 10);
     },
     render: () => {
       let component: HTMLDivElement | null = null;
       let selectedIndex = 0;
       let noResultTimer: ReturnType<typeof setTimeout> | null = null;
       let confirmedEmpty = false;
-
-      let items: { id: string; label: string; type: string; title: string; chartTitle: string }[] = [];
+      let activeTab: MentionTab = "items";
+      let displayItems: MentionItem[] = [];
+      let currentQuery = "";
       let command: (item: { id: string; label: string }) => void = () => {};
 
-      function updateDropdown() {
-        if (!component) return;
-        if (items.length === 0) {
-          component.innerHTML = confirmedEmpty
-            ? '<div class="px-3 py-2 text-sm text-gray-400">見つかりません</div>'
-            : '<div class="px-3 py-2 text-sm text-gray-400">検索中...</div>';
-          return;
+      async function fetchTabItems(tab: MentionTab, query: string): Promise<MentionItem[]> {
+        if (tab === "people") {
+          const members = await searchWorkspaceMembers(workspaceId, query);
+          return members.map((m) => ({
+            id: m.id,
+            label: m.title,
+            type: "user",
+            title: m.title,
+          }));
         }
-        confirmedEmpty = false;
-        if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
+        if (tab === "charts") {
+          const charts = await searchWorkspaceCharts(workspaceId, query);
+          return charts.map((c) => ({
+            id: `chart:${c.chartId}:${c.id}`,
+            label: c.title,
+            type: "chart",
+            title: c.title,
+            chartTitle: c.chartTitle,
+            chartId: c.chartId,
+          }));
+        }
+        const results = await searchWorkspaceItems(workspaceId, query, chartId);
+        return results.map((item) => ({
+          id: `${item.type}:${item.chartId}:${item.id}`,
+          label: item.title,
+          type: item.type,
+          title: item.title,
+          chartTitle: item.chartTitle,
+          chartId: item.chartId,
+        }));
+      }
+
+      function renderItemList(items: MentionItem[]) {
         const iconConfig = (type: string) =>
           MENTION_ICONS[type] || MENTION_ICONS.chart;
-        const getItemType = (item: { type?: string; id?: string }) =>
-          item.type || (item.id || "").split(":")[0] || "chart";
-        component.innerHTML = items
-          .map(
-            (item, index) => {
-              const itemType = getItemType(item);
-              const { svg, color } = iconConfig(itemType);
-              return `<div class="px-3 py-2 text-sm rounded cursor-pointer flex items-center gap-3 min-w-[350px] ${
-                index === selectedIndex ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"
-              }" data-index="${index}">
+        if (items.length === 0) {
+          return confirmedEmpty
+            ? `<div class="px-3 py-2 text-sm text-gray-400">${t("mentionNoResults")}</div>`
+            : `<div class="px-3 py-2 text-sm text-gray-400">${t("mentionSearching")}</div>`;
+        }
+        return items.slice(0, 15).map((item, index) => {
+          const itemType = item.type || (item.id || "").split(":")[0] || "chart";
+          const { svg, color } = iconConfig(itemType);
+          return `<div class="px-3 py-2 text-sm rounded cursor-pointer flex items-center gap-3 min-w-[350px] ${
+            index === selectedIndex ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"
+          }" data-index="${index}">
   <span class="flex items-center justify-center shrink-0 w-6 h-6 rounded" style="background:${color}20;color:${color}">${svg}</span>
   <span class="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title="${(item.title || "").replace(/"/g, "&quot;")}">${(item.title || "").replace(/</g, "&lt;")}</span>
 </div>`;
+        }).join("");
+      }
+
+      async function updateDropdown() {
+        if (!component) return;
+        const tabsHtml = `
+          <div class="flex border-b border-gray-200 mb-1">
+            <button type="button" class="mention-tab px-3 py-1.5 text-sm ${activeTab === "people" ? "border-b-2 border-blue-500 font-medium text-blue-600" : "text-gray-600"}" data-tab="people">${t("mentionPeople")}</button>
+            <button type="button" class="mention-tab px-3 py-1.5 text-sm ${activeTab === "items" ? "border-b-2 border-blue-500 font-medium text-blue-600" : "text-gray-600"}" data-tab="items">${t("mentionItems")}</button>
+            <button type="button" class="mention-tab px-3 py-1.5 text-sm ${activeTab === "charts" ? "border-b-2 border-blue-500 font-medium text-blue-600" : "text-gray-600"}" data-tab="charts">${t("mentionCharts")}</button>
+          </div>
+          <div class="px-2 py-1 text-xs text-gray-500">${t("searchMention")} ${currentQuery ? `"${currentQuery.replace(/"/g, "&quot;")}"` : ""}</div>
+        `;
+        component.innerHTML = tabsHtml + `<div class="mention-list max-h-[220px] overflow-y-auto">${renderItemList(displayItems)}</div>`;
+
+        component.querySelectorAll(".mention-tab").forEach((el) => {
+          el.addEventListener("click", async (e) => {
+            const tab = (e.currentTarget as HTMLElement).getAttribute("data-tab") as MentionTab;
+            activeTab = tab;
+            selectedIndex = 0;
+            confirmedEmpty = false;
+            displayItems = await fetchTabItems(tab, currentQuery);
+            if (displayItems.length === 0 && currentQuery) {
+              noResultTimer = setTimeout(() => {
+                confirmedEmpty = true;
+                updateDropdown();
+              }, 500);
             }
-          )
-          .join("");
+            updateDropdown();
+          });
+        });
 
         component.querySelectorAll("[data-index]").forEach((el) => {
           el.addEventListener("click", () => {
             const idx = parseInt(el.getAttribute("data-index") || "0", 10);
-            if (items[idx]) command({ id: items[idx].id, label: items[idx].label });
+            if (displayItems[idx]) command({ id: displayItems[idx].id, label: displayItems[idx].label });
           });
         });
       }
 
       return {
-        onStart: (props: any) => {
+        onStart: async (props: any) => {
           command = props.command;
-          items = props.items;
+          currentQuery = (props.query ?? props.decorationNode?.text?.slice(1) ?? "") as string;
+          activeTab = "items";
           selectedIndex = 0;
           confirmedEmpty = false;
           if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
 
           component = document.createElement("div");
           component.className =
-            "mention-dropdown bg-white border rounded-lg shadow-lg p-1 max-h-[280px] overflow-y-auto z-[9999] min-w-[350px]";
+            "mention-dropdown bg-white border rounded-lg shadow-lg p-2 max-h-[320px] z-[9999] min-w-[380px]";
+          displayItems = await fetchTabItems("items", currentQuery);
+          if (displayItems.length === 0 && currentQuery) {
+            noResultTimer = setTimeout(() => {
+              confirmedEmpty = true;
+              updateDropdown();
+            }, 1000);
+          }
           updateDropdown();
 
           const { view } = props.editor;
@@ -134,34 +220,38 @@ function createMentionSuggestion(workspaceId: string, chartId: string) {
           component.style.bottom = `${window.innerHeight - coords.top + 4}px`;
           document.body.appendChild(component);
         },
-        onUpdate: (props: any) => {
+        onUpdate: async (props: any) => {
           command = props.command;
-          selectedIndex = 0;
-          items = props.items;
-          confirmedEmpty = false;
-          if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
-          if (items.length === 0) {
-            noResultTimer = setTimeout(() => {
-              confirmedEmpty = true;
-              updateDropdown();
-            }, 1000);
+          const newQuery = (props.query ?? props.decorationNode?.text?.slice(1) ?? "") as string;
+          if (newQuery !== currentQuery) {
+            currentQuery = newQuery;
+            selectedIndex = 0;
+            confirmedEmpty = false;
+            if (noResultTimer) { clearTimeout(noResultTimer); noResultTimer = null; }
+            displayItems = await fetchTabItems(activeTab, currentQuery);
+            if (displayItems.length === 0 && currentQuery) {
+              noResultTimer = setTimeout(() => {
+                confirmedEmpty = true;
+                updateDropdown();
+              }, 500);
+            }
           }
           updateDropdown();
         },
         onKeyDown: (props: { event: KeyboardEvent }) => {
           if (props.event.key === "ArrowUp") {
-            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+            selectedIndex = (selectedIndex - 1 + displayItems.length) % Math.max(displayItems.length, 1);
             updateDropdown();
             return true;
           }
           if (props.event.key === "ArrowDown") {
-            selectedIndex = (selectedIndex + 1) % items.length;
+            selectedIndex = (selectedIndex + 1) % Math.max(displayItems.length, 1);
             updateDropdown();
             return true;
           }
           if (props.event.key === "Enter") {
-            if (items[selectedIndex]) {
-              command({ id: items[selectedIndex].id, label: items[selectedIndex].label });
+            if (displayItems[selectedIndex]) {
+              command({ id: displayItems[selectedIndex].id, label: displayItems[selectedIndex].label });
             }
             return true;
           }
@@ -189,15 +279,18 @@ export function CommentInput({
   onFailed,
 }: CommentInputProps) {
   const t = useTranslations("timeline");
+  const tMention = useTranslations("mention");
   const tToast = useTranslations("toast");
   const commentPlaceholder = t("commentPlaceholder");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const handleSubmitRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const mentionSuggestion = useMemo(
-    () => createMentionSuggestion(workspaceId, chartId),
-    [workspaceId, chartId]
+    () => createMentionSuggestion(workspaceId, chartId, (k) => tMention(k)),
+    [workspaceId, chartId, tMention]
   );
 
   const editor = useEditor({
@@ -209,6 +302,7 @@ export function CommentInput({
       StarterKit.configure({
         heading: false,
       }),
+      LinkExtension.configure({ openOnClick: false }),
       Placeholder.configure({
         placeholder: commentPlaceholder,
       }),
@@ -236,7 +330,7 @@ export function CommentInput({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none focus:outline-none min-h-[60px] max-h-[200px] overflow-y-auto p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500",
+          "prose prose-sm max-w-none focus:outline-none min-h-[60px] max-h-[200px] overflow-y-auto p-2 border-0 rounded-t-lg text-sm focus:ring-0",
       },
       handleKeyDown: (_view, event) => {
         if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
@@ -248,6 +342,31 @@ export function CommentInput({
       },
     },
   }, [workspaceId, mentionSuggestion, commentPlaceholder]);
+
+  const handleMentionClick = () => {
+    editor?.chain().focus().run();
+    const dom = editor?.view.dom;
+    if (dom) {
+      dom.focus();
+      document.execCommand("insertText", false, "@");
+    } else {
+      editor?.chain().focus().insertContent("@").run();
+    }
+  };
+
+  const handleLinkInsert = (urlToInsert: string) => {
+    const url = urlToInsert.trim();
+    if (!url) return;
+    const href = url.startsWith("http") ? url : `https://${url}`;
+    const escaped = href.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (editor?.state.selection.empty) {
+      editor?.chain().focus().insertContent(`<a href="${escaped}" target="_blank" rel="noopener">${escaped}</a>`).run();
+    } else {
+      editor?.chain().focus().setLink({ href }).run();
+    }
+    setLinkUrl("");
+    setLinkPopoverOpen(false);
+  };
 
   const handleSubmit = async () => {
     if (!editor?.getHTML || editor.isEmpty || isSubmitting) return;
@@ -308,17 +427,99 @@ export function CommentInput({
 
   return (
     <div className="flex gap-2">
-      <div className="flex-1 border border-zenshin-navy/15 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 disabled:opacity-50">
+      <div className="flex-1 border border-zenshin-navy/15 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 disabled:opacity-50 overflow-hidden">
         <EditorContent editor={editor} />
+        <div className="flex items-center gap-1 px-2 py-1.5 border-t border-zenshin-navy/10 bg-zenshin-cream/20">
+          <button
+            type="button"
+            disabled
+            className="p-1.5 rounded hover:bg-zenshin-navy/5 text-zenshin-navy/40 cursor-not-allowed"
+            title={tMention("attachFile")}
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleMentionClick}
+            className="p-1.5 rounded hover:bg-zenshin-navy/5 text-zenshin-navy/70 hover:text-zenshin-navy"
+            title="@"
+          >
+            <AtSign className="w-4 h-4" />
+          </button>
+          <Popover open={linkPopoverOpen} onOpenChange={setLinkPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="p-1.5 rounded hover:bg-zenshin-navy/5 text-zenshin-navy/70 hover:text-zenshin-navy"
+                title={tMention("insertLink")}
+              >
+                <Link className="w-4 h-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-3" align="start" side="top">
+              <div className="space-y-3">
+                <label className="text-xs font-medium text-muted-foreground">
+                  URL
+                </label>
+                <input
+                  type="url"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleLinkInsert(linkUrl);
+                      setLinkPopoverOpen(false);
+                    }
+                    if (e.key === "Escape") setLinkPopoverOpen(false);
+                  }}
+                  placeholder="https://..."
+                  className="w-full h-8 px-2 text-sm rounded border border-zenshin-navy/15"
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLinkPopoverOpen(false)}
+                    className="px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    {tMention("linkCancel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleLinkInsert(linkUrl);
+                      setLinkPopoverOpen(false);
+                    }}
+                    disabled={!linkUrl.trim()}
+                    className="px-3 py-1 text-sm bg-zenshin-teal text-white rounded hover:bg-zenshin-teal/90 disabled:opacity-50"
+                  >
+                    {tMention("linkInsert")}
+                  </button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <button
+            type="button"
+            disabled
+            className="p-1.5 rounded hover:bg-zenshin-navy/5 text-zenshin-navy/40 cursor-not-allowed"
+            title={tMention("askAI")}
+          >
+            <Bot className="w-4 h-4" />
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => void handleSubmit()}
+            disabled={isEmpty || isSubmitting}
+            className="shrink-0 px-3 py-1 bg-zenshin-teal text-white rounded text-sm font-medium hover:bg-zenshin-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+            title={t("sendTitle")}
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{t("send")}</span>
+          </button>
+        </div>
       </div>
-      <button
-        onClick={() => void handleSubmit()}
-        disabled={isEmpty || isSubmitting}
-        className="shrink-0 px-4 bg-zenshin-teal text-white rounded-lg hover:bg-zenshin-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-        title={t("sendTitle")}
-      >
-        <Send className="h-4 w-4" />
-      </button>
     </div>
   );
 }

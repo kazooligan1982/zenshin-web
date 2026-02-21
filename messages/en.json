@@ -387,6 +387,19 @@
     "placeholder": "Select date",
     "clearDate": "Clear date"
   },
+  "mention": {
+    "mentionPeople": "People",
+    "mentionItems": "Items",
+    "mentionCharts": "Charts",
+    "searchMention": "Search:",
+    "mentionNoResults": "No results",
+    "mentionSearching": "Searching...",
+    "attachFile": "Attach file (coming soon)",
+    "askAI": "Ask AI coach (coming soon)",
+    "insertLink": "Insert link",
+    "linkCancel": "Cancel",
+    "linkInsert": "Insert"
+  },
   "timeline": {
     "showPrevious": "Show previous comments ({count})",
     "noComments": "No comments yet",
@@ -396,6 +409,7 @@
     "restore": "Undo",
     "saving": "Saving...",
     "commentPlaceholder": "Enter comment... (Cmd+Enter to send, Markdown supported, @ for mention)",
+    "send": "Send",
     "sendTitle": "Send (Cmd+Enter)",
     "daysAgo": "{count} days ago",
     "hoursAgo": "{count} hours ago",

@@ -387,6 +387,19 @@
     "placeholder": "日付を選択",
     "clearDate": "日付をクリア"
   },
+  "mention": {
+    "mentionPeople": "メンバー",
+    "mentionItems": "アイテム",
+    "mentionCharts": "チャート",
+    "searchMention": "検索:",
+    "mentionNoResults": "見つかりません",
+    "mentionSearching": "検索中...",
+    "attachFile": "ファイル添付（準備中）",
+    "askAI": "AIコーチに相談（準備中）",
+    "insertLink": "リンクを挿入",
+    "linkCancel": "キャンセル",
+    "linkInsert": "挿入"
+  },
   "timeline": {
     "showPrevious": "以前のコメントを表示 ({count}件)",
     "noComments": "まだコメントがありません",
@@ -396,6 +409,7 @@
     "restore": "元に戻す",
     "saving": "保存中...",
     "commentPlaceholder": "コメントを入力... (Cmd+Enterで送信、Markdownも使えます、@でメンション)",
+    "send": "送信",
     "sendTitle": "送信 (Cmd+Enter)",
     "daysAgo": "{count}日前",
     "hoursAgo": "{count}時間前",
