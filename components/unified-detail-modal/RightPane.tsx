@@ -13,6 +13,7 @@ import {
   fetchVisionComments,
   fetchRealityComments,
 } from "@/app/charts/[id]/actions";
+import { linkifyUrls } from "@/lib/utils";
 import type { ItemType } from "./ModalHeader";
 import type { TimelineComment } from "@/types/database";
 import type { Tension, Area } from "@/types/chart";
@@ -43,6 +44,7 @@ interface RightPaneProps {
   currentUserId?: string;
   tensions?: Tension[];
   areas?: Area[];
+  refreshKey?: number;
 }
 
 function formatHistoryValue(field: string, value: string): string {
@@ -118,6 +120,12 @@ function formatHistorySummary(
     }
     return t("historyLinkRemoved", { value: oldVal || fallback });
   }
+  if (field === "dependency") {
+    if (rawNew) {
+      return t("historyDependencyAdded", { value: newVal || fallback });
+    }
+    return t("historyDependencyRemoved", { value: oldVal || fallback });
+  }
   return `${field}: ${oldVal || fallback} → ${newVal || fallback}`;
 }
 
@@ -130,6 +138,7 @@ export function RightPane({
   currentUserId: currentUserIdProp,
   tensions = [],
   areas = [],
+  refreshKey,
 }: RightPaneProps) {
   const t = useTranslations("modal");
   const locale = useLocale();
@@ -200,7 +209,7 @@ export function RightPane({
     return () => {
       cancelled = true;
     };
-  }, [loadComments, loadHistory]);
+  }, [loadComments, loadHistory, refreshKey]);
 
   const timeline: TimelineEntry[] = [
     ...comments
@@ -343,7 +352,20 @@ export function RightPane({
                         })}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{description}</p>
+                    <div
+                      className="text-sm text-muted-foreground [&_a]:text-blue-500 [&_a]:underline [&_a]:hover:text-blue-700 [&_a]:cursor-pointer"
+                      dangerouslySetInnerHTML={{
+                        __html: linkifyUrls(description),
+                      }}
+                      onClick={(e) => {
+                        const target = e.target as HTMLElement;
+                        if (target.tagName === "A") {
+                          e.preventDefault();
+                          window.open((target as HTMLAnchorElement).href, "_blank");
+                        }
+                      }}
+                      role="presentation"
+                    />
                   </div>
                 </div>
               );

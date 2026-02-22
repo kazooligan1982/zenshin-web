@@ -23,6 +23,7 @@ interface ActionDependenciesProps {
   chartId: string;
   actionId: string;
   onNavigate?: (itemType: "action", itemId: string) => void;
+  onActivityChange?: () => void;
 }
 
 function StatusBadge({ status }: { status: string | null }) {
@@ -93,6 +94,7 @@ export function ActionDependencies({
   chartId,
   actionId,
   onNavigate,
+  onActivityChange,
 }: ActionDependenciesProps) {
   const t = useTranslations("modal");
   const tToast = useTranslations("toast");
@@ -146,6 +148,7 @@ export function ActionDependencies({
       setAddMode(null);
       setAddOpen(false);
       load();
+      onActivityChange?.();
     } catch (error) {
       console.error("[ActionDependencies] add error:", error);
       toast.error(tToast("error") || "エラーが発生しました");
@@ -156,9 +159,10 @@ export function ActionDependencies({
 
   const handleRemove = async (dependencyId: string) => {
     try {
-      await removeActionDependency(dependencyId);
+      await removeActionDependency(dependencyId, actionId);
       toast.success(t("dependencyRemoved"));
       load();
+      onActivityChange?.();
     } catch (error) {
       console.error("[ActionDependencies] remove error:", error);
       toast.error(tToast("error") || "エラーが発生しました");

@@ -21,6 +21,7 @@ interface LinkedResourcesProps {
   chartId: string;
   itemType: ItemType;
   itemId: string;
+  onActivityChange?: () => void;
 }
 
 function getServiceIcon(service: string | null) {
@@ -67,6 +68,7 @@ export function LinkedResources({
   chartId,
   itemType,
   itemId,
+  onActivityChange,
 }: LinkedResourcesProps) {
   const t = useTranslations("modal");
   const tToast = useTranslations("toast");
@@ -107,6 +109,7 @@ export function LinkedResources({
       const newLink = await addItemLink(chartId, itemType, itemId, url);
       setLinks((prev) => [newLink, ...prev]);
       toast.success(t("linkAdded"));
+      onActivityChange?.();
     } catch (error) {
       console.error("[LinkedResources] add error:", error);
       toast.error(tToast("error") || "エラーが発生しました");
@@ -128,6 +131,7 @@ export function LinkedResources({
       await deleteItemLink(linkId);
       setLinks((prev) => prev.filter((l) => l.id !== linkId));
       toast.success(t("linkRemoved"));
+      onActivityChange?.();
     } catch (error) {
       console.error("[LinkedResources] delete error:", error);
       toast.error(tToast("error") || "エラーが発生しました");

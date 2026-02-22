@@ -104,6 +104,12 @@ function formatHistorySummary(
     }
     return t("historyLinkRemoved", { value: oldVal || fallback });
   }
+  if (field === "dependency") {
+    if (rawNew) {
+      return t("historyDependencyAdded", { value: newVal || fallback });
+    }
+    return t("historyDependencyRemoved", { value: oldVal || fallback });
+  }
   return `${field}: ${oldVal || fallback} → ${newVal || fallback}`;
 }
 

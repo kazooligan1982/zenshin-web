@@ -28,6 +28,7 @@ interface LeftPaneProps {
   onUpdate: (field: string, value: string | boolean | null) => void;
   locale?: string;
   onNavigate?: (itemType: ItemType, itemId: string) => void;
+  onActivityChange?: () => void;
 }
 
 export function LeftPane({
@@ -44,6 +45,7 @@ export function LeftPane({
   onUpdate,
   locale,
   onNavigate,
+  onActivityChange,
 }: LeftPaneProps) {
   const t = useTranslations("modal");
 
@@ -104,6 +106,7 @@ export function LeftPane({
           chartId={chartId}
           actionId={itemId}
           onNavigate={onNavigate}
+          onActivityChange={onActivityChange}
         />
       )}
 
@@ -111,6 +114,7 @@ export function LeftPane({
         chartId={chartId}
         itemType={itemType}
         itemId={itemId}
+        onActivityChange={onActivityChange}
       />
 
       <ItemRelations
