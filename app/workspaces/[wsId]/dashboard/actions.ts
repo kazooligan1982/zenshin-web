@@ -33,6 +33,27 @@ export type UpcomingDeadline = {
   chart_title: string;
   isOverdue: boolean;
   daysUntilDue: number;
+  blockingCount: number;
+};
+
+export type DelayImpact = {
+  action: {
+    id: string;
+    title: string;
+    due_date: string;
+    status: string;
+    daysOverdue: number;
+  };
+  chart: { id: string; title: string };
+  assignee: { id: string; name: string } | null;
+  blockedActions: {
+    id: string;
+    title: string;
+    chartId: string;
+    chartTitle: string;
+    assignee: { id: string; name: string } | null;
+  }[];
+  affectedPeople: { id: string; name: string }[];
 };
 
 export async function getDashboardData(
@@ -45,6 +66,7 @@ export async function getDashboardData(
   stats: DashboardStats;
   staleCharts: StaleChart[];
   upcomingDeadlines: UpcomingDeadline[];
+  delayImpacts: DelayImpact[];
   availableCharts: { id: string; title: string }[];
 }> {
   const supabase = await createClient();
@@ -93,6 +115,7 @@ export async function getDashboardData(
       status,
       is_completed,
       due_date,
+      assignee,
       created_at,
       updated_at,
       tension_id,
@@ -176,7 +199,31 @@ export async function getDashboardData(
       };
     })
     .sort((a, b) => b.daysSinceUpdate - a.daysSinceUpdate)
-    .slice(0, 5);
+    .slice(0, 10);
+
+  const overdueActionIds = allActions
+    .filter((a: any) => {
+      if (!a.due_date) return false;
+      if (a.status === "done" || a.status === "canceled") return false;
+      return new Date(a.due_date) < now;
+    })
+    .map((a: any) => a.id);
+
+  let blockingCountByActionId: Record<string, number> = {};
+  if (overdueActionIds.length > 0) {
+    const { data: deps } = await supabase
+      .from("action_dependencies")
+      .select("blocker_action_id")
+      .in("blocker_action_id", overdueActionIds);
+    blockingCountByActionId = (deps || []).reduce(
+      (acc: Record<string, number>, row: any) => {
+        const bid = row.blocker_action_id;
+        acc[bid] = (acc[bid] || 0) + 1;
+        return acc;
+      },
+      {}
+    );
+  }
 
   const upcomingDeadlines: UpcomingDeadline[] = allActions
     .filter((action) => {
@@ -200,10 +247,18 @@ export async function getDashboardData(
         chart_title: chartData?.title || "",
         isOverdue: daysUntilDue < 0,
         daysUntilDue,
+        blockingCount: blockingCountByActionId[action.id] || 0,
       };
     })
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue)
     .slice(0, 10);
+
+  const delayImpacts: DelayImpact[] = await buildDelayImpacts(
+    supabase,
+    allActions,
+    overdueActionIds,
+    now
+  );
 
   const stats: DashboardStats = {
     totalCharts: allCharts.length,
@@ -217,8 +272,136 @@ export async function getDashboardData(
     stats,
     staleCharts,
     upcomingDeadlines,
+    delayImpacts,
     availableCharts: allChartsForFilter || [],
   };
+}
+
+async function buildDelayImpacts(
+  supabase: any,
+  allActions: any[],
+  overdueActionIds: string[],
+  now: Date
+): Promise<DelayImpact[]> {
+  if (overdueActionIds.length === 0) return [];
+
+  const actionMap = new Map(allActions.map((a) => [a.id, a]));
+
+  const { data: deps } = await supabase
+    .from("action_dependencies")
+    .select("id, blocked_action_id, blocker_action_id")
+    .in("blocker_action_id", overdueActionIds);
+
+  const blockedByBlocker = new Map<string, string[]>();
+  const allBlockedIds = new Set<string>();
+  for (const row of deps || []) {
+    const blockerId = (row as { blocker_action_id: string }).blocker_action_id;
+    const blockedId = (row as { blocked_action_id: string }).blocked_action_id;
+    if (!blockedByBlocker.has(blockerId)) blockedByBlocker.set(blockerId, []);
+    blockedByBlocker.get(blockerId)!.push(blockedId);
+    allBlockedIds.add(blockedId);
+  }
+
+  const missingBlockedIds = [...allBlockedIds].filter((id) => !actionMap.has(id));
+  if (missingBlockedIds.length > 0) {
+    const { data: extraActions } = await supabase
+      .from("actions")
+      .select(
+        `
+        id,
+        title,
+        assignee,
+        tension_id,
+        tensions(chart_id, charts(id, title))
+      `
+      )
+      .in("id", missingBlockedIds);
+    for (const a of extraActions || []) {
+      actionMap.set((a as { id: string }).id, a);
+    }
+  }
+
+  const allActionsForProfiles = Array.from(actionMap.values());
+  const assigneeEmails = [
+    ...new Set(
+      allActionsForProfiles
+        .filter((a) => a.assignee)
+        .map((a) => a.assignee as string)
+    ),
+  ];
+  let profileByEmail: Record<string, { id: string; name: string }> = {};
+  if (assigneeEmails.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, email, name")
+      .in("email", assigneeEmails);
+    for (const p of profiles || []) {
+      const email = (p as { email?: string }).email;
+      if (email) {
+        profileByEmail[email] = {
+          id: (p as { id: string }).id,
+          name: ((p as { name?: string }).name || email).trim() || email,
+        };
+      }
+    }
+  }
+
+  const impacts: DelayImpact[] = overdueActionIds.map((actionId) => {
+    const action = actionMap.get(actionId);
+    if (!action) return null;
+    const dueDate = new Date(action.due_date);
+    const daysOverdue = Math.ceil(
+      (now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const chartData = action.tensions?.charts;
+    const blockedIds = blockedByBlocker.get(actionId) || [];
+    const blockedActions = blockedIds
+      .map((bid) => actionMap.get(bid))
+      .filter(Boolean)
+      .map((a: any) => {
+        const t = Array.isArray(a.tensions) ? a.tensions[0] : a.tensions;
+        const c = t?.charts ?? t;
+        const chartId = c?.id ?? "";
+        const chartTitle = c?.title ?? "";
+        return {
+          id: a.id,
+          title: a.title || "(無題)",
+          chartId,
+          chartTitle,
+          assignee: a.assignee ? profileByEmail[a.assignee] || null : null,
+        };
+      });
+
+    const affectedPeopleMap = new Map<string, { id: string; name: string }>();
+    if (action.assignee && profileByEmail[action.assignee]) {
+      const p = profileByEmail[action.assignee];
+      affectedPeopleMap.set(p.id, p);
+    }
+    for (const ba of blockedActions) {
+      if (ba.assignee) {
+        affectedPeopleMap.set(ba.assignee.id, ba.assignee);
+      }
+    }
+    const affectedPeople = Array.from(affectedPeopleMap.values());
+
+    return {
+      action: {
+        id: action.id,
+        title: action.title || "(無題)",
+        due_date: action.due_date,
+        status: action.status || "todo",
+        daysOverdue,
+      },
+      chart: { id: chartData?.id || "", title: chartData?.title || "" },
+      assignee: action.assignee ? profileByEmail[action.assignee] || null : null,
+      blockedActions,
+      affectedPeople,
+    };
+  }).filter((x): x is DelayImpact => x !== null);
+
+  return impacts
+    .sort((a, b) => b.blockedActions.length - a.blockedActions.length)
+    .slice(0, 5);
 }
 
 async function getAllDescendantChartIds(

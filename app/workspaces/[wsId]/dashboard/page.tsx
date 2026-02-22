@@ -8,6 +8,10 @@ import {
   Clock,
   TrendingUp,
   AlertCircle,
+  FileText,
+  User,
+  Link2,
+  Users,
 } from "lucide-react";
 import { getDashboardData } from "./actions";
 import { DashboardChartFilter } from "./dashboard-chart-filter";
@@ -26,7 +30,7 @@ export default async function DashboardPage({
   const period = resolvedParams?.period ?? "all";
   const from = resolvedParams?.from ?? null;
   const to = resolvedParams?.to ?? null;
-  const { stats, staleCharts, upcomingDeadlines, availableCharts } =
+  const { stats, staleCharts, upcomingDeadlines, delayImpacts, availableCharts } =
     await getDashboardData(wsId, selectedChartId, period, from, to);
   const t = await getTranslations("dashboard");
   const tKanban = await getTranslations("kanban");
@@ -101,6 +105,63 @@ export default async function DashboardPage({
         </div>
       </div>
 
+      {/* 遅延インパクト */}
+      {delayImpacts.length > 0 && (
+        <section className="bg-white rounded-xl border border-zenshin-navy/8 p-6 mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <h2 className="text-lg font-semibold text-zenshin-navy">{t("delayImpact")}</h2>
+            <span className="text-sm text-red-500 font-medium">
+              {delayImpacts.length}{t("delayImpactCount")}
+            </span>
+          </div>
+          <div className="space-y-4">
+            {delayImpacts.map((impact) => (
+              <div
+                key={impact.action.id}
+                className="border border-red-100 bg-red-50/50 rounded-lg p-4"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-500 font-medium">❌</span>
+                    <span className="font-medium text-zenshin-navy">{impact.action.title}</span>
+                  </div>
+                  <span className="text-sm text-red-500 font-medium">
+                    {t("daysOverdue", { count: impact.action.daysOverdue })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-zenshin-navy/60 mb-1">
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>{impact.chart.title}</span>
+                </div>
+                {impact.assignee && (
+                  <div className="flex items-center gap-2 text-sm text-zenshin-navy/60 mb-1">
+                    <User className="w-3.5 h-3.5" />
+                    <span>{impact.assignee.name}</span>
+                  </div>
+                )}
+                {impact.blockedActions.length > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-orange-600 mb-1">
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span>
+                      {t("blocking")}: {impact.blockedActions.map((a) => a.title).join(", ")}
+                    </span>
+                  </div>
+                )}
+                {impact.affectedPeople.length > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-zenshin-navy/50">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>
+                      {t("affectedPeople")}: {impact.affectedPeople.map((p) => p.name).join(", ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 停滞 & 期限切れ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 停滞しているチャート */}
@@ -126,7 +187,7 @@ export default async function DashboardPage({
                     <span className="text-sm text-zenshin-navy truncate group-hover:text-zenshin-navy/80">{chart.title}</span>
                   </div>
                   <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0 ml-3">
-                    {t("daysAgo", { count: chart.daysSinceUpdate })}
+                    {t("staleDaysUpdated", { days: chart.daysSinceUpdate })}
                   </span>
                 </Link>
               ))}
@@ -165,6 +226,11 @@ export default async function DashboardPage({
                       <>
                         <AlertCircle className="w-3 h-3" />
                         {t("daysOverdue", { count: Math.abs(action.daysUntilDue) })}
+                        {action.blockingCount > 0 && (
+                          <span className="text-orange-500 ml-1">
+                            ⛓️ {action.blockingCount}{t("actionsBlocked")}
+                          </span>
+                        )}
                       </>
                     ) : action.daysUntilDue === 0 ? (
                       t("today")
