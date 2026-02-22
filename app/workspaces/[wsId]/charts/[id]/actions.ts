@@ -1725,8 +1725,8 @@ export async function addActionDependency(
   return _addActionDependency(chartId, actionId, relatedActionId, relationType);
 }
 
-export async function removeActionDependency(dependencyId: string) {
-  return _removeActionDependency(dependencyId);
+export async function removeActionDependency(dependencyId: string, actionId: string) {
+  return _removeActionDependency(dependencyId, actionId);
 }
 
 export async function addItemLink(

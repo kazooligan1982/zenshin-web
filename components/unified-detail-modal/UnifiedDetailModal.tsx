@@ -53,6 +53,10 @@ export function UnifiedDetailModal({
 }: UnifiedDetailModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [leftWidth, setLeftWidth] = useState(60);
+  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
+  const refreshActivity = useCallback(() => {
+    setActivityRefreshKey((prev) => prev + 1);
+  }, []);
   const isDesktop = useSyncExternalStore(
     (callback) => {
       const mq = window.matchMedia("(min-width: 800px)");
@@ -189,6 +193,7 @@ export function UnifiedDetailModal({
             onUpdate={onUpdate}
             locale={locale}
             onNavigate={onNavigate}
+            onActivityChange={refreshActivity}
           />
             </div>
           </div>
@@ -216,6 +221,7 @@ export function UnifiedDetailModal({
                 currentUserId={currentUserId}
                 tensions={tensions}
                 areas={areas}
+                refreshKey={activityRefreshKey}
               />
             </div>
           </div>

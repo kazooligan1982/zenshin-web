@@ -1889,6 +1889,18 @@ export async function addActionDependency(
 
     if (error) throw new Error(error.message);
 
+    const { data: relatedAction } = await supabase
+      .from("actions")
+      .select("title")
+      .eq("id", relatedActionId)
+      .single();
+    const relatedTitle = (relatedAction as { title?: string } | null)?.title?.trim() || "(無題)";
+    const displayValue =
+      relationType === "blocked_by"
+        ? `Blocked by: ${relatedTitle}`
+        : `Blocking: ${relatedTitle}`;
+    await recordChartHistory(chartId, "action", actionId, "updated", "dependency", null, displayValue);
+
     revalidatePath(`/charts/${chartId}`);
     const { data: chart } = await supabase.from("charts").select("workspace_id").eq("id", chartId).single();
     if (chart?.workspace_id) {
@@ -1902,14 +1914,29 @@ export async function addActionDependency(
   }
 }
 
-export async function removeActionDependency(dependencyId: string) {
+export async function removeActionDependency(dependencyId: string, actionId: string) {
   try {
     const supabase = await createClient();
     const { data: dep } = await supabase
       .from("action_dependencies")
-      .select("chart_id")
+      .select("chart_id, blocked_action_id, blocker_action_id")
       .eq("id", dependencyId)
       .single();
+
+    let displayValue: string | null = null;
+    if (dep?.chart_id) {
+      const blockedId = (dep as { blocked_action_id?: string }).blocked_action_id;
+      const blockerId = (dep as { blocker_action_id?: string }).blocker_action_id;
+      const otherId = actionId === blockedId ? blockerId : blockedId;
+      const { data: otherAction } = await supabase
+        .from("actions")
+        .select("title")
+        .eq("id", otherId)
+        .single();
+      const otherTitle = (otherAction as { title?: string } | null)?.title?.trim() || "(無題)";
+      displayValue = actionId === blockedId ? `Blocked by: ${otherTitle}` : `Blocking: ${otherTitle}`;
+      await recordChartHistory(dep.chart_id, "action", actionId, "updated", "dependency", displayValue, null);
+    }
 
     const { error } = await supabase.from("action_dependencies").delete().eq("id", dependencyId);
     if (error) throw new Error(error.message);
