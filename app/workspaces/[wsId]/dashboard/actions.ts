@@ -429,7 +429,7 @@ async function buildDelayImpacts(
         .map((a) => a.assignee as string)
     ),
   ];
-  let profileByEmail: Record<string, { id: string; name: string }> = {};
+  const profileByEmail: Record<string, { id: string; name: string }> = {};
   if (assigneeEmails.length > 0) {
     const { data: profiles } = await supabase
       .from("profiles")
@@ -568,7 +568,7 @@ async function buildDelayCascade(
       allActions.filter((a) => a.assignee).map((a) => a.assignee as string)
     ),
   ];
-  let profileByEmail: Record<string, { id: string; name: string }> = {};
+  const profileByEmail: Record<string, { id: string; name: string }> = {};
   if (assigneeEmails.length > 0) {
     const { data: profiles } = await supabase
       .from("profiles")
