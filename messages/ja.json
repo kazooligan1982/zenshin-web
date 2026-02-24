@@ -467,6 +467,24 @@
     "custom": "カスタム",
     "resetToAll": "全期間に戻す"
   },
+  "ai": {
+    "welcomeTitle": "AIアシスタントで始めませんか？",
+    "welcomeDescription": "創り出したい状態、その状態に対しての現時点での状態を自由に書いてください。AIがVision・Reality・Tension・Actionの構造化をお手伝いします。",
+    "startWithAi": "AIで始める",
+    "startBlank": "自分で書く",
+    "inputTitle": "AIアシスタント",
+    "inputDescription": "創り出したい状態、その状態に対しての現時点での状態、課題を自由に書いてください。どんな形式でも構いません。",
+    "inputPlaceholder": "例: U2Cの事業を3つの柱で回したい。ZENSHINコンサルは既に始まっていて、ZENSHIN CHARTはβ版。DOJOはまだ構想段階...\n\n※ Markdown記法も使えます",
+    "analyze": "分析する",
+    "analyzing": "分析中...",
+    "reviewTitle": "構造化の提案",
+    "retry": "やり直す",
+    "applyToChart": "チャートに反映する",
+    "applying": "反映中...",
+    "cancel": "キャンセル",
+    "analysisError": "AI分析に失敗しました。もう一度お試しください。",
+    "applyError": "チャートへの反映に失敗しました。"
+  },
   "snapshot": {
     "title": "スナップショット",
     "comparisonMode": "比較モード",

@@ -116,6 +116,7 @@ import { useTensionHandlers } from "./hooks/useTensionHandlers";
 import { useActionHandlers, _pendingScrollRestore } from "./hooks/useActionHandlers";
 import { useDetailPanel } from "./hooks/useDetailPanel";
 import { useDndHandlers } from "./hooks/useDndHandlers";
+import { WelcomeCard } from "@/components/ai-assistant/WelcomeCard";
 
 const CalendarComponent = dynamic(
   () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
@@ -1578,6 +1579,17 @@ export function ProjectEditor({
 
       {/* メインエリア */}
       <div className="flex-1 overflow-hidden bg-zenshin-cream">
+        {visions.length === 0 &&
+          realities.length === 0 &&
+          tensions.length === 0 &&
+          looseActions.length === 0 && (
+            <div className="px-6 pt-6">
+              <WelcomeCard
+                chartId={chartId}
+                onStructurized={() => router.refresh()}
+              />
+            </div>
+          )}
         {focusedArea ? (
           <div className="h-full p-6">
             {focusedArea === "vision" && (
