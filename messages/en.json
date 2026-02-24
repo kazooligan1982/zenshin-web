@@ -467,6 +467,24 @@
     "custom": "Custom",
     "resetToAll": "Reset to all period"
   },
+  "ai": {
+    "welcomeTitle": "Start with AI Assistant?",
+    "welcomeDescription": "Describe the state you want to create and your current state. AI will help structure it into Vision, Reality, Tension, and Action.",
+    "startWithAi": "Start with AI",
+    "startBlank": "Start blank",
+    "inputTitle": "AI Assistant",
+    "inputDescription": "Describe the state you want to create, your current state, and challenges. Any format is fine.",
+    "inputPlaceholder": "Example: I want to build a sustainable business with three pillars...\n\nMarkdown formatting is supported.",
+    "analyze": "Analyze",
+    "analyzing": "Analyzing...",
+    "reviewTitle": "Structured Suggestion",
+    "retry": "Try again",
+    "applyToChart": "Apply to chart",
+    "applying": "Applying...",
+    "cancel": "Cancel",
+    "analysisError": "AI analysis failed. Please try again.",
+    "applyError": "Failed to apply to chart."
+  },
   "snapshot": {
     "title": "Snapshots",
     "comparisonMode": "Comparison mode",
