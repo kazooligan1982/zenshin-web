@@ -373,6 +373,7 @@ export function SortableVisionItem({
               variant="ghost"
               className={`${ICON_BTN_CLASS} opacity-0 group-hover:opacity-100 transition-opacity`}
               onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               title={t("changeTag")}
             >
               <Tag size={16} />
