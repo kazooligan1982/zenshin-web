@@ -8,8 +8,11 @@ import {
   Clock,
   TrendingUp,
   AlertCircle,
+  Lightbulb,
+  ChevronRight,
+  GitBranch,
 } from "lucide-react";
-import { getDashboardData } from "./actions";
+import { getDashboardData, type CascadeNode } from "./actions";
 import { DashboardChartFilter } from "./dashboard-chart-filter";
 import { DashboardPeriodFilter } from "./dashboard-period-filter";
 
@@ -26,8 +29,15 @@ export default async function DashboardPage({
   const period = resolvedParams?.period ?? "all";
   const from = resolvedParams?.from ?? null;
   const to = resolvedParams?.to ?? null;
-  const { stats, staleCharts, upcomingDeadlines, availableCharts } =
-    await getDashboardData(wsId, selectedChartId, period, from, to);
+  const {
+    stats,
+    staleCharts,
+    upcomingDeadlines,
+    delayImpacts,
+    recommendations,
+    delayCascade,
+    availableCharts,
+  } = await getDashboardData(wsId, selectedChartId, period, from, to);
   const t = await getTranslations("dashboard");
   const tKanban = await getTranslations("kanban");
 
@@ -100,6 +110,64 @@ export default async function DashboardPage({
           <StatusBadge label={tKanban("canceled")} count={stats.statusDistribution.canceled} color="bg-zenshin-navy/5 text-zenshin-navy/40" />
         </div>
       </div>
+
+      {/* 遅延カスケード */}
+      {delayCascade.length > 0 && (
+        <section className="bg-white rounded-xl border border-zenshin-navy/8 p-6 mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <GitBranch className="w-5 h-5 text-red-500" />
+            <h2 className="text-lg font-semibold text-zenshin-navy">{t("delayCascade")}</h2>
+          </div>
+          <div className="space-y-4">
+            {delayCascade.map((root) => (
+              <CascadeTree key={root.action.id} node={root} depth={0} wsId={wsId} t={t} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 推奨アクション */}
+      {recommendations.length > 0 && (
+        <section className="bg-white rounded-xl border border-zenshin-navy/8 p-6 mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="w-5 h-5 text-amber-500" />
+            <h2 className="text-lg font-semibold text-zenshin-navy">{t("recommendations")}</h2>
+          </div>
+          <div className="space-y-3">
+            {recommendations.map((rec, index) => (
+              <Link
+                key={`${rec.chartId}-${rec.actionId ?? index}`}
+                href={`/workspaces/${wsId}/charts/${rec.chartId}`}
+                className="flex items-start gap-3 p-3 rounded-lg hover:bg-zenshin-cream/60 transition-colors cursor-pointer"
+              >
+                <span className="text-lg shrink-0">{rec.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {rec.type === "critical_blocker" && (
+                      <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                        {t("highPriority")}
+                      </span>
+                    )}
+                    {rec.type === "deadline_approaching" && (
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                        {t("deadlineSoon")}
+                      </span>
+                    )}
+                    {rec.type === "stale_chart" && (
+                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                        {t("staleWarning")}
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-medium text-zenshin-navy mt-1">{rec.title}</p>
+                  <p className="text-sm text-zenshin-navy/50 mt-0.5">{rec.description}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zenshin-navy/30 shrink-0 mt-1" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 停滞 & 期限切れ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -178,6 +246,63 @@ export default async function DashboardPage({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function CascadeTree({
+  node,
+  depth,
+  wsId,
+  t,
+}: {
+  node: CascadeNode;
+  depth: number;
+  wsId: string;
+  t: (key: string) => string;
+}) {
+  return (
+    <div
+      className={
+        depth > 0 ? "ml-6 border-l-2 border-zenshin-navy/10 pl-4 relative" : "relative"
+      }
+    >
+      <Link
+        href={`/workspaces/${wsId}/charts/${node.chart.id}`}
+        className="flex items-center gap-2 p-2 rounded-lg hover:bg-zenshin-cream/60 transition-colors"
+      >
+        {node.isRoot ? (
+          <span className="text-red-500 font-bold">❌</span>
+        ) : (
+          <span className="text-orange-400">⏸</span>
+        )}
+        <span
+          className={
+            node.isRoot ? "font-medium text-red-700" : "font-medium text-orange-700"
+          }
+        >
+          {node.action.title}
+        </span>
+        {node.isRoot && node.action.daysOverdue != null && (
+          <span className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+            {node.action.daysOverdue}
+            {t("daysOverdueShort")}
+          </span>
+        )}
+        {!node.isRoot && (
+          <span className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+            {t("blocked")}
+          </span>
+        )}
+        {node.assignee && (
+          <span className="text-xs text-zenshin-navy/40 ml-auto">
+            {node.assignee.name}
+          </span>
+        )}
+      </Link>
+      {node.children.map((child) => (
+        <CascadeTree key={child.action.id} node={child} depth={depth + 1} wsId={wsId} t={t} />
+      ))}
     </div>
   );
 }

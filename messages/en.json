@@ -465,7 +465,15 @@
     "lastQuarter": "Last quarter",
     "thisYear": "This year",
     "custom": "Custom",
-    "resetToAll": "Reset to all period"
+    "resetToAll": "Reset to all period",
+    "recommendations": "Recommended Actions",
+    "highPriority": "High Priority",
+    "deadlineSoon": "Deadline Soon",
+    "staleWarning": "Stale Warning",
+    "delayCascade": "Delay Cascade",
+    "daysOverdueShort": "d overdue",
+    "blocked": "Blocked",
+    "noCascade": "No delay cascades"
   },
   "ai": {
     "welcomeTitle": "Start with AI Assistant?",
