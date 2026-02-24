@@ -465,7 +465,15 @@
     "lastQuarter": "前四半期",
     "thisYear": "今年",
     "custom": "カスタム",
-    "resetToAll": "全期間に戻す"
+    "resetToAll": "全期間に戻す",
+    "recommendations": "推奨アクション",
+    "highPriority": "最優先",
+    "deadlineSoon": "期限間近",
+    "staleWarning": "停滞注意",
+    "delayCascade": "遅延カスケード",
+    "daysOverdueShort": "日超過",
+    "blocked": "ブロック中",
+    "noCascade": "遅延カスケードはありません"
   },
   "snapshot": {
     "title": "スナップショット",
