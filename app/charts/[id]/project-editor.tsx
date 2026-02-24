@@ -108,6 +108,7 @@ import {
 } from "./editor-utils";
 import { SortableVisionItem } from "./components/SortableVisionItem";
 import { SortableRealityItem } from "./components/SortableRealityItem";
+import { AreaDropZone } from "./components/AreaDropZone";
 import { TensionGroup } from "./components/TensionGroup";
 import { ActionSection } from "./components/ActionSection";
 import { useVisionHandlers } from "./hooks/useVisionHandlers";
@@ -880,49 +881,38 @@ export function ProjectEditor({
           const areaVisions = visions.filter((v) => v.area_id === area.id);
           return (
             <div key={area.id} className="mb-4 last:mb-0">
-              <div className="flex items-center px-3 mb-1">
-                <span
-                  className="w-3 h-3 rounded-full mr-2"
-                  style={{ backgroundColor: area.color }}
-                />
-                <span className="text-sm font-bold text-zenshin-navy">{area.name}</span>
-                <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: areaVisions.length })}</span>
-              </div>
-              <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
-                <SortableContext items={areaVisions} strategy={verticalListSortingStrategy}>
-                  {areaVisions.length === 0 ? (
-                    <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                      {t("noItems")}
-                    </div>
-                  ) : (
-                    areaVisions.map((vision, index) => (
-                      <SortableVisionItem
-                        key={vision.id}
-                        vision={vision}
-                        index={index}
-                        chartId={chartId}
-                        onUpdate={handleUpdateVision}
-                        onDelete={handleDeleteVision}
-                        areas={chart.areas || []}
-                        onOpenDetail={(item) =>
-                          handleOpenDetailPanelForModal("vision", item.id, item.content || "")
-                        }
-                        onOpenFocus={(item, itemIndex) =>
-                          openFocusMode(
-                            "vision",
-                            item.id,
-                            `Vision V-${String(itemIndex + 1).padStart(2, "0")}`,
-                            item.content || ""
-                          )
-                        }
-                        onOpenAreaSettings={() => setTagManagerOpen(true)}
-                        currentUser={currentUser}
-                        workspaceMembers={workspaceMembers}
-                      />
-                    ))
-                  )}
-                </SortableContext>
-              </div>
+              <AreaDropZone
+                areaId={area.id}
+                areaName={area.name}
+                areaColor={area.color}
+                items={areaVisions}
+                listType="vision"
+                renderItem={(vision, index) => (
+                  <SortableVisionItem
+                    key={vision.id}
+                    vision={vision}
+                    index={index}
+                    chartId={chartId}
+                    onUpdate={handleUpdateVision}
+                    onDelete={handleDeleteVision}
+                    areas={chart.areas || []}
+                    onOpenDetail={(item) =>
+                      handleOpenDetailPanelForModal("vision", item.id, item.content || "")
+                    }
+                    onOpenFocus={(item, itemIndex) =>
+                      openFocusMode(
+                        "vision",
+                        item.id,
+                        `Vision V-${String(itemIndex + 1).padStart(2, "0")}`,
+                        item.content || ""
+                      )
+                    }
+                    onOpenAreaSettings={() => setTagManagerOpen(true)}
+                    currentUser={currentUser}
+                    workspaceMembers={workspaceMembers}
+                  />
+                )}
+              />
             </div>
           );
         })}
@@ -931,51 +921,38 @@ export function ProjectEditor({
           const uncategorizedVisions = visions.filter((v) => !v.area_id);
           return (
             <div className="mb-4 last:mb-0">
-              <div className="flex items-center px-3 mb-1">
-                <span className="w-3 h-3 rounded-full mr-2 bg-gray-400" />
-                <span className="text-sm font-bold text-zenshin-navy">{tTags("untagged")}</span>
-                <span className="ml-2 text-xs text-zenshin-navy/40">
-                  {t("itemCount", { count: uncategorizedVisions.length })}
-                </span>
-              </div>
-              <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
-                <SortableContext
-                  items={uncategorizedVisions}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {uncategorizedVisions.length === 0 ? (
-                    <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                      {t("noItems")}
-                    </div>
-                  ) : (
-                    uncategorizedVisions.map((vision, index) => (
-                      <SortableVisionItem
-                        key={vision.id}
-                        vision={vision}
-                        index={index}
-                        chartId={chartId}
-                        onUpdate={handleUpdateVision}
-                        onDelete={handleDeleteVision}
-                        areas={chart.areas || []}
-                        onOpenDetail={(item) =>
-                          handleOpenDetailPanelForModal("vision", item.id, item.content || "")
-                        }
-                        onOpenFocus={(item, itemIndex) =>
-                          openFocusMode(
-                            "vision",
-                            item.id,
-                            `Vision V-${String(itemIndex + 1).padStart(2, "0")}`,
-                            item.content || ""
-                          )
-                        }
-                        onOpenAreaSettings={() => setTagManagerOpen(true)}
-                        currentUser={currentUser}
-                        workspaceMembers={workspaceMembers}
-                      />
-                    ))
-                  )}
-                </SortableContext>
-              </div>
+              <AreaDropZone
+                areaId={null}
+                areaName={tTags("untagged")}
+                areaColor="#9CA3AF"
+                items={uncategorizedVisions}
+                listType="vision"
+                renderItem={(vision, index) => (
+                  <SortableVisionItem
+                    key={vision.id}
+                    vision={vision}
+                    index={index}
+                    chartId={chartId}
+                    onUpdate={handleUpdateVision}
+                    onDelete={handleDeleteVision}
+                    areas={chart.areas || []}
+                    onOpenDetail={(item) =>
+                      handleOpenDetailPanelForModal("vision", item.id, item.content || "")
+                    }
+                    onOpenFocus={(item, itemIndex) =>
+                      openFocusMode(
+                        "vision",
+                        item.id,
+                        `Vision V-${String(itemIndex + 1).padStart(2, "0")}`,
+                        item.content || ""
+                      )
+                    }
+                    onOpenAreaSettings={() => setTagManagerOpen(true)}
+                    currentUser={currentUser}
+                    workspaceMembers={workspaceMembers}
+                  />
+                )}
+              />
             </div>
           );
         })()}
@@ -1242,16 +1219,9 @@ export function ProjectEditor({
 
   const handleUpdateChartDueDate = async (dueDate: string | null) => {
     try {
-      const { error } = await supabase
-        .from("charts")
-        .update({
-          due_date: dueDate,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", chart.id);
-
-      if (error) {
-        console.error("[handleUpdateChartDueDate] Error:", error);
+      const success = await updateChartData(chartId, { due_date: dueDate });
+      if (!success) {
+        console.error("[handleUpdateChartDueDate] Update failed");
         return;
       }
 
