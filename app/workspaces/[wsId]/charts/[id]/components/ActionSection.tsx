@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import { useDroppable, useDndContext } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useItemInput } from "@/hooks/use-item-input";
 import type { Tension, ActionPlan, TensionStatus, VisionItem, RealityItem, Area } from "@/types/chart";
 import {
@@ -122,24 +121,17 @@ export function ActionSection({
             : "border border-transparent"
       }`}
     >
-      <div className="flex items-center gap-2 px-2 py-1">
-        <Badge
-          variant="outline"
-          className="text-xs font-semibold h-6 inline-flex items-center px-2"
-          style={{
-            minHeight: "1.5rem",
-            backgroundColor: `${areaColor}20`,
-            borderColor: areaColor,
-            color: areaColor,
-          }}
-        >
-          {areaName}
-        </Badge>
-        <span className="text-xs text-muted-foreground">{t("itemCount", { count: tensionActionCount + looseActions.length })}</span>
+      <div className="flex items-center px-3 mb-2">
+        <span
+          className="w-3 h-3 rounded-full mr-2 shrink-0"
+          style={{ backgroundColor: areaColor }}
+        />
+        <span className="text-sm font-bold text-zenshin-navy">{areaName}</span>
+        <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: tensionActionCount + looseActions.length })}</span>
       </div>
 
-      <div className="space-y-4 px-2">
-        <div>
+      <div className="space-y-0.5 px-2">
+        <div className="mt-2 mb-3">
           <Input
             {...newTensionInput.bind}
             onKeyDown={async (e) => {
@@ -159,18 +151,18 @@ export function ActionSection({
               }
             }}
             placeholder={t("addTensionForArea", { areaName })}
-            className="h-8 text-sm keyboard-focusable"
+            className="h-8 text-sm py-1.5 px-2 keyboard-focusable"
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-1">
           <SortableContext
             items={sortedTensionsInSection.map((t) => `tension-${t.id}`)}
             strategy={verticalListSortingStrategy}
           >
           {sortedTensionsInSection.map((tension, tensionIndex) => (
             <TensionGroup
-              key={tension.id}
+              key={tension._stableKey ?? tension.id}
               tension={tension}
               tensionIndex={tensionIndex}
               areaId={areaId}

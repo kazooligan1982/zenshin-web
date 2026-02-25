@@ -242,7 +242,7 @@ export function TensionGroup({
           >
             <Check className="w-3 h-3" />
           </button>
-          <span className="text-sm font-bold text-zenshin-navy/50 line-through flex-1 truncate">
+          <span className="text-sm font-bold text-zenshin-navy/50 line-through flex-1 line-clamp-2 break-words">
             {tension.title}
           </span>
           <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
@@ -263,7 +263,7 @@ export function TensionGroup({
         isResolved && isExpanded && "opacity-60"
       )}
     >
-      <div className="flex items-center justify-between gap-4 px-3 py-2 border-b bg-gray-50">
+      <div className="flex items-center justify-between gap-4 px-3 py-2 border-b mb-1 bg-gray-50">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {!isOverlay && (
             <div
@@ -370,7 +370,7 @@ export function TensionGroup({
         </div>
       </div>
       {!isOverlay && (
-        <div className="px-3 py-2">
+        <div className="px-3 pt-1 pb-2">
         {sortByStatusFlag && groupedByStatus ? (
           <div className="space-y-0">
             {groupedByStatus.map(({ key, actions: groupActions }, idx) => (
@@ -470,7 +470,7 @@ export function TensionGroup({
                 items={undatedItems.map((a) => a.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div id={`action-list-container-${tension.id}`} className="space-y-0">
+                <div id={`action-list-container-${tension.id}`} className="space-y-1">
                   {undatedItems.length === 0 ? (
                     isDragging ? (
                       <div
@@ -517,7 +517,7 @@ export function TensionGroup({
             {t("hiddenCompletedCount", { count: hiddenCount })}
           </div>
         )}
-        <div className="p-2 border-t border-zenshin-navy/5 bg-white">
+        <div className="mt-2 py-1.5 px-2 border-t border-zenshin-navy/5 bg-white">
           <div className="flex gap-2">
             <Input
               {...newActionInput.bind}

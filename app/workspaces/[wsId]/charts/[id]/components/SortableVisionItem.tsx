@@ -7,7 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useTranslations } from "next-intl";
 import { GripVertical, FileText, Tag, Plus, Trash2, UserPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Popover,
   PopoverContent,
@@ -185,7 +185,7 @@ export function SortableVisionItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex items-center gap-2 py-3 px-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors"
+      className="group flex items-center gap-2 py-1.5 px-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors"
     >
       <div
         {...attributes}
@@ -195,22 +195,46 @@ export function SortableVisionItem({
         <GripVertical className="h-4 w-4 text-zenshin-navy/40" />
       </div>
 
-      <span className="text-[11px] font-mono text-zenshin-teal/50 w-5 text-right shrink-0 leading-6">
+      <span className="text-[11px] font-mono text-zenshin-teal/50 w-5 text-right shrink-0 leading-5">
         {index + 1}
       </span>
 
       <div className="flex-1 min-w-0">
-        <Input
-          {...visionInput.bind}
-          placeholder={t("visionIdealPlaceholder")}
-          className="text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable"
-          onKeyDown={(e) => {
-            visionInput.handleKeyDown(e);
-            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-              handleTextKeyboardNavigation(e);
-            }
-          }}
-        />
+        {!visionInput.isEditing ? (
+          <span
+            id={visionInput.bind.id}
+            tabIndex={0}
+            role="textbox"
+            className={cn(
+              "block w-full text-sm leading-5 line-clamp-2 cursor-text min-w-0",
+              !visionInput.value && "text-muted-foreground"
+            )}
+            onClick={() => visionInput.setIsEditing(true)}
+            onFocus={() => visionInput.setIsEditing(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                visionInput.setIsEditing(true);
+              }
+            }}
+          >
+            {visionInput.value || t("visionIdealPlaceholder")}
+          </span>
+        ) : (
+          <Textarea
+            {...visionInput.bind}
+            placeholder={t("visionIdealPlaceholder")}
+            rows={2}
+            className="text-sm flex-1 w-full border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable resize-none leading-5 min-h-0 py-0"
+            autoFocus
+            onKeyDown={(e) => {
+              visionInput.handleKeyDown(e);
+              if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                handleTextKeyboardNavigation(e);
+              }
+            }}
+          />
+        )}
       </div>
 
       <div className={cn(ICON_CONTAINER_CLASS, "flex-none ml-auto")}>

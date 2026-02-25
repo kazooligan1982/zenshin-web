@@ -77,6 +77,8 @@ export interface Tension {
   visionIds: string[]; // 関連するVisionのIDリスト
   realityIds: string[]; // 関連するRealityのIDリスト
   actionPlans: ActionPlan[];
+  /** 楽観的更新時のtempId→実ID置換でコンポーネントのアンマウントを防ぐための安定キー */
+  _stableKey?: string;
 }
 
 export type ChartStatus = "active" | "completed";

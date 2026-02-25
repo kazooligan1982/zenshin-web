@@ -876,11 +876,11 @@ export function ProjectEditor({
     const showUncategorized = selectedAreaId === "uncategorized";
     const visibleAreas = showAll ? areas : areas.filter((area) => area.id === selectedAreaId);
     return (
-      <div className="pt-3">
+      <div className="p-0 space-y-4">
         {visibleAreas.map((area) => {
           const areaVisions = visions.filter((v) => v.area_id === area.id);
           return (
-            <div key={area.id} className="mb-4 last:mb-0">
+            <div key={area.id}>
               <AreaDropZone
                 areaId={area.id}
                 areaName={area.name}
@@ -920,7 +920,7 @@ export function ProjectEditor({
           if (!showAll && !showUncategorized) return null;
           const uncategorizedVisions = visions.filter((v) => !v.area_id);
           return (
-            <div className="mb-4 last:mb-0">
+            <div className="mt-4 first:mt-0 mb-4 last:mb-0">
               <AreaDropZone
                 areaId={null}
                 areaName={tTags("untagged")}
@@ -989,12 +989,12 @@ export function ProjectEditor({
     const showUncategorized = selectedAreaId === "uncategorized";
     const visibleAreas = showAll ? areas : areas.filter((area) => area.id === selectedAreaId);
     return (
-      <div className="pt-3">
+      <div className="p-0 space-y-4">
         {visibleAreas.map((area) => {
           const areaRealities = realities.filter((r) => r.area_id === area.id);
           return (
-            <div key={area.id} className="mb-4 last:mb-0">
-              <div className="flex items-center px-3 mb-1">
+            <div key={area.id}>
+              <div className="flex items-center mb-2">
                 <span
                   className="w-3 h-3 rounded-full mr-2"
                   style={{ backgroundColor: area.color }}
@@ -1002,7 +1002,7 @@ export function ProjectEditor({
                 <span className="text-sm font-bold text-zenshin-navy">{area.name}</span>
                 <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: areaRealities.length })}</span>
               </div>
-              <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
+              <div className="space-y-1 transition-all min-h-[40px]">
                 <SortableContext items={areaRealities} strategy={verticalListSortingStrategy}>
                   {areaRealities.length === 0 ? (
                     <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
@@ -1043,15 +1043,15 @@ export function ProjectEditor({
           if (!showAll && !showUncategorized) return null;
           const uncategorizedRealities = realities.filter((r) => !r.area_id);
           return (
-            <div className="mb-4 last:mb-0">
-              <div className="flex items-center px-3 mb-1">
+            <div>
+              <div className="flex items-center mb-2">
                 <span className="w-3 h-3 rounded-full mr-2 bg-gray-400" />
                 <span className="text-sm font-bold text-zenshin-navy">{tTags("untagged")}</span>
                 <span className="ml-2 text-xs text-zenshin-navy/40">
                   {t("itemCount", { count: uncategorizedRealities.length })}
                 </span>
               </div>
-              <div className="space-y-1 px-3 py-2 transition-all min-h-[40px]">
+              <div className="space-y-1 transition-all min-h-[40px]">
                 <SortableContext
                   items={uncategorizedRealities}
                   strategy={verticalListSortingStrategy}
@@ -1553,13 +1553,13 @@ export function ProjectEditor({
             {focusedArea === "vision" && (
               <div className="h-full">
                 <div
-                  className={`flex flex-col bg-white border-2 rounded-lg shadow-sm h-full transition-all duration-200 ${
+                  className={`flex flex-col p-4 bg-white border-2 rounded-lg shadow-sm h-full transition-all duration-200 ${
                     hoveredSection === "vision"
                       ? "border-zenshin-teal shadow-md shadow-zenshin-teal/20"
                       : "border-zenshin-teal/50"
                   }`}
                 >
-                  <div className="px-3 py-2 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg">
+                  <div className="pt-2 pb-2 mb-3 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg -mx-4 -mt-4 px-4 pt-4">
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-zenshin-teal" />
                       <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("vision")}</h2>
@@ -1585,7 +1585,7 @@ export function ProjectEditor({
                       </div>
                     </DndContext>
                   </ScrollArea>
-                  <div className="p-2 border-t bg-white shrink-0">
+                  <div className="mt-3 py-1.5 px-2 border-t bg-white shrink-0">
                     <div className="flex gap-2">
                       <Input
                         {...newVisionInput.bind}
@@ -1622,13 +1622,13 @@ export function ProjectEditor({
             {focusedArea === "reality" && (
               <div className="h-full">
                 <div
-                  className={`flex flex-col bg-white border-2 rounded-lg shadow-sm h-full overflow-hidden transition-all duration-200 ${
+                  className={`flex flex-col p-4 bg-white border-2 rounded-lg shadow-sm h-full overflow-hidden transition-all duration-200 ${
                     hoveredSection === "reality"
                       ? "border-zenshin-orange shadow-md shadow-zenshin-orange/20"
                       : "border-zenshin-orange/50"
                   }`}
                 >
-                  <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
+                  <div className="pt-2 pb-2 mb-3 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0 -mx-4 -mt-4 px-4 pt-4">
                     <div className="flex items-center gap-2">
                       <Search className="w-4 h-4 text-zenshin-orange" />
                       <h2 className="text-base font-bold text-foreground leading-tight">
@@ -1660,7 +1660,7 @@ export function ProjectEditor({
                       </div>
                     </DndContext>
                   </ScrollArea>
-                  <div className="p-2 border-t bg-white shrink-0">
+                  <div className="mt-3 py-1.5 px-2 border-t bg-white shrink-0">
                     <div className="flex gap-2">
                       <Input
                         {...newRealityInput.bind}
@@ -1705,7 +1705,7 @@ export function ProjectEditor({
                       : "border-zenshin-navy/30"
                   }`}
                 >
-                  <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
+                  <div className="px-3 pt-2 pb-3 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-zenshin-navy" />
                       <h2 className="text-base font-bold text-foreground leading-tight">
@@ -1885,7 +1885,7 @@ export function ProjectEditor({
                                     <div className="opacity-60">
                                       {allCompletedTensions.map((tension) => (
                                         <TensionGroup
-                                          key={tension.id}
+                                          key={tension._stableKey ?? tension.id}
                                           tension={tension}
                                           tensionIndex={0}
                                           areaId={tension.area_id ?? null}
@@ -2015,13 +2015,13 @@ export function ProjectEditor({
               {/* Vision Area - 50% */}
               <div className="flex-1 min-h-0">
                 <div
-                  className={`h-full flex flex-col bg-white border-2 rounded-lg shadow-sm overflow-hidden transition-all duration-200 ${
+                  className={`h-full flex flex-col p-4 bg-white border-2 rounded-lg shadow-sm overflow-hidden transition-all duration-200 ${
                     hoveredSection === "vision"
                       ? "border-zenshin-teal shadow-md shadow-zenshin-teal/20"
                       : "border-zenshin-teal/50"
                   }`}
                 >
-                  <div className="px-3 py-2 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg">
+                  <div className="pt-2 pb-2 mb-3 border-b bg-zenshin-teal/10 flex items-center justify-between rounded-t-lg -mx-4 -mt-4 px-4 pt-4">
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-zenshin-teal" />
                       <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("vision")}</h2>
@@ -2055,7 +2055,7 @@ export function ProjectEditor({
                       </div>
                     </DndContext>
                   </ScrollArea>
-                  <div className="p-2 border-t bg-white shrink-0">
+                  <div className="mt-3 py-1.5 px-2 border-t bg-white shrink-0">
                     <div className="flex gap-2">
                       <Input
                         {...newVisionInput.bind}
@@ -2092,13 +2092,13 @@ export function ProjectEditor({
               {/* Reality Area - 50% */}
               <div className="flex-1 min-h-0">
                 <div
-                  className={`h-full flex flex-col bg-white border-2 rounded-lg shadow-sm overflow-hidden transition-all duration-200 ${
+                  className={`h-full flex flex-col p-4 bg-white border-2 rounded-lg shadow-sm overflow-hidden transition-all duration-200 ${
                     hoveredSection === "reality"
                       ? "border-zenshin-orange shadow-md shadow-zenshin-orange/20"
                       : "border-zenshin-orange/50"
                   }`}
                 >
-                  <div className="px-3 py-2 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0">
+                  <div className="pt-2 pb-2 mb-3 border-b bg-zenshin-orange/10 flex items-center justify-between rounded-t-lg shrink-0 -mx-4 -mt-4 px-4 pt-4">
                     <div className="flex items-center gap-2">
                       <Search className="w-4 h-4 text-zenshin-orange" />
                       <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("reality")}</h2>
@@ -2132,7 +2132,7 @@ export function ProjectEditor({
                       </div>
                     </DndContext>
                   </ScrollArea>
-                  <div className="p-2 border-t bg-white shrink-0">
+                  <div className="mt-3 py-1.5 px-2 border-t bg-white shrink-0">
                     <div className="flex gap-2">
                       <Input
                         {...newRealityInput.bind}
@@ -2176,7 +2176,7 @@ export function ProjectEditor({
                     : "border-zenshin-navy/30"
                 }`}
               >
-                <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
+                <div className="px-3 pt-2 pb-3 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-zenshin-navy" />
                     <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("tensionAndAction")}</h2>
@@ -2351,7 +2351,7 @@ export function ProjectEditor({
                                   <div className="opacity-60">
                                     {allCompletedTensions.map((tension) => (
                                       <TensionGroup
-                                        key={tension.id}
+                                        key={tension._stableKey ?? tension.id}
                                         tension={tension}
                                         tensionIndex={0}
                                         areaId={tension.area_id ?? null}
@@ -2701,8 +2701,8 @@ function ComparisonView({
           collisionDetection={customCollisionDetection}
           onDragEnd={handleVrDragEnd}
         >
-          <div className="space-y-6">
-            {allAreaIds.map((areaId) => {
+          <div className="space-y-4">
+            {allAreaIds.map((areaId, areaIndex) => {
               const v = Array.isArray(visions) ? visions : [];
               const r = Array.isArray(realities) ? realities : [];
               const areaVisions = v.filter((item) => (item.area_id || "uncategorized") === areaId);
@@ -2720,16 +2720,19 @@ function ComparisonView({
               return (
                 <div
                   key={areaId}
-                  className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+                  className={`bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden ${areaIndex > 0 ? "mt-4" : ""}`}
                 >
                   {/* タグ名ヘッダー — カードの上部 */}
-                  <div className="px-4 py-2 bg-gray-50 border-b flex items-center gap-2">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full"
+                  <div className="px-4 py-2 mb-2 bg-gray-50 border-b flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0"
                       style={{ backgroundColor: getAreaColor(areaId) }}
                     />
-                    <span className="text-sm font-semibold text-zenshin-navy">
+                    <span className="text-sm font-bold text-zenshin-navy">
                       {getAreaName(areaId)}
+                    </span>
+                    <span className="ml-2 text-xs text-zenshin-navy/40">
+                      {t("itemCount", { count: areaVisions.length + areaRealities.length })}
                     </span>
                   </div>
 
@@ -2741,7 +2744,7 @@ function ComparisonView({
                         <Target className="w-3.5 h-3.5 text-zenshin-teal" />
                         <span className="text-xs font-bold text-zenshin-teal uppercase tracking-wider">{t("vision")}</span>
                       </div>
-                      <div className="space-y-1 px-2 py-2 min-h-[40px]">
+                      <div className="space-y-1 px-2 py-1.5 min-h-[40px]">
                         <SortableContext items={areaVisions} strategy={verticalListSortingStrategy}>
                           {areaVisions.length === 0 ? (
                             <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
@@ -2771,7 +2774,7 @@ function ComparisonView({
                           )}
                         </SortableContext>
                       </div>
-                      <div className="p-2 border-t border-gray-100 flex gap-2">
+                      <div className="mt-2 py-1.5 px-2 border-t border-gray-100 flex gap-2">
                         <Input
                           value={visionInput}
                           onChange={(e) => setVisionInput(e.target.value)}
@@ -2816,7 +2819,7 @@ function ComparisonView({
                         <Search className="w-3.5 h-3.5 text-zenshin-orange" />
                         <span className="text-xs font-bold text-zenshin-orange uppercase tracking-wider">{t("reality")}</span>
                       </div>
-                      <div className="space-y-1 px-2 py-2 min-h-[40px]">
+                      <div className="space-y-1 px-2 py-1.5 min-h-[40px]">
                         <SortableContext items={areaRealities} strategy={verticalListSortingStrategy}>
                           {areaRealities.length === 0 ? (
                             <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
@@ -2845,7 +2848,7 @@ function ComparisonView({
                           )}
                         </SortableContext>
                       </div>
-                      <div className="p-2 border-t border-gray-100 flex gap-2">
+                      <div className="mt-2 py-1.5 px-2 border-t border-gray-100 flex gap-2">
                         <Input
                           value={realityInput}
                           onChange={(e) => setRealityInput(e.target.value)}
@@ -2894,7 +2897,7 @@ function ComparisonView({
       {/* T&Aエリア — 残りの高さを使う、最低でも画面の80%確保 */}
       <div className="flex-1 min-h-[80vh] px-6 pt-3 pb-6">
         <div className="flex flex-col bg-white border-2 border-zenshin-navy/30 rounded-lg shadow-sm overflow-hidden h-full">
-          <div className="px-3 py-2 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
+          <div className="px-3 pt-2 pb-3 border-b bg-zenshin-navy/8 flex items-center justify-between rounded-t-lg shrink-0">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-zenshin-navy" />
               <h2 className="text-base font-bold text-zenshin-navy leading-tight">{t("tensionAndAction")}</h2>
@@ -3039,7 +3042,7 @@ function ComparisonView({
                               <div className="opacity-60">
                                 {allCompletedTensions.map((tension) => (
                                   <TensionGroup
-                                    key={tension.id}
+                                    key={tension._stableKey ?? tension.id}
                                     tension={tension}
                                     tensionIndex={0}
                                     areaId={tension.area_id ?? null}

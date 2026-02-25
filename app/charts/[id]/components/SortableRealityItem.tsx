@@ -4,8 +4,9 @@ import { useTranslations } from "next-intl";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, FileText, Tag, Plus, Trash2 } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Popover,
   PopoverContent,
@@ -94,7 +95,7 @@ export function SortableRealityItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex w-full max-w-full items-center gap-2 py-3 px-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors ${
+      className={`group flex w-full max-w-full items-center gap-2 py-1.5 px-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors ${
         highlightedItemId === reality.id ? "bg-white" : ""
       }`}
     >
@@ -110,27 +111,61 @@ export function SortableRealityItem({
             <GripVertical className="w-4 h-4" />
           </div>
         )}
-        <span className="text-[11px] font-mono text-zenshin-orange/50 w-5 text-right shrink-0 leading-6">
+        <span className="text-[11px] font-mono text-zenshin-orange/50 w-5 text-right shrink-0 leading-5">
           {index + 1}
         </span>
       </div>
-      <div className="flex-1 min-w-0 overflow-hidden">
-        <Input
-          {...realityInput.bind}
-          placeholder={t("realityCurrentPlaceholder")}
-          className="text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable"
-          disabled={reality.isLocked}
-          onKeyDown={(e) => {
-            if (e.nativeEvent.isComposing) return;
-            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-              handleTextKeyboardNavigation(e);
-              return;
-            }
-            realityInput.handleKeyDown(e);
-          }}
-        />
+      <div className="flex-1 min-w-0">
+        {!realityInput.isEditing ? (
+          <span
+            id={realityInput.bind.id}
+            tabIndex={reality.isLocked ? -1 : 0}
+            role="textbox"
+            className={cn(
+              "block w-full text-sm leading-5 line-clamp-2 cursor-text min-w-0",
+              !realityInput.value && "text-muted-foreground",
+              reality.isLocked && "cursor-not-allowed opacity-60"
+            )}
+            onClick={() => !reality.isLocked && realityInput.setIsEditing(true)}
+            onFocus={() => !reality.isLocked && realityInput.setIsEditing(true)}
+            onKeyDown={(e) => {
+              if (reality.isLocked) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                realityInput.setIsEditing(true);
+              }
+            }}
+          >
+            {realityInput.value || t("realityCurrentPlaceholder")}
+          </span>
+        ) : (
+          <Textarea
+            {...realityInput.bind}
+            placeholder={t("realityCurrentPlaceholder")}
+            rows={2}
+            className="text-sm flex-1 w-full border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable resize-none leading-5 min-h-0 py-0"
+            disabled={reality.isLocked}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing) return;
+              if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                handleTextKeyboardNavigation(e);
+                return;
+              }
+              realityInput.handleKeyDown(e);
+            }}
+          />
+        )}
       </div>
       <div className={cn(ICON_CONTAINER_CLASS, "flex-none ml-auto")}>
+        <div className="w-[110px] relative flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200">
+          <DatePicker
+            value={reality.dueDate || null}
+            onChange={(date) => handleUpdateReality(reality.id, "dueDate", date || null)}
+            className="flex items-center justify-center"
+            modal={true}
+          />
+        </div>
         <div className="flex items-center gap-2 text-xs text-zenshin-navy/40">
           <span>
             {format(new Date(reality.createdAt), "MM/dd HH:mm", { locale: ja })}
