@@ -10,11 +10,13 @@ import {
   updateRealityArea,
   updateActionArea,
   updateTensionArea,
+  updateAreaOrder,
 } from "../actions";
 
 export function useDndHandlers({
   chartId,
   chart,
+  setChart,
   visions,
   setVisions,
   realities,
@@ -30,6 +32,7 @@ export function useDndHandlers({
 }: {
   chartId: string;
   chart: { areas: Area[] };
+  setChart: React.Dispatch<React.SetStateAction<{ areas: Area[] } & Record<string, unknown>>>;
   visions: VisionItem[];
   setVisions: React.Dispatch<React.SetStateAction<VisionItem[]>>;
   realities: RealityItem[];
@@ -455,9 +458,50 @@ export function useDndHandlers({
     await handleActionSectionDragEnd(event);
   };
 
+  const handleAreaDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeStr = String(active.id);
+    const overStr = String(over.id);
+    if (!activeStr.startsWith("area-") || !overStr.startsWith("area-")) return;
+
+    const activeAreaId = activeStr.replace(/^area-/, "");
+    const overAreaId = overStr.replace(/^area-/, "");
+    const areas = [...(chart.areas ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    const oldIndex = areas.findIndex((a) => a.id === activeAreaId);
+    const newIndex = areas.findIndex((a) => a.id === overAreaId);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const previousAreas = [...areas];
+    const reordered = arrayMove(areas, oldIndex, newIndex);
+    const areaOrders = reordered.map((area, index) => ({
+      areaId: area.id,
+      sort_order: index,
+    }));
+
+    setChart((prev) => ({
+      ...prev,
+      areas: reordered.map((a, i) => ({ ...a, sort_order: i })),
+    }));
+
+    try {
+      const ok = await updateAreaOrder(chartId, areaOrders);
+      if (!ok) {
+        setChart((prev) => ({ ...prev, areas: previousAreas }));
+        toast.error(tt("orderUpdateFailed"), { duration: 5000 });
+      }
+    } catch (error) {
+      console.error("Area order update failed:", error);
+      setChart((prev) => ({ ...prev, areas: previousAreas }));
+      toast.error(tt("orderUpdateFailed"), { duration: 5000 });
+    }
+  };
+
   return {
     handleDragEnd,
     handleTensionDragEnd,
     handleActionSectionDragEnd,
+    handleAreaDragEnd,
   };
 }

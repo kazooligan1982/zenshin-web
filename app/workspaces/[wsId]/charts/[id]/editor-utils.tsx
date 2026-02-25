@@ -187,6 +187,43 @@ export const customCollisionDetection = (
   return closestCenter(args);
 };
 
+/** Returns timestamp at local midnight for date comparison (avoids timezone issues with YYYY-MM-DD). */
+function toLocalMidnight(dateStr: string): number {
+  const d = new Date(dateStr);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+/** Sorts items: future due_date first (ascending), then past/none by display_order (or sort_order). */
+export function sortItemsByFutureDateFirst<T extends { id: string }>(
+  items: T[],
+  getDate: (item: T) => string | null | undefined,
+  getOrder: (item: T) => number = (item) => (item as { sort_order?: number; display_order?: number }).sort_order ?? (item as { sort_order?: number; display_order?: number }).display_order ?? 0,
+  descending: boolean = false
+): T[] {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const nowMs = now.getTime();
+  const future = items
+    .filter((item) => {
+      const d = getDate(item);
+      if (!d) return false;
+      const ms = toLocalMidnight(d);
+      return !Number.isNaN(ms) && ms >= nowMs;
+    })
+    .sort((a, b) => descending
+      ? toLocalMidnight(getDate(b)!) - toLocalMidnight(getDate(a)!)
+      : toLocalMidnight(getDate(a)!) - toLocalMidnight(getDate(b)!));
+  const pastOrNone = items
+    .filter((item) => {
+      const d = getDate(item);
+      if (!d) return true;
+      const ms = toLocalMidnight(d);
+      return Number.isNaN(ms) || ms < nowMs;
+    })
+    .sort((a, b) => getOrder(a) - getOrder(b));
+  return [...future, ...pastOrNone];
+}
+
 export const splitItemsByDate = <T extends { id: string }>(
   items: T[],
   getDate: (item: T) => string | null | undefined
