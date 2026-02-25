@@ -197,7 +197,10 @@ export function ProjectEditor({
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!chart?.id || !chart?.title) return;
-    const stored = localStorage.getItem("zenshin_recent_charts");
+    const wsKey = chart.workspace_id
+      ? `zenshin_recent_charts_${chart.workspace_id}`
+      : "zenshin_recent_charts";
+    const stored = localStorage.getItem(wsKey);
     let recentCharts: { id: string; title: string; visitedAt: string }[] = [];
     try {
       recentCharts = stored ? JSON.parse(stored) : [];
@@ -211,9 +214,9 @@ export function ProjectEditor({
     };
     const filtered = recentCharts.filter((item) => item.id !== chart.id);
     const updated = [nextRecent, ...filtered].slice(0, 3);
-    localStorage.setItem("zenshin_recent_charts", JSON.stringify(updated));
+    localStorage.setItem(wsKey, JSON.stringify(updated));
     window.dispatchEvent(new Event("recentChartsUpdated"));
-  }, [chart?.id, chart?.title]);
+  }, [chart?.id, chart?.title, chart?.workspace_id]);
   const [visions, setVisions] = useState<VisionItem[]>(chart.visions ?? []);
   const [realities, setRealities] = useState<RealityItem[]>(chart.realities ?? []);
   const [tensions, setTensions] = useState<Tension[]>(chart.tensions);

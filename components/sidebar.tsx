@@ -88,15 +88,7 @@ export function Sidebar(props?: SidebarProps) {
 
   const [isHovered, setIsHovered] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [recentCharts, setRecentCharts] = useState<RecentChart[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = localStorage.getItem(RECENT_CHARTS_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [recentCharts, setRecentCharts] = useState<RecentChart[]>([]);
   const [fetchedWorkspace, setFetchedWorkspace] = useState<{
     id: string;
     name: string;
@@ -139,8 +131,17 @@ export function Sidebar(props?: SidebarProps) {
   const isExpanded = isHovered || isDropdownOpen;
 
   useEffect(() => {
+    const storageKey = wsId ? `${RECENT_CHARTS_KEY}_${wsId}` : RECENT_CHARTS_KEY;
+    // Load initial data for this workspace
+    try {
+      const stored = localStorage.getItem(storageKey);
+      setRecentCharts(stored ? JSON.parse(stored) : []);
+    } catch {
+      setRecentCharts([]);
+    }
+
     const handleUpdate = () => {
-      const updated = localStorage.getItem(RECENT_CHARTS_KEY);
+      const updated = localStorage.getItem(storageKey);
       if (updated) {
         try {
           setRecentCharts(JSON.parse(updated));
@@ -150,7 +151,7 @@ export function Sidebar(props?: SidebarProps) {
 
     window.addEventListener("recentChartsUpdated", handleUpdate);
     return () => window.removeEventListener("recentChartsUpdated", handleUpdate);
-  }, []);
+  }, [wsId]);
 
   useEffect(() => {
     if (props?.currentWorkspace && props?.workspaces) return;
