@@ -105,10 +105,12 @@ import {
   StructuredData,
   customCollisionDetection,
   splitItemsByDate,
+  sortItemsByFutureDateFirst,
 } from "./editor-utils";
 import { SortableVisionItem } from "./components/SortableVisionItem";
 import { SortableRealityItem } from "./components/SortableRealityItem";
 import { AreaDropZone } from "./components/AreaDropZone";
+import { SortableAreaSection } from "@/components/SortableAreaSection";
 import { TensionGroup } from "./components/TensionGroup";
 import { ActionSection } from "./components/ActionSection";
 import { useVisionHandlers } from "./hooks/useVisionHandlers";
@@ -694,9 +696,10 @@ export function ProjectEditor({
 
   const getVisionDate = (vision: VisionItem) => vision.dueDate || null;
 
-  const { handleDragEnd, handleTensionDragEnd, handleActionSectionDragEnd } = useDndHandlers({
+  const { handleDragEnd, handleTensionDragEnd, handleActionSectionDragEnd, handleAreaDragEnd } = useDndHandlers({
     chartId,
     chart,
+    setChart: setChart as React.Dispatch<React.SetStateAction<{ areas: Area[] }>>,
     visions,
     setVisions,
     realities,
@@ -761,7 +764,8 @@ export function ProjectEditor({
   }, [realities, chart.areas]);
 
   const structuredData = useMemo<StructuredData>(() => {
-    const areas = chart.areas ?? [];
+    const getActionDate = (a: ActionPlan) => a.dueDate || null;
+    const areas = (chart.areas ?? []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     if (!areas || !tensions || !looseActions) {
       return {
         categorized: [],
@@ -782,20 +786,22 @@ export function ProjectEditor({
         .filter((tension) => tension.area_id === area.id)
         .map((tension) => ({
           ...tension,
-          actions: [...tension.actionPlans].sort(
-            (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+          actions: sortItemsByFutureDateFirst(
+            tension.actionPlans,
+            getActionDate
           ),
         }))
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
-      const orphans = allActions
-        .filter(
+      const orphans = sortItemsByFutureDateFirst(
+        allActions.filter(
           (action) =>
             action.area_id === area.id &&
             !action.tension_id &&
             !assignedActionIds.has(action.id)
-        )
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        ),
+        getActionDate
+      );
 
       return {
         area,
@@ -808,18 +814,17 @@ export function ProjectEditor({
       .filter((tension) => !tension.area_id)
       .map((tension) => ({
         ...tension,
-        actions: [...tension.actionPlans].sort(
-          (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
-        ),
+        actions: sortItemsByFutureDateFirst(tension.actionPlans, getActionDate),
       }))
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
-    const uncategorizedOrphans = allActions
-      .filter(
+    const uncategorizedOrphans = sortItemsByFutureDateFirst(
+      allActions.filter(
         (action) =>
           !action.area_id && !action.tension_id && !assignedActionIds.has(action.id)
-      )
-      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      ),
+      getActionDate
+    );
 
     return {
       categorized,
@@ -871,54 +876,99 @@ export function ProjectEditor({
   );
 
   const renderVisionContent = () => {
-    const areas = chart.areas ?? [];
+    const areas = (chart.areas ?? []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     const showAll = selectedAreaId === "all";
     const showUncategorized = selectedAreaId === "uncategorized";
     const visibleAreas = showAll ? areas : areas.filter((area) => area.id === selectedAreaId);
-    return (
+    const areaIds = visibleAreas.map((a) => a.id);
+    const getVisionDate = (v: VisionItem) => v.dueDate || null;
+    const visionItemRenderer = (vision: VisionItem, index: number) => (
+      <SortableVisionItem
+        key={vision.id}
+        vision={vision}
+        index={index}
+        chartId={chartId}
+        onUpdate={handleUpdateVision}
+        onDelete={handleDeleteVision}
+        areas={chart.areas || []}
+        onOpenDetail={(item) =>
+          handleOpenDetailPanelForModal("vision", item.id, item.content || "")
+        }
+        onOpenFocus={(item, itemIndex) =>
+          openFocusMode(
+            "vision",
+            item.id,
+            `Vision V-${String(itemIndex + 1).padStart(2, "0")}`,
+            item.content || ""
+          )
+        }
+        onOpenAreaSettings={() => setTagManagerOpen(true)}
+        currentUser={currentUser}
+        workspaceMembers={workspaceMembers}
+      />
+    );
+    const inner = (
       <div className="p-0 space-y-4">
-        {visibleAreas.map((area) => {
-          const areaVisions = visions.filter((v) => v.area_id === area.id);
-          return (
-            <div key={area.id}>
-              <AreaDropZone
-                areaId={area.id}
-                areaName={area.name}
-                areaColor={area.color}
-                items={areaVisions}
-                listType="vision"
-                renderItem={(vision, index) => (
-                  <SortableVisionItem
-                    key={vision.id}
-                    vision={vision}
-                    index={index}
-                    chartId={chartId}
-                    onUpdate={handleUpdateVision}
-                    onDelete={handleDeleteVision}
-                    areas={chart.areas || []}
-                    onOpenDetail={(item) =>
-                      handleOpenDetailPanelForModal("vision", item.id, item.content || "")
-                    }
-                    onOpenFocus={(item, itemIndex) =>
-                      openFocusMode(
-                        "vision",
-                        item.id,
-                        `Vision V-${String(itemIndex + 1).padStart(2, "0")}`,
-                        item.content || ""
-                      )
-                    }
-                    onOpenAreaSettings={() => setTagManagerOpen(true)}
-                    currentUser={currentUser}
-                    workspaceMembers={workspaceMembers}
+        {showAll && areaIds.length > 0 ? (
+          <SortableContext items={areaIds.map((id) => `area-${id}`)} strategy={verticalListSortingStrategy}>
+            {visibleAreas.map((area) => {
+              const areaVisions = sortItemsByFutureDateFirst(
+                visions.filter((v) => v.area_id === area.id),
+                getVisionDate,
+                undefined,
+                true
+              );
+              return (
+                <SortableAreaSection
+                  key={area.id}
+                  areaId={area.id}
+                  area={area}
+                  itemCount={areaVisions.length}
+                  headerContent={<span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: areaVisions.length })}</span>}
+                >
+                  <AreaDropZone
+                    areaId={area.id}
+                    areaName={area.name}
+                    areaColor={area.color}
+                    items={areaVisions}
+                    listType="vision"
+                    showHeader={false}
+                    renderItem={visionItemRenderer}
                   />
-                )}
-              />
-            </div>
-          );
-        })}
+                </SortableAreaSection>
+              );
+            })}
+          </SortableContext>
+        ) : (
+          visibleAreas.map((area) => {
+            const areaVisions = sortItemsByFutureDateFirst(
+              visions.filter((v) => v.area_id === area.id),
+              getVisionDate,
+              undefined,
+              true
+            );
+            return (
+              <div key={area.id}>
+                <AreaDropZone
+                  areaId={area.id}
+                  areaName={area.name}
+                  areaColor={area.color}
+                  items={areaVisions}
+                  listType="vision"
+                  renderItem={visionItemRenderer}
+                />
+              </div>
+            );
+          })
+        )}
         {(() => {
           if (!showAll && !showUncategorized) return null;
-          const uncategorizedVisions = visions.filter((v) => !v.area_id);
+          const uncategorizedVisions = sortItemsByFutureDateFirst(
+            visions.filter((v) => !v.area_id),
+            getVisionDate,
+            undefined,
+            true
+          );
           return (
             <div className="mt-4 first:mt-0 mb-4 last:mb-0">
               <AreaDropZone
@@ -927,37 +977,14 @@ export function ProjectEditor({
                 areaColor="#9CA3AF"
                 items={uncategorizedVisions}
                 listType="vision"
-                renderItem={(vision, index) => (
-                  <SortableVisionItem
-                    key={vision.id}
-                    vision={vision}
-                    index={index}
-                    chartId={chartId}
-                    onUpdate={handleUpdateVision}
-                    onDelete={handleDeleteVision}
-                    areas={chart.areas || []}
-                    onOpenDetail={(item) =>
-                      handleOpenDetailPanelForModal("vision", item.id, item.content || "")
-                    }
-                    onOpenFocus={(item, itemIndex) =>
-                      openFocusMode(
-                        "vision",
-                        item.id,
-                        `Vision V-${String(itemIndex + 1).padStart(2, "0")}`,
-                        item.content || ""
-                      )
-                    }
-                    onOpenAreaSettings={() => setTagManagerOpen(true)}
-                    currentUser={currentUser}
-                    workspaceMembers={workspaceMembers}
-                  />
-                )}
+                renderItem={visionItemRenderer}
               />
             </div>
           );
         })()}
       </div>
     );
+    return inner;
   };
 
   const renderRealityItem = (reality: RealityItem, index: number) => (
@@ -984,64 +1011,98 @@ export function ProjectEditor({
   );
 
   const renderRealityContent = () => {
-    const areas = chart.areas ?? [];
+    const areas = (chart.areas ?? []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     const showAll = selectedAreaId === "all";
     const showUncategorized = selectedAreaId === "uncategorized";
     const visibleAreas = showAll ? areas : areas.filter((area) => area.id === selectedAreaId);
+    const areaIds = visibleAreas.map((a) => a.id);
+    const getRealityDate = (r: RealityItem) => r.dueDate || null;
+    const realityItemRenderer = (reality: RealityItem, index: number) => (
+      <SortableRealityItem
+        key={reality.id}
+        reality={reality}
+        index={index}
+        highlightedItemId={highlightedItemId}
+        handleUpdateReality={handleUpdateReality}
+        handleDeleteReality={handleDeleteReality}
+        areas={chart.areas}
+        onOpenDetail={(item) =>
+          handleOpenDetailPanelForModal("reality", item.id, item.content || "")
+        }
+        onOpenFocus={(item, itemIndex) =>
+          openFocusMode(
+            "reality",
+            item.id,
+            `Reality R-${String(itemIndex + 1).padStart(2, "0")}`,
+            item.content || ""
+          )
+        }
+        onOpenAreaSettings={() => setTagManagerOpen(true)}
+        currentUser={currentUser}
+      />
+    );
+    const renderAreaRealities = (areaRealities: RealityItem[]) => (
+      <div className="space-y-1 transition-all min-h-[40px]">
+        <SortableContext items={areaRealities.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+          {areaRealities.length === 0 ? (
+            <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
+              {t("noItems")}
+            </div>
+          ) : (
+            areaRealities.map((reality, index) => realityItemRenderer(reality, index))
+          )}
+        </SortableContext>
+      </div>
+    );
     return (
       <div className="p-0 space-y-4">
-        {visibleAreas.map((area) => {
-          const areaRealities = realities.filter((r) => r.area_id === area.id);
-          return (
-            <div key={area.id}>
-              <div className="flex items-center mb-2">
-                <span
-                  className="w-3 h-3 rounded-full mr-2"
-                  style={{ backgroundColor: area.color }}
-                />
-                <span className="text-sm font-bold text-zenshin-navy">{area.name}</span>
-                <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: areaRealities.length })}</span>
+        {showAll && areaIds.length > 0 ? (
+          <SortableContext items={areaIds.map((id) => `area-${id}`)} strategy={verticalListSortingStrategy}>
+            {visibleAreas.map((area) => {
+              const areaRealities = sortItemsByFutureDateFirst(
+                realities.filter((r) => r.area_id === area.id),
+                getRealityDate
+              );
+              return (
+                <SortableAreaSection
+                  key={area.id}
+                  areaId={area.id}
+                  area={area}
+                  itemCount={areaRealities.length}
+                  headerContent={<span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: areaRealities.length })}</span>}
+                >
+                  {renderAreaRealities(areaRealities)}
+                </SortableAreaSection>
+              );
+            })}
+          </SortableContext>
+        ) : (
+          visibleAreas.map((area) => {
+            const areaRealities = sortItemsByFutureDateFirst(
+              realities.filter((r) => r.area_id === area.id),
+              getRealityDate
+            );
+            return (
+              <div key={area.id}>
+                <div className="flex items-center mb-2">
+                  <span
+                    className="w-3 h-3 rounded-full mr-2"
+                    style={{ backgroundColor: area.color }}
+                  />
+                  <span className="text-sm font-bold text-zenshin-navy">{area.name}</span>
+                  <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: areaRealities.length })}</span>
+                </div>
+                {renderAreaRealities(areaRealities)}
               </div>
-              <div className="space-y-1 transition-all min-h-[40px]">
-                <SortableContext items={areaRealities} strategy={verticalListSortingStrategy}>
-                  {areaRealities.length === 0 ? (
-                    <div className="text-zenshin-navy/40 text-sm py-2 px-1 select-none opacity-60">
-                      {t("noItems")}
-                    </div>
-                  ) : (
-                    areaRealities.map((reality, index) => (
-                      <SortableRealityItem
-                        key={reality.id}
-                        reality={reality}
-                        index={index}
-                        highlightedItemId={highlightedItemId}
-                        handleUpdateReality={handleUpdateReality}
-                        handleDeleteReality={handleDeleteReality}
-                        areas={chart.areas}
-                        onOpenDetail={(item) =>
-                          handleOpenDetailPanelForModal("reality", item.id, item.content || "")
-                        }
-                        onOpenFocus={(item, itemIndex) =>
-                          openFocusMode(
-                            "reality",
-                            item.id,
-                            `Reality R-${String(itemIndex + 1).padStart(2, "0")}`,
-                            item.content || ""
-                          )
-                        }
-                        onOpenAreaSettings={() => setTagManagerOpen(true)}
-                        currentUser={currentUser}
-                      />
-                    ))
-                  )}
-                </SortableContext>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
         {(() => {
           if (!showAll && !showUncategorized) return null;
-          const uncategorizedRealities = realities.filter((r) => !r.area_id);
+          const uncategorizedRealities = sortItemsByFutureDateFirst(
+            realities.filter((r) => !r.area_id),
+            getRealityDate
+          );
           return (
             <div>
               <div className="flex items-center mb-2">
@@ -1053,7 +1114,7 @@ export function ProjectEditor({
               </div>
               <div className="space-y-1 transition-all min-h-[40px]">
                 <SortableContext
-                  items={uncategorizedRealities}
+                  items={uncategorizedRealities.map((r) => r.id)}
                   strategy={verticalListSortingStrategy}
                 >
                   {uncategorizedRealities.length === 0 ? (
@@ -1061,30 +1122,7 @@ export function ProjectEditor({
                       {t("noItems")}
                     </div>
                   ) : (
-                    uncategorizedRealities.map((reality, index) => (
-                      <SortableRealityItem
-                        key={reality.id}
-                        reality={reality}
-                        index={index}
-                        highlightedItemId={highlightedItemId}
-                        handleUpdateReality={handleUpdateReality}
-                        handleDeleteReality={handleDeleteReality}
-                        areas={chart.areas}
-                        onOpenDetail={(item) =>
-                          handleOpenDetailPanelForModal("reality", item.id, item.content || "")
-                        }
-                        onOpenFocus={(item, itemIndex) =>
-                          openFocusMode(
-                            "reality",
-                            item.id,
-                            `Reality R-${String(itemIndex + 1).padStart(2, "0")}`,
-                            item.content || ""
-                          )
-                        }
-                        onOpenAreaSettings={() => setTagManagerOpen(true)}
-                        currentUser={currentUser}
-                      />
-                    ))
+                    uncategorizedRealities.map((reality, index) => realityItemRenderer(reality, index))
                   )}
                 </SortableContext>
               </div>
@@ -1578,7 +1616,13 @@ export function ProjectEditor({
                       id="dnd-context-vision"
                       sensors={sensors}
                       collisionDetection={customCollisionDetection}
-                      onDragEnd={(e) => handleDragEnd(e, "visions")}
+                      onDragEnd={(e) => {
+                      if (String(e.active.id).startsWith("area-")) {
+                        handleAreaDragEnd(e);
+                      } else {
+                        handleDragEnd(e, "visions");
+                      }
+                    }}
                     >
                       <div id="vision-list-container" className="space-y-0" data-nav-scope="vision">
                         {renderVisionContent()}
@@ -1649,7 +1693,13 @@ export function ProjectEditor({
                       id="dnd-context-reality-focused"
                       sensors={sensors}
                       collisionDetection={customCollisionDetection}
-                      onDragEnd={(e) => handleDragEnd(e, "realities")}
+                      onDragEnd={(e) => {
+                      if (String(e.active.id).startsWith("area-")) {
+                        handleAreaDragEnd(e);
+                      } else {
+                        handleDragEnd(e, "realities");
+                      }
+                    }}
                     >
                       <div
                         id="reality-list-container"
@@ -2048,7 +2098,13 @@ export function ProjectEditor({
                       id="dnd-context-vision-focused"
                       sensors={sensors}
                       collisionDetection={customCollisionDetection}
-                      onDragEnd={(e) => handleDragEnd(e, "visions")}
+                      onDragEnd={(e) => {
+                      if (String(e.active.id).startsWith("area-")) {
+                        handleAreaDragEnd(e);
+                      } else {
+                        handleDragEnd(e, "visions");
+                      }
+                    }}
                     >
                       <div id="vision-list-container" className="space-y-0" data-nav-scope="vision">
                         {renderVisionContent()}
@@ -2125,7 +2181,13 @@ export function ProjectEditor({
                       id="dnd-context-reality"
                       sensors={sensors}
                       collisionDetection={customCollisionDetection}
-                      onDragEnd={(e) => handleDragEnd(e, "realities")}
+                      onDragEnd={(e) => {
+                      if (String(e.active.id).startsWith("area-")) {
+                        handleAreaDragEnd(e);
+                      } else {
+                        handleDragEnd(e, "realities");
+                      }
+                    }}
                     >
                       <div id="reality-list-container" className="space-y-0" data-nav-scope="reality">
                         {renderRealityContent()}

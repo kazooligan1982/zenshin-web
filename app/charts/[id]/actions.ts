@@ -198,6 +198,31 @@ export async function removeArea(areaId: string, chartId: string) {
   return result;
 }
 
+export async function updateAreaOrder(
+  chartId: string,
+  areaOrders: { areaId: string; sort_order: number }[]
+) {
+  try {
+    const supabase = await createClient();
+    for (const { areaId, sort_order } of areaOrders) {
+      const { error } = await supabase
+        .from("areas")
+        .update({ sort_order })
+        .eq("id", areaId)
+        .eq("chart_id", chartId);
+      if (error) {
+        console.error("[updateAreaOrder] Error updating area:", areaId, error);
+        return false;
+      }
+    }
+    await revalidateChartPath(chartId);
+    return true;
+  } catch (error) {
+    console.error("[updateAreaOrder] Exception:", error);
+    return false;
+  }
+}
+
 export async function removeReality(realityId: string, chartId: string) {
   const result = await deleteReality(realityId, chartId);
   if (result) {

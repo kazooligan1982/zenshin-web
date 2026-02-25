@@ -16,6 +16,8 @@ interface AreaDropZoneProps<T extends { id: string }> {
   listType: "vision" | "reality" | "tension" | "action";
   topContent?: ReactNode;
   showEmptyState?: boolean;
+  /** When false, header (color dot, name, count) is hidden. Use when wrapped by SortableAreaSection. */
+  showHeader?: boolean;
 }
 
 export function AreaDropZone<T extends { id: string }>({
@@ -28,6 +30,7 @@ export function AreaDropZone<T extends { id: string }>({
   listType,
   topContent,
   showEmptyState = true,
+  showHeader = true,
 }: AreaDropZoneProps<T>) {
   const t = useTranslations("editor");
   const { setNodeRef, isOver } = useDroppable({
@@ -58,14 +61,16 @@ export function AreaDropZone<T extends { id: string }>({
         }),
       }}
     >
-      <div className="flex items-center mb-2">
-        <span
-          className="w-3 h-3 rounded-full mr-2 shrink-0"
-          style={{ backgroundColor: areaColor || "#9CA3AF" }}
-        />
-        <span className="text-sm font-bold text-zenshin-navy">{areaName}</span>
-        <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: itemCount ?? items.length })}</span>
-      </div>
+      {showHeader && (
+        <div className="flex items-center mb-2">
+          <span
+            className="w-3 h-3 rounded-full mr-2 shrink-0"
+            style={{ backgroundColor: areaColor || "#9CA3AF" }}
+          />
+          <span className="text-sm font-bold text-zenshin-navy">{areaName}</span>
+          <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: itemCount ?? items.length })}</span>
+        </div>
+      )}
 
       {topContent}
 
