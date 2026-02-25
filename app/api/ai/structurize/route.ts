@@ -23,64 +23,82 @@ export async function POST(req: NextRequest) {
   const systemPrompt =
     language === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_JA;
 
-  try {
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: text.slice(0, 8000) }],
-    });
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS = [2000, 5000, 10000];
 
-    const content = message.content[0];
-    if (content.type !== "text") {
-      return NextResponse.json(
-        { error: "Unexpected response type" },
-        { status: 500 }
-      );
-    }
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const message = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: text.slice(0, 8000) }],
+      });
 
-    let jsonStr = content.text;
-    const jsonMatch = jsonStr.match(/```json\n?([\s\S]*?)\n?```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1];
-    } else {
-      const codeMatch = jsonStr.match(/```\n?([\s\S]*?)\n?```/);
-      if (codeMatch) {
-        jsonStr = codeMatch[1];
+      const content = message.content[0];
+      if (content.type !== "text") {
+        return NextResponse.json(
+          { error: "Unexpected response type" },
+          { status: 500 }
+        );
       }
-    }
-    jsonStr = jsonStr.trim();
 
-    const result = JSON.parse(jsonStr);
+      let jsonStr = content.text;
+      const jsonMatch = jsonStr.match(/```json\n?([\s\S]*?)\n?```/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[1];
+      } else {
+        const codeMatch = jsonStr.match(/```\n?([\s\S]*?)\n?```/);
+        if (codeMatch) {
+          jsonStr = codeMatch[1];
+        }
+      }
+      jsonStr = jsonStr.trim();
 
-    if (
-      !result.visions ||
-      !result.realities ||
-      !result.tensions ||
-      !result.actions
-    ) {
-      return NextResponse.json(
-        { error: "Invalid AI response structure" },
-        { status: 500 }
-      );
-    }
+      const result = JSON.parse(jsonStr);
 
-    return NextResponse.json(result);
-  } catch (parseError) {
-    if (parseError instanceof SyntaxError) {
-      console.error("JSON parse error:", parseError);
-      return NextResponse.json(
-        { error: "Failed to parse AI response" },
-        { status: 500 }
-      );
+      if (
+        !result.visions ||
+        !result.realities ||
+        !result.tensions ||
+        !result.actions
+      ) {
+        return NextResponse.json(
+          { error: "Invalid AI response structure" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(result);
+    } catch (parseError) {
+      if (parseError instanceof SyntaxError) {
+        console.error("JSON parse error:", parseError);
+        return NextResponse.json(
+          { error: "Failed to parse AI response" },
+          { status: 500 }
+        );
+      }
+      const err = parseError as { status?: number; message?: string };
+      const status = err?.status || 500;
+
+      if (status === 529 && attempt < MAX_RETRIES - 1) {
+        console.log(`AI structurize: retrying (attempt ${attempt + 2}/${MAX_RETRIES}) after ${RETRY_DELAYS[attempt]}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS[attempt]));
+        continue;
+      }
+
+      console.error("AI structurize error:", err?.message || err);
+      const errorMessage =
+        err?.message?.includes("credit")
+          ? "API credits insufficient"
+          : status === 529
+            ? "AI service is temporarily busy. Please try again in a moment."
+            : "AI processing failed";
+      return NextResponse.json({ error: errorMessage }, { status });
     }
-    const err = parseError as { status?: number; message?: string };
-    console.error("AI structurize error:", err?.message || err);
-    const status = err?.status || 500;
-    const errorMessage =
-      err?.message?.includes("credit") ? "API credits insufficient" : "AI processing failed";
-    return NextResponse.json({ error: errorMessage }, { status });
   }
+
+  return NextResponse.json({ error: "AI processing failed after retries" }, { status: 500 });
 }
 
 const SYSTEM_PROMPT_JA = `あなたはロバート・フリッツの「構造的テンション」理論に基づいた構造化のエキスパートです。
