@@ -665,5 +665,11 @@
     "statusDone": "完了",
     "statusPending": "保留",
     "statusCanceled": "キャンセル"
+  },
+  "aiCoach": {
+    "title": "AIコーチ",
+    "greeting": "チャートについて何でも聞いてください。分析してコーチングします。",
+    "analyzing": "分析中...",
+    "inputPlaceholder": "質問を入力..."
   }
 }

@@ -120,6 +120,8 @@ import { useActionHandlers, _pendingScrollRestore } from "./hooks/useActionHandl
 import { useDetailPanel } from "./hooks/useDetailPanel";
 import { useDndHandlers } from "./hooks/useDndHandlers";
 import { WelcomeCard } from "@/components/ai-assistant/WelcomeCard";
+import { AICoachButton } from "@/components/ai-coach-button";
+import { collectChartDataForAI } from "@/lib/ai/collect-chart-data";
 
 const CalendarComponent = dynamic(
   () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
@@ -2637,6 +2639,16 @@ export function ProjectEditor({
           onCommentCountChange={handleCommentCountChange}
         />
       )}
+      <AICoachButton
+          chartData={collectChartDataForAI(
+            chart,
+            visions,
+            realities,
+            tensions,
+            chart.areas ?? [],
+            workspaceMembers
+          )}
+        />
     </div>
   );
 }

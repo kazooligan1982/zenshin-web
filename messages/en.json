@@ -665,5 +665,11 @@
     "statusDone": "Done",
     "statusPending": "Pending",
     "statusCanceled": "Canceled"
+  },
+  "aiCoach": {
+    "title": "AI Coach",
+    "greeting": "Ask me anything about your chart. I'll analyze and coach you.",
+    "analyzing": "Analyzing...",
+    "inputPlaceholder": "Ask a question..."
   }
 }
