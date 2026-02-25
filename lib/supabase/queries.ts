@@ -390,7 +390,10 @@ export async function updateVision(
     const updateData: any = {};
     if (updates.content !== undefined) updateData.content = updates.content;
     if (updates.assignee !== undefined) updateData.assignee = updates.assignee;
-    if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
+    if (updates.dueDate !== undefined) {
+      const v = updates.dueDate;
+      updateData.due_date = v === null ? null : (typeof v === "string" && v.length >= 10 ? v.substring(0, 10) : v);
+    }
     if (updates.targetDate !== undefined) updateData.target_date = updates.targetDate;
     if (updates.isLocked !== undefined) updateData.is_locked = updates.isLocked;
     if (updates.area_id !== undefined) updateData.area_id = updates.area_id;
@@ -529,7 +532,10 @@ export async function updateReality(
     if (updates.content !== undefined) updateData.content = updates.content;
     if (updates.isLocked !== undefined) updateData.is_locked = updates.isLocked;
     if (updates.area_id !== undefined) updateData.area_id = updates.area_id;
-    if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
+    if (updates.dueDate !== undefined) {
+      const v = updates.dueDate;
+      updateData.due_date = v === null ? null : (typeof v === "string" && v.length >= 10 ? v.substring(0, 10) : v);
+    }
 
     const { error } = await serverClient
       .from("realities")
@@ -1011,7 +1017,6 @@ export async function telescopeAction(
 ): Promise<string | null> {
   try {
     const user = await getAuthenticatedUser();
-    const workspaceId = await getOrCreateWorkspace();
     const serverSupabase = await createClient();
     // 1. アクション情報を取得
     let actionQuery = serverSupabase
@@ -1037,6 +1042,17 @@ export async function telescopeAction(
     if (action.child_chart_id) {
       return action.child_chart_id;
     }
+
+    // 2.5. 親チャートのworkspace_idを取得（子チャートを同じワークスペースに作成）
+    const { data: parentChart, error: parentChartError } = await serverSupabase
+      .from("charts")
+      .select("workspace_id")
+      .eq("id", action.chart_id)
+      .single();
+    const workspaceId =
+      !parentChartError && parentChart?.workspace_id
+        ? parentChart.workspace_id
+        : await getOrCreateWorkspace();
 
     // 3. 新規チャート作成フロー
     // 3-1. 新しいチャートを作成

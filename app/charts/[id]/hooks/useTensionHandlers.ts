@@ -57,9 +57,11 @@ export function useTensionHandlers({
     try {
       const newTension = await addTension(chartId, titleToAdd, areaId);
       if (newTension) {
-        // 成功: tempIdを実際のデータに置換
+        // 成功: tempIdを実際のデータに置換。_stableKeyでReact keyを維持し、Action入力欄のstateを保持
         setTensions((prev) =>
-          prev.map((t) => (t.id === tempId ? newTension : t))
+          prev.map((t) =>
+            t.id === tempId ? { ...newTension, _stableKey: tempId } : t
+          )
         );
         toast.success(tt("tensionCreated"), { duration: 3000 });
       } else {

@@ -9,6 +9,9 @@ async function revalidateChartPath(chartId: string) {
   if (data?.workspace_id) {
     revalidatePath(`/workspaces/${data.workspace_id}/charts/${chartId}`);
     revalidatePath(`/workspaces/${data.workspace_id}/charts`);
+  } else {
+    revalidatePath(`/charts/${chartId}`);
+    revalidatePath(`/charts`);
   }
 }
 

@@ -46,7 +46,7 @@ export function AreaDropZone<T extends { id: string }>({
     <div
       ref={setNodeRef}
       className={cn(
-        "space-y-1 px-3 py-2 transition-all min-h-[40px]",
+        "p-0 transition-all min-h-[40px]",
         isDragging && isOver && "bg-blue-50 border-2 border-blue-400 shadow-md",
         isDragging && !isOver && "border-2 border-dashed border-gray-200",
         !isDragging && "border border-transparent"
@@ -58,21 +58,19 @@ export function AreaDropZone<T extends { id: string }>({
         }),
       }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        {areaColor && (
-          <div
-            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: areaColor }}
-          />
-        )}
-        <h3 className="font-semibold text-sm text-gray-700">{areaName}</h3>
-        <span className="text-xs text-gray-400">{t("itemCount", { count: itemCount ?? items.length })}</span>
+      <div className="flex items-center mb-2">
+        <span
+          className="w-3 h-3 rounded-full mr-2 shrink-0"
+          style={{ backgroundColor: areaColor || "#9CA3AF" }}
+        />
+        <span className="text-sm font-bold text-zenshin-navy">{areaName}</span>
+        <span className="ml-2 text-xs text-zenshin-navy/40">{t("itemCount", { count: itemCount ?? items.length })}</span>
       </div>
 
       {topContent}
 
       <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-        <div className="min-h-[40px]">
+        <div className="min-h-[40px] space-y-1">
           {items.length > 0 ? (
             items.map((item, index) => renderItem(item, index))
           ) : (

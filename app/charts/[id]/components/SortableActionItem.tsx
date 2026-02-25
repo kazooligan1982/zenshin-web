@@ -25,7 +25,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -260,7 +260,7 @@ export function SortableActionItem({
       <div
         ref={setNodeRef}
         style={style}
-        className={`group flex items-center gap-2 p-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors ${
+        className={`group flex items-center gap-2 py-1.5 px-2 bg-white border-b border-zenshin-navy/5 hover:bg-zenshin-cream/50 transition-colors ${
           actionIndex === 0 ? "border-t border-zenshin-navy/5" : ""
         } ${isCompleted ? "opacity-60" : ""}`}
       >
@@ -312,7 +312,7 @@ export function SortableActionItem({
         </Popover>
       </div>
       <span
-        className={`text-[11px] font-mono text-zenshin-navy/35 w-5 text-right shrink-0 leading-6 ${
+        className={`text-[11px] font-mono text-zenshin-navy/35 w-5 text-right shrink-0 leading-5 ${
           isCompleted ? "opacity-60" : ""
         }`}
       >
@@ -335,19 +335,47 @@ export function SortableActionItem({
           {actionAreaName}
         </Badge>
       )}
-      <Input
-        {...actionInput.bind}
-        placeholder={t("actionPlaceholder")}
-        className={`text-sm flex-1 border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable ${
-          isCompleted ? "line-through text-zenshin-navy/40" : ""
-        }`}
-        onKeyDown={(e) => {
-          actionInput.handleKeyDown(e);
-          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-            handleKeyboardNavigation(e);
-          }
-        }}
-      />
+      <div className="flex-1 min-w-0">
+        {!actionInput.isEditing ? (
+          <span
+            id={actionInput.bind.id}
+            tabIndex={0}
+            role="textbox"
+            className={cn(
+              "block w-full text-sm leading-5 line-clamp-2 cursor-text min-w-0",
+              !actionInput.value && "text-muted-foreground",
+              isCompleted && "line-through text-zenshin-navy/40"
+            )}
+            onClick={() => actionInput.setIsEditing(true)}
+            onFocus={() => actionInput.setIsEditing(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                actionInput.setIsEditing(true);
+              }
+            }}
+          >
+            {actionInput.value || t("actionPlaceholder")}
+          </span>
+        ) : (
+          <Textarea
+            {...actionInput.bind}
+            placeholder={t("actionPlaceholder")}
+            rows={2}
+            className={cn(
+              "text-sm flex-1 w-full border-none shadow-none focus-visible:ring-0 bg-transparent keyboard-focusable resize-none leading-5 min-h-0 py-0",
+              isCompleted && "line-through text-zenshin-navy/40"
+            )}
+            autoFocus
+            onKeyDown={(e) => {
+              actionInput.handleKeyDown(e);
+              if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                handleKeyboardNavigation(e);
+              }
+            }}
+          />
+        )}
+      </div>
       <div className={cn(ICON_CONTAINER_CLASS, isCompleted ? "opacity-60" : "")}>
         {isOrphaned && (
           <DropdownMenu>
@@ -650,7 +678,7 @@ export function SortableActionItem({
                               style={{ backgroundColor: tArea.color }}
                             />
                           )}
-                          <span className="truncate">{tension.title || t("noTitleTension")}</span>
+                          <span className="line-clamp-2 break-words">{tension.title || t("noTitleTension")}</span>
                         </div>
                       </Button>
                     );
@@ -707,7 +735,7 @@ export function SortableActionItem({
                             className="text-sm text-gray-700 flex items-center gap-2"
                           >
                             <Circle className="w-3 h-3 text-zenshin-navy/40 shrink-0" />
-                            <span className="truncate">{action.title}</span>
+                            <span className="line-clamp-2 break-words">{action.title}</span>
                           </li>
                         ))}
                         {incompleteDialog.incompleteCount > 5 && (
