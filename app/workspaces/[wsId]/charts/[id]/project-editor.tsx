@@ -83,6 +83,10 @@ import {
   removeArea,
   moveActionToTension,
   moveActionToLoose,
+  addVision,
+  addReality,
+  addTension,
+  addActionPlan,
 } from "./actions";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -120,7 +124,7 @@ import { useActionHandlers, _pendingScrollRestore } from "./hooks/useActionHandl
 import { useDetailPanel } from "./hooks/useDetailPanel";
 import { useDndHandlers } from "./hooks/useDndHandlers";
 import { WelcomeCard } from "@/components/ai-assistant/WelcomeCard";
-import { AICoachButton } from "@/components/ai-coach-button";
+import { AICoachButton, type StructuredItems } from "@/components/ai-coach-button";
 import { collectChartDataForAI } from "@/lib/ai/collect-chart-data";
 
 const CalendarComponent = dynamic(
@@ -2648,6 +2652,35 @@ export function ProjectEditor({
             chart.areas ?? [],
             workspaceMembers
           )}
+          chartId={chart.id}
+          onAddItems={async (items: StructuredItems) => {
+            // 1. Vision追加
+            for (const v of items.visions) {
+              await addVision(chart.id, v.title);
+            }
+            // 2. Reality追加
+            for (const r of items.realities) {
+              await addReality(chart.id, r.title);
+            }
+            // 3. Tension追加（IDを保持してAction紐付けに使う）
+            const newTensionIds: string[] = [];
+            for (const t of items.tensions) {
+              const result = await addTension(chart.id, t.title);
+              if (result?.id) {
+                newTensionIds.push(result.id);
+              }
+            }
+            // 4. Action追加（tensionIndexで新Tensionに紐付け）
+            for (const a of items.actions) {
+              const idx = a.tensionIndex;
+              if (typeof idx === "number" && idx >= 0 && newTensionIds[idx]) {
+                await addActionPlan(newTensionIds[idx], a.title, null, chart.id);
+              }
+              // tensionIndex === -1 は既存Tension向け（今回はスキップ）
+            }
+            // ページを更新してデータを反映
+            router.refresh();
+          }}
         />
     </div>
   );

@@ -668,8 +668,32 @@
   },
   "aiCoach": {
     "title": "AIコーチ",
-    "greeting": "チャートについて何でも聞いてください。分析してコーチングします。",
+    "greeting": "チャートを分析しています...",
     "analyzing": "分析中...",
-    "inputPlaceholder": "質問を入力..."
+    "inputPlaceholder": "メッセージを入力...",
+    "back": "戻る",
+    "modeSelect": {
+      "title": "何をしますか？",
+      "analyze": "チャートを分析",
+      "analyzeDesc": "現在のチャートをフリッツ理論で分析・コーチング",
+      "add": "チャート情報を追加",
+      "addDesc": "テキストからV/R/T/Aに振り分けて追加",
+      "chat": "自由に質問",
+      "chatDesc": "構造的テンション理論やチャートについて質問"
+    },
+    "chat": {
+      "greeting": "なんでも聞いてください。チャートの内容やフリッツ理論について、お答えします。",
+      "inputPlaceholder": "質問を入力..."
+    },
+    "add": {
+      "description": "追加したい内容をテキストで入力してください。AIがVision / Reality / Tension / Actionに振り分けます。",
+      "placeholder": "例: 売上が前年比120%に達している。新規顧客の獲得チャネルが確立されている。現在は既存顧客中心で新規は月5件程度...",
+      "submit": "振り分ける",
+      "categorizing": "テキストを振り分けています...",
+      "preview": "以下の項目が追加されます：",
+      "confirm": "チャートに追加",
+      "discard": "やり直す",
+      "success": "チャートに追加しました！"
+    }
   }
 }

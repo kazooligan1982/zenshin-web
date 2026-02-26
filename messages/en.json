@@ -668,8 +668,32 @@
   },
   "aiCoach": {
     "title": "AI Coach",
-    "greeting": "Ask me anything about your chart. I'll analyze and coach you.",
+    "greeting": "Analyzing your chart...",
     "analyzing": "Analyzing...",
-    "inputPlaceholder": "Ask a question..."
+    "inputPlaceholder": "Type a message...",
+    "back": "Back",
+    "modeSelect": {
+      "title": "What would you like to do?",
+      "analyze": "Analyze Chart",
+      "analyzeDesc": "Analyze your chart with Fritz's structural tension theory",
+      "add": "Add Chart Info",
+      "addDesc": "Extract V/R/T/A from text and add to your chart",
+      "chat": "Ask Freely",
+      "chatDesc": "Ask about structural tension theory or your chart"
+    },
+    "chat": {
+      "greeting": "Ask me anything about your chart or Fritz's structural tension theory.",
+      "inputPlaceholder": "Type your question..."
+    },
+    "add": {
+      "description": "Paste your text below. AI will categorize it into Vision / Reality / Tension / Action items.",
+      "placeholder": "e.g., Revenue has grown 120% YoY. New customer acquisition channels are established. Currently relying on existing customers with only ~5 new leads per month...",
+      "submit": "Categorize",
+      "categorizing": "Categorizing your text...",
+      "preview": "The following items will be added:",
+      "confirm": "Add to Chart",
+      "discard": "Start Over",
+      "success": "Added to your chart!"
+    }
   }
 }
