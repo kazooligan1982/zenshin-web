@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, FileText, Tag, Plus, Trash2 } from "lucide-react";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -158,14 +157,7 @@ export function SortableRealityItem({
         )}
       </div>
       <div className={cn(ICON_CONTAINER_CLASS, "flex-none ml-auto")}>
-        <div className="w-[110px] relative flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 p-1 hover:bg-zenshin-navy/8 hover:ring-1 hover:ring-gray-200">
-          <DatePicker
-            value={reality.dueDate || null}
-            onChange={(date) => handleUpdateReality(reality.id, "dueDate", date || null)}
-            className="flex items-center justify-center"
-            modal={true}
-          />
-        </div>
+        
         <div className="flex items-center gap-2 text-xs text-zenshin-navy/40">
           <span>
             {format(new Date(reality.createdAt), "MM/dd HH:mm", { locale: ja })}
