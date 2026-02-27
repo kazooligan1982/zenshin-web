@@ -61,9 +61,10 @@ export function LeftPane({
     itemType === "action"
       ? (item as ActionPlan).title ?? ""
       : ((item as VisionItem | RealityItem).content ?? "").slice(0, 200);
-  // Action のみ description（詳細）を表示。Vision/Reality には description カラムがないため非表示
   const description =
-    itemType === "action" ? (item as ActionPlan).description ?? "" : "";
+    itemType === "action"
+      ? (item as ActionPlan).description ?? ""
+      : (item as VisionItem | RealityItem).description ?? "";
   const childChartId = itemType === "action" ? (item as ActionPlan).childChartId : null;
 
   const handleTitleSave = (newTitle: string) => {
@@ -75,9 +76,7 @@ export function LeftPane({
   };
 
   const handleDetailsSave = (newContent: string) => {
-    if (itemType === "action") {
-      onUpdate("description", newContent);
-    }
+    onUpdate("description", newContent);
   };
 
   return (
@@ -124,16 +123,13 @@ export function LeftPane({
         onNavigate={onNavigate}
       />
 
-      {/* Action のみ「詳細」セクションを表示。Vision/Reality は description がないため非表示 */}
-      {itemType === "action" && (
-        <div className="w-full max-w-[800px]">
-          <DetailsEditor
-            value={description}
-            onSave={handleDetailsSave}
-            placeholder={t("detailsPlaceholder")}
-          />
-        </div>
-      )}
+      <div className="w-full max-w-[800px]">
+        <DetailsEditor
+          value={description}
+          onSave={handleDetailsSave}
+          placeholder={t("detailsPlaceholder")}
+        />
+      </div>
 
       {itemType === "action" && childChartId && (
         <ChildChartLink

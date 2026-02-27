@@ -98,7 +98,7 @@ export async function addVision(chartId: string, content: string, areaId?: strin
 export async function updateVisionItem(
   visionId: string,
   chartId: string,
-  field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId",
+  field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId" | "description",
   value: string | boolean | null
 ) {
   const updates: Partial<VisionItem> = {};
@@ -108,6 +108,7 @@ export async function updateVisionItem(
   if (field === "targetDate") updates.targetDate = value as string;
   if (field === "isLocked") updates.isLocked = value as boolean;
   if (field === "areaId") updates.area_id = value as string | null;
+  if (field === "description") updates.description = value as string;
 
   const result = await updateVision(visionId, chartId, updates);
   if (result) {
@@ -145,7 +146,7 @@ export async function addReality(chartId: string, content: string, areaId?: stri
 export async function updateRealityItem(
   realityId: string,
   chartId: string,
-  field: "content" | "isLocked" | "areaId" | "dueDate",
+  field: "content" | "isLocked" | "areaId" | "dueDate" | "description",
   value: string | boolean | null
 ) {
   const updates: any = {};
@@ -153,6 +154,7 @@ export async function updateRealityItem(
   if (field === "isLocked") updates.isLocked = value as boolean;
   if (field === "areaId") updates.area_id = value as string | null;
   if (field === "dueDate") updates.dueDate = value as string | null;
+  if (field === "description") updates.description = value as string;
   const result = await updateReality(realityId, chartId, updates);
   if (result) {
     await recordChartHistory(chartId, "reality", realityId, "updated", field, null, String(value ?? ""));

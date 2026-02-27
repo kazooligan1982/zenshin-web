@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS visions (
   due_date DATE,
   target_date TIMESTAMPTZ, -- 時間軸に基づいた動的な順序用
   is_locked BOOLEAN NOT NULL DEFAULT FALSE,
+  description TEXT DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT visions_content_not_empty CHECK (char_length(trim(content)) >= 0)
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS realities (
   related_vision_id UUID REFERENCES visions(id) ON DELETE SET NULL, -- 将来的な紐付け用
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  description TEXT DEFAULT '',
   CONSTRAINT realities_content_not_empty CHECK (char_length(trim(content)) >= 0)
 );
 

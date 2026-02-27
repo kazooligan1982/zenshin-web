@@ -1,19 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { format } from "date-fns";
 import { ja, enUS } from "date-fns/locale";
 import { useTranslations } from "next-intl";
-import { Calendar, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { Calendar, RefreshCcw, CheckCircle2, Link2, Check } from "lucide-react";
+import { toast } from "sonner";
 import { DeleteChartButton } from "./delete-chart-button";
 import type { ChartWithMeta } from "./actions";
 
 export function ChartCard({ chart, isMaster = false, wsId }: { chart: ChartWithMeta; isMaster?: boolean; wsId?: string }) {
   const locale = useLocale();
+  const [copied, setCopied] = useState(false);
   const t = useTranslations("home");
   const dateLocale = locale === "ja" ? ja : enUS;
   const chartHref = wsId ? `/workspaces/${wsId}/charts/${chart.id}` : `/charts/${chart.id}`;
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const fullUrl = `${window.location.origin}${chartHref}`;
+    navigator.clipboard.writeText(fullUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success(t("linkCopied"), { duration: 2000 });
+    });
+  };
   const depthLabel =
     chart.depth === 1
       ? t("master")
@@ -102,7 +115,14 @@ export function ChartCard({ chart, isMaster = false, wsId }: { chart: ChartWithM
       </Link>
 
       {/* Link の外に配置。hover で表示、クリックしても遷移しない */}
-      <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+        <button
+          onClick={handleCopyLink}
+          className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-zenshin-navy/10 transition-colors"
+          title={copied ? t("linkCopied") : t("copyLink")}
+        >
+          {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Link2 className="w-4 h-4 text-zenshin-navy/50" />}
+        </button>
         <DeleteChartButton chartId={chart.id} />
       </div>
     </div>

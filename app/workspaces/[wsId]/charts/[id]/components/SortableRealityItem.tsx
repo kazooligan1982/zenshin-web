@@ -34,6 +34,7 @@ export function SortableRealityItem({
   onOpenFocus,
   onOpenAreaSettings,
   currentUser,
+  workspaceMembers = [],
   disabled = false,
 }: {
   reality: RealityItem;
@@ -51,6 +52,7 @@ export function SortableRealityItem({
     name?: string;
     avatar_url?: string | null;
   } | null;
+  workspaceMembers?: { id: string; display_name?: string; avatar_url?: string | null; email?: string }[];
   disabled?: boolean;
 }) {
   const t = useTranslations("editor");
@@ -163,28 +165,32 @@ export function SortableRealityItem({
             {format(new Date(reality.createdAt), "MM/dd HH:mm", { locale: ja })}
           </span>
         </div>
-        {reality.created_by &&
-          currentUser &&
-          reality.created_by === currentUser.id && (
+        {(() => {
+          const authorId = reality.created_by;
+          if (!authorId) return null;
+          const member = workspaceMembers.find((m) => m.id === authorId);
+          const isMe = currentUser && authorId === currentUser.id;
+          const name = member?.display_name || (isMe ? currentUser?.name : null) || member?.email || currentUser?.email || "?";
+          const avatarUrl = member?.avatar_url || (isMe ? currentUser?.avatar_url : null);
+          return (
             <div
-              className="flex items-center justify-center rounded-md p-1"
-              title={t("authorLabel", { name: currentUser.name || currentUser.email })}
+              className="flex items-center justify-center shrink-0 p-1"
+              title={name}
             >
-              {currentUser.avatar_url ? (
+              {avatarUrl ? (
                 <img
-                  src={currentUser.avatar_url}
-                  alt={currentUser.name || ""}
+                  src={avatarUrl}
+                  alt={name}
                   className="h-5 w-5 rounded-full object-cover"
                 />
               ) : (
-                <div className="h-5 w-5 rounded-full bg-green-500 text-white text-[10px] flex items-center justify-center font-medium">
-                  {(currentUser.name || currentUser.email || "?")
-                    .charAt(0)
-                    .toUpperCase()}
+                <div className="h-5 w-5 rounded-full bg-green-500 text-white text-[10px] flex items-center justify-center font-medium shrink-0">
+                  {name.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
-          )}
+          );
+        })()}
         <div className="relative flex items-center justify-center h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             size="icon"

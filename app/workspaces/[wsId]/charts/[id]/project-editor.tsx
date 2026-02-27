@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useLayoutEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import {
@@ -196,6 +196,7 @@ export function ProjectEditor({
   const tk = useTranslations("kanban");
   const tAction = useTranslations("action");
   const router = useRouter();
+  const searchParams = useSearchParams();
   // areasがundefinedの場合に空配列を設定
   const chartWithAreas: Chart = {
     ...initialChart,
@@ -373,6 +374,21 @@ export function ProjectEditor({
     setUnifiedModal({ isOpen: true, itemType, itemId });
   };
   const closeUnifiedModal = () => setUnifiedModal(null);
+
+  // ディープリンク: URLパラメータからモーダルを自動オープン
+  useEffect(() => {
+    const type = searchParams.get("type");
+    const item = searchParams.get("item");
+    if (type && item && ["vision", "reality", "action"].includes(type)) {
+      openUnifiedModal(type as "vision" | "reality" | "action", item);
+      // パラメータをURLから除去（履歴を汚さない）
+      const url = new URL(window.location.href);
+      url.searchParams.delete("type");
+      url.searchParams.delete("item");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
+
   const handleOpenDetailPanelForModal = (
     itemType: "vision" | "reality" | "action",
     itemId: string,
@@ -1019,6 +1035,7 @@ export function ProjectEditor({
       }
       onOpenAreaSettings={() => setTagManagerOpen(true)}
       currentUser={currentUser}
+      workspaceMembers={workspaceMembers}
     />
   );
 
@@ -1051,6 +1068,7 @@ export function ProjectEditor({
         }
         onOpenAreaSettings={() => setTagManagerOpen(true)}
         currentUser={currentUser}
+        workspaceMembers={workspaceMembers}
       />
     );
     const renderAreaRealities = (areaRealities: RealityItem[]) => (
@@ -1156,6 +1174,7 @@ export function ProjectEditor({
                         }
                         onOpenAreaSettings={() => setTagManagerOpen(true)}
                         currentUser={currentUser}
+                        workspaceMembers={workspaceMembers}
                       />
                     ))
                   )}
@@ -2567,9 +2586,9 @@ export function ProjectEditor({
         const childChartTitle = null;
         const handleItemUpdate = (field: string, value: string | boolean | null) => {
           if (unifiedModal.itemType === "vision") {
-            void handleUpdateVision(unifiedModal.itemId, field as "content" | "assignee" | "dueDate" | "areaId", value);
+            void handleUpdateVision(unifiedModal.itemId, field as "content" | "assignee" | "dueDate" | "areaId" | "description", value);
           } else if (unifiedModal.itemType === "reality") {
-            void handleUpdateReality(unifiedModal.itemId, field as "content" | "areaId" | "dueDate", value);
+            void handleUpdateReality(unifiedModal.itemId, field as "content" | "areaId" | "dueDate" | "description", value);
           } else if (unifiedModal.itemType === "action" && actionItem) {
             if (field === "tensionId") {
               const newTensionId = value as string | null;
@@ -2805,10 +2824,16 @@ function ComparisonView({
     const areaIds = new Set<string>();
     v.forEach((item) => areaIds.add(item.area_id || "uncategorized"));
     r.forEach((item) => areaIds.add(item.area_id || "uncategorized"));
-    const result = Array.from(areaIds);
-    // 空のチャートでも最低1セクション（uncategorized）を表示
-    return result.length > 0 ? result : ["uncategorized"];
-  }, [visions, realities]);
+    if (areaIds.size === 0) return ["uncategorized"];
+
+    // areas の sort_order に基づいてソート（標準モードと同じ順序）
+    const areaOrderMap = new Map(areas.map((a, i) => [a.id, a.sort_order ?? i]));
+    return Array.from(areaIds).sort((a, b) => {
+      if (a === "uncategorized") return 1;  // 未分類は常に最後
+      if (b === "uncategorized") return -1;
+      return (areaOrderMap.get(a) ?? 999) - (areaOrderMap.get(b) ?? 999);
+    });
+  }, [visions, realities, areas]);
 
   const getAreaName = (areaId: string) => {
     if (areaId === "uncategorized") return tTags("untagged");
@@ -2987,6 +3012,7 @@ function ComparisonView({
                                 }
                                 onOpenAreaSettings={onOpenAreaSettings}
                                 currentUser={currentUser as any}
+                                workspaceMembers={workspaceMembers}
                               />
                             ))
                           )}

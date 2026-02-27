@@ -78,7 +78,7 @@ export function useRealityHandlers({
 
   const handleUpdateReality = async (
     id: string,
-    field: "content" | "isLocked" | "areaId" | "dueDate",
+    field: "content" | "isLocked" | "areaId" | "dueDate" | "description",
     value: string | boolean | null
   ) => {
     // 楽観的にローカルStateを即時更新
@@ -90,6 +90,7 @@ export function useRealityHandlers({
         if (field === "isLocked") return { ...r, isLocked: value as boolean };
         if (field === "areaId") return { ...r, area_id: value as string | null };
         if (field === "dueDate") return { ...r, dueDate: (value as string) || undefined };
+        if (field === "description") return { ...r, description: value as string };
         return r;
       })
     );
