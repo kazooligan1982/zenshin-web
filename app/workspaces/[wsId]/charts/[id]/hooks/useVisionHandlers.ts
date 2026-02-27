@@ -78,11 +78,11 @@ export function useVisionHandlers({
 
   const handleUpdateVision = async (
     id: string,
-    field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId",
+    field: "content" | "assignee" | "dueDate" | "targetDate" | "isLocked" | "areaId" | "description",
     value: string | boolean | null
   ) => {
     // 楽観的にローカル状態を即座に更新
-    if (field === "assignee" || field === "dueDate" || field === "targetDate") {
+    if (field === "assignee" || field === "dueDate" || field === "targetDate" || field === "description") {
       setVisions((prev) =>
         prev.map((vision) =>
           vision.id === id ? { ...vision, [field]: value } : vision
@@ -123,7 +123,7 @@ export function useVisionHandlers({
     } else {
       console.error("[handleUpdateVision] 更新失敗");
       // 失敗時はロールバック
-      if (field === "assignee" || field === "dueDate" || field === "targetDate") {
+      if (field === "assignee" || field === "dueDate" || field === "targetDate" || field === "description") {
         router.refresh();
       }
     }

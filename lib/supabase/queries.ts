@@ -106,6 +106,7 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
           isLocked: v.is_locked || false,
           area_id: v.area_id || null,
           comment_count: v.vision_comments?.[0]?.count ?? 0,
+          description: v.description || "",
         } as VisionItem,
       ])
     );
@@ -123,6 +124,7 @@ export async function getChartById(chartId: string): Promise<Chart | null> {
           isLocked: r.is_locked || false,
           created_by: r.created_by || null,
           comment_count: r.reality_comments?.[0]?.count ?? 0,
+          description: r.description || "",
         } as RealityItem,
       ])
     );
@@ -397,6 +399,7 @@ export async function updateVision(
     if (updates.targetDate !== undefined) updateData.target_date = updates.targetDate;
     if (updates.isLocked !== undefined) updateData.is_locked = updates.isLocked;
     if (updates.area_id !== undefined) updateData.area_id = updates.area_id;
+    if (updates.description !== undefined) updateData.description = updates.description;
 
     const { error } = await serverClient
       .from("visions")
@@ -524,7 +527,7 @@ export async function createReality(
 export async function updateReality(
   realityId: string,
   chartId: string,
-  updates: Partial<Pick<RealityItem, "content" | "isLocked" | "area_id" | "dueDate">>
+  updates: Partial<Pick<RealityItem, "content" | "isLocked" | "area_id" | "dueDate" | "description">>
 ): Promise<boolean> {
   try {
     const serverClient = await createClient();
@@ -536,6 +539,7 @@ export async function updateReality(
       const v = updates.dueDate;
       updateData.due_date = v === null ? null : (typeof v === "string" && v.length >= 10 ? v.substring(0, 10) : v);
     }
+    if (updates.description !== undefined) updateData.description = updates.description;
 
     const { error } = await serverClient
       .from("realities")

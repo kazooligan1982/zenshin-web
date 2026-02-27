@@ -37,7 +37,7 @@ export function DatePicker({
   const handleSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
       // ISO string形式で保存（YYYY-MM-DD形式）
-      const isoString = selectedDate.toISOString();
+      const isoString = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
       onChange(isoString);
     } else {
       onChange(null);

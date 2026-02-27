@@ -438,7 +438,9 @@
     "nth": "{n}番目",
     "completed": "完了",
     "dueNotSet": "期限: 未設定",
-    "creating": "作成中..."
+    "creating": "作成中...",
+    "copyLink": "リンクをコピー",
+    "linkCopied": "コピーしました"
   },
   "dashboard": {
     "title": "ダッシュボード",

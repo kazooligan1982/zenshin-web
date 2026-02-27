@@ -51,6 +51,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { MemberAvatar } from "@/components/member-avatar";
 import { toast } from "sonner";
 import { useItemInput } from "@/hooks/use-item-input";
 import type { ActionPlan, Tension, Area } from "@/types/chart";
@@ -481,75 +482,54 @@ export function SortableActionItem({
               </div>
             </PopoverTrigger>
             <PopoverContent
-              className="w-48 max-h-[240px] overflow-y-auto p-2 z-50"
+              className="!w-56 max-w-56 max-h-[240px] overflow-y-auto overflow-x-hidden p-2 z-50"
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="space-y-0.5">
-                <Button
-                  variant={!actionPlan.assignee ? "secondary" : "ghost"}
-                  className="w-full justify-start text-xs h-7 gap-2"
+                {/* 担当者なし */}
+                <button
+                  className={cn(
+                    "flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs hover:bg-gray-100 transition-colors",
+                    !actionPlan.assignee && "bg-gray-100"
+                  )}
                   onClick={() => {
                     handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", "");
                     setAssigneePopoverOpen(false);
                   }}
                 >
-                  {!actionPlan.assignee ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
-                  {tAction("noAssignee")}
-                </Button>
-                {workspaceMembers.length > 0 ? (
-                  workspaceMembers.map((member) => (
-                    <Button
+                  <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                    {!actionPlan.assignee && <Check className="h-3.5 w-3.5" />}
+                  </span>
+                  <span className="w-5 h-5 rounded-full bg-gray-300 shrink-0" />
+                  <span className="text-gray-500">{tAction("noAssignee")}</span>
+                </button>
+
+                {/* メンバー一覧 */}
+                {(workspaceMembers.length > 0 ? workspaceMembers : (currentUser ? [{ id: currentUser.id, name: currentUser.name, email: currentUser.email, avatar_url: currentUser.avatar_url }] : [])).map((member) => {
+                  const isSelected = actionPlan.assignee === member.email;
+                  const displayName = member.name || member.email || "?";
+                  return (
+                    <button
                       key={member.id}
-                      variant={actionPlan.assignee === member.email ? "secondary" : "ghost"}
-                      className="w-full justify-start text-xs h-7 gap-2"
+                      className={cn(
+                        "flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-xs hover:bg-gray-100 transition-colors",
+                        isSelected && "bg-gray-100"
+                      )}
                       onClick={() => {
                         handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", member.email);
                         setAssigneePopoverOpen(false);
                       }}
                     >
-                      {actionPlan.assignee === member.email ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
-                      {member.avatar_url ? (
-                        <img
-                          src={member.avatar_url}
-                          alt={member.name || ""}
-                          className="h-4 w-4 rounded-full object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
-                          {(member.name || member.email || "?").charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      {member.name || member.email}
-                    </Button>
-                  ))
-                ) : (
-                  currentUser && (
-                    <Button
-                      variant={actionPlan.assignee === currentUser.email ? "secondary" : "ghost"}
-                      className="w-full justify-start text-xs h-7 gap-2"
-                      onClick={() => {
-                        handleUpdateActionPlan(tensionId, actionPlan.id, "assignee", currentUser.email);
-                        setAssigneePopoverOpen(false);
-                      }}
-                    >
-                      {actionPlan.assignee === currentUser.email ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
-                      {currentUser.avatar_url ? (
-                        <img
-                          src={currentUser.avatar_url}
-                          alt={currentUser.name || ""}
-                          className="h-4 w-4 rounded-full object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full bg-zenshin-navy text-white text-[8px] flex items-center justify-center font-medium flex-shrink-0">
-                          {(currentUser.name || currentUser.email || "?").charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      {currentUser.name || currentUser.email}
-                    </Button>
-                  )
-                )}
+                      <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                        {isSelected && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                      <MemberAvatar name={displayName} avatarUrl={member.avatar_url} />
+                      <span className="truncate min-w-0 flex-1 text-left">{displayName}</span>
+                    </button>
+                  );
+                })}
               </div>
             </PopoverContent>
           </Popover>

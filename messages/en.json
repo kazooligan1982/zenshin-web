@@ -438,7 +438,9 @@
     "nth": "{n}th",
     "completed": "Completed",
     "dueNotSet": "Due: Not set",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "copyLink": "Copy link",
+    "linkCopied": "Copied!"
   },
   "dashboard": {
     "title": "Dashboard",

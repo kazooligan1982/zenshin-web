@@ -136,6 +136,7 @@ export function UnifiedDetailModal({
       >
         <ModalHeader
           itemType={itemType}
+          itemId={itemId}
           onClose={onClose}
           onPrevious={
             items.length > 0 && onNavigate

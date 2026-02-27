@@ -1,14 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronUp, ChevronDown, Link2, MoreHorizontal, X } from "lucide-react";
+import { ChevronUp, ChevronDown, Link2, Check, MoreHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export type ItemType = "vision" | "reality" | "action";
 
 interface ModalHeaderProps {
   itemType: ItemType;
+  itemId: string;
   onClose: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
@@ -25,15 +28,28 @@ const ITEM_TYPE_STYLES: Record<ItemType, { bg: string; text: string }> = {
 
 export function ModalHeader({
   itemType,
+  itemId,
   onClose,
   onPrevious,
   onNext,
   hasPrevious = false,
   hasNext = false,
 }: ModalHeaderProps) {
+  const [copied, setCopied] = useState(false);
   const t = useTranslations("modal");
   const style = ITEM_TYPE_STYLES[itemType];
   const typeLabel = t(itemType);
+
+  const handleCopyLink = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("type", itemType);
+    url.searchParams.set("item", itemId);
+    navigator.clipboard.writeText(url.toString()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success(t("linkCopied"), { duration: 2000 });
+    });
+  };
 
   return (
     <div className="flex items-center justify-between px-6 py-3 border-b bg-white shrink-0">
@@ -77,11 +93,11 @@ export function ModalHeader({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground"
-          disabled
-          title={t("copyLink")}
+          className={cn("h-8 w-8", copied ? "text-emerald-500" : "text-muted-foreground")}
+          onClick={handleCopyLink}
+          title={copied ? t("linkCopied") : t("copyLink")}
         >
-          <Link2 className="h-4 w-4" />
+          {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
         </Button>
         <Button
           variant="ghost"

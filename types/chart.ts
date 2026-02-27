@@ -26,6 +26,7 @@ export interface VisionItem {
   dueDate?: string;
   targetDate?: string; // 時間軸に基づいた動的な順序用
   isLocked?: boolean;
+  description?: string;
   area_id?: string | null; // エリアID
   sort_order?: number;
   comment_count?: number;
@@ -40,6 +41,7 @@ export interface RealityItem {
   relatedVisionId?: string; // 将来的な紐付け用
   area_id?: string | null; // エリアID
   isLocked?: boolean;
+  description?: string;
   created_by?: string | null;
   sort_order?: number;
   created_by_profile?: { name?: string; avatar_url?: string } | null;
