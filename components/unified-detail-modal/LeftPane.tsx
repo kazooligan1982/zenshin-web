@@ -80,7 +80,7 @@ export function LeftPane({
   };
 
   return (
-    <div className="w-full space-y-5">
+    <div className="w-full space-y-3">
       <div className="w-full">
         <TitleEditor
         title={title}

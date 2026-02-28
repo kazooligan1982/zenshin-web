@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import {
   Link2,
+  ChevronRight,
   Github,
   Figma,
   FileText,
@@ -76,12 +77,16 @@ export function LinkedResources({
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const loadLinks = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getItemLinks(itemType, itemId);
       setLinks(data);
+      if (data.length > 0) {
+        setIsExpanded(true);
+      }
     } catch (error) {
       console.error("[LinkedResources] load error:", error);
     } finally {
@@ -142,13 +147,21 @@ export function LinkedResources({
     link.title?.trim() || shortenUrl(link.url);
 
   return (
-    <div className="w-full space-y-2">
-      <div className="flex items-center gap-2 mb-2">
-        <Link2 className="w-4 h-4 text-gray-400" />
-        <h3 className="text-sm font-medium text-gray-500">{t("linkedResources")}</h3>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+    <div className="w-full">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full text-left py-1"
+      >
+        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+        <Link2 className="w-4 h-4" />
+        <span>{t("linkedResources")}</span>
+        {links.length > 0 && (
+          <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{links.length}</span>
+        )}
+      </button>
+      {isExpanded && (
+      <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t("loading")}</p>
         ) : (
@@ -188,28 +201,21 @@ export function LinkedResources({
               </ul>
             )}
 
-            <div className="flex gap-2">
+            <div>
               <input
                 type="url"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={t("addLink")}
-                className="flex-1 min-w-0 h-8 px-2.5 text-sm rounded-md border border-zenshin-navy/15 bg-white focus:outline-none focus:ring-1 focus:ring-zenshin-teal/50 placeholder:text-muted-foreground"
+                placeholder={t("pasteLink")}
+                className="w-full h-8 px-2.5 text-sm rounded-md border border-zenshin-navy/15 bg-white focus:outline-none focus:ring-1 focus:ring-zenshin-teal/50 placeholder:text-muted-foreground"
                 disabled={isAdding}
               />
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={!inputValue.trim() || isAdding}
-                className="h-8 px-3 text-sm font-medium rounded-md bg-zenshin-teal text-white hover:bg-zenshin-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isAdding ? "..." : t("addLinkButton")}
-              </button>
             </div>
           </>
         )}
       </div>
+      )}
     </div>
   );
 }
