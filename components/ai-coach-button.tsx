@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Bot, X, Send, Loader2, Sparkles, ArrowLeft, Target, Search, Plus } from "lucide-react";
+import { Bot, X, Send, Loader2, Sparkles, ArrowLeft, Target, Search, Plus, Wand2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +21,13 @@ export interface StructurizeResult {
   actions: { title: string; tensionIndex?: number }[];
 }
 
+interface CreateStructurizeResult {
+  visions: { title: string; enabled: boolean }[];
+  realities: { title: string; enabled: boolean }[];
+  tensions: { title: string; category: string; enabled: boolean }[];
+  actions: { title: string; tensionIndex: number; enabled: boolean }[];
+}
+
 export type StructuredItems = StructurizeResult;
 
 interface AICoachButtonProps {
@@ -28,7 +36,7 @@ interface AICoachButtonProps {
   onAddItems?: (items: StructurizeResult) => Promise<void>;
 }
 
-type ViewMode = "select" | "analyze" | "chat" | "add";
+type ViewMode = "select" | "analyze" | "chat" | "add" | "create";
 
 export function AICoachButton({ chartData, chartId, onAddItems }: AICoachButtonProps) {
   const t = useTranslations("aiCoach");
@@ -41,6 +49,11 @@ export function AICoachButton({ chartData, chartId, onAddItems }: AICoachButtonP
   const [addText, setAddText] = useState("");
   const [addResult, setAddResult] = useState<StructurizeResult | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [createText, setCreateText] = useState("");
+  const [createResult, setCreateResult] = useState<CreateStructurizeResult | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createApplying, setCreateApplying] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -61,18 +74,10 @@ export function AICoachButton({ chartData, chartId, onAddItems }: AICoachButtonP
   const handleOpen = () => {
     setIsOpen(true);
     setViewMode("select");
-    setMessages([]);
-    setInput("");
-    setAddText("");
-    setAddResult(null);
   };
 
   const handleBack = () => {
     setViewMode("select");
-    setMessages([]);
-    setInput("");
-    setAddText("");
-    setAddResult(null);
   };
 
   const sendAnalyzeMessage = async (userMessage?: string) => {
@@ -221,6 +226,58 @@ export function AICoachButton({ chartData, chartId, onAddItems }: AICoachButtonP
     }
   };
 
+  const handleCreateAnalyze = async () => {
+    setCreateLoading(true);
+    setCreateError(null);
+    try {
+      const res = await fetch("/api/ai/structurize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: createText, language: locale }),
+      });
+      if (!res.ok) throw new Error("AI analysis failed");
+      const data = await res.json();
+      setCreateResult({
+        visions: (data.visions || []).map((v: { title?: string }) => ({ ...v, title: v.title || "", enabled: true })),
+        realities: (data.realities || []).map((r: { title?: string }) => ({ ...r, title: r.title || "", enabled: true })),
+        tensions: (data.tensions || []).map((t: { title?: string; category?: string }) => ({ ...t, title: t.title || "", category: t.category || "uncategorized", enabled: true })),
+        actions: (data.actions || []).map((a: { title?: string; tensionIndex?: number }) => ({ ...a, title: a.title || "", tensionIndex: a.tensionIndex ?? 0, enabled: true })),
+      });
+    } catch {
+      setCreateError(locale === "en" ? "Analysis failed. Please try again." : "分析に失敗しました。もう一度お試しください。");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleCreateApply = async () => {
+    if (!createResult || !chartId) return;
+    setCreateApplying(true);
+    setCreateError(null);
+    try {
+      const res = await fetch("/api/ai/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chartId,
+          visions: createResult.visions.filter((v) => v.enabled).map((v) => ({ title: v.title })),
+          realities: createResult.realities.filter((r) => r.enabled).map((r) => ({ title: r.title })),
+          tensions: createResult.tensions.filter((t) => t.enabled).map((t) => ({ title: t.title })),
+          actions: createResult.actions.filter((a) => a.enabled).map((a) => ({ title: a.title, tensionIndex: a.tensionIndex })),
+        }),
+      });
+      if (!res.ok) throw new Error("Apply failed");
+      setCreateText("");
+      setCreateResult(null);
+      setViewMode("select");
+      window.location.reload();
+    } catch {
+      setCreateError(locale === "en" ? "Failed to apply. Please try again." : "適用に失敗しました。もう一度お試しください。");
+    } finally {
+      setCreateApplying(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
@@ -276,6 +333,146 @@ export function AICoachButton({ chartData, chartId, onAddItems }: AICoachButtonP
                 <p className="text-xs text-zenshin-navy/60">{t("modeSelect.addDesc")}</p>
               </div>
             </button>
+            <button
+              onClick={() => setViewMode("create")}
+              className="w-full text-left p-3 rounded-xl border border-gray-200 hover:bg-violet-50 hover:border-violet-200 transition-colors flex gap-3"
+            >
+              <Wand2 className="w-5 h-5 text-violet-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm text-zenshin-navy">{t("modeCreate")}</p>
+                <p className="text-xs text-zenshin-navy/60">{t("modeCreateDesc")}</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (viewMode === "create") {
+      return (
+        <div className="flex-1 flex flex-col min-h-0 p-4">
+          <p className="text-sm text-gray-600 mb-3">{t("createDescription")}</p>
+          <textarea
+            value={createText}
+            onChange={(e) => setCreateText(e.target.value)}
+            placeholder={t("createPlaceholder")}
+            className="flex-1 min-h-[120px] p-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+            autoFocus
+          />
+          {createError && <p className="text-sm text-red-500 mt-2">{createError}</p>}
+          {createResult && (
+            <div className="mt-3 space-y-2 overflow-y-auto max-h-[300px]">
+              {createResult.visions.length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-teal-600">Vision ({createResult.visions.filter((v) => v.enabled).length})</span>
+                  {createResult.visions.map((v, i) => (
+                    <label key={i} className="flex items-center gap-2 text-sm py-1 block">
+                      <input
+                        type="checkbox"
+                        checked={v.enabled}
+                        onChange={() => {
+                          setCreateResult((prev) =>
+                            prev ? { ...prev, visions: prev.visions.map((item, idx) => (idx === i ? { ...item, enabled: !item.enabled } : item)) } : null
+                          );
+                        }}
+                        className="rounded"
+                      />
+                      <span className={v.enabled ? "" : "line-through text-gray-400"}>{v.title}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {createResult.realities.length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-orange-600">Reality ({createResult.realities.filter((r) => r.enabled).length})</span>
+                  {createResult.realities.map((r, i) => (
+                    <label key={i} className="flex items-center gap-2 text-sm py-1 block">
+                      <input
+                        type="checkbox"
+                        checked={r.enabled}
+                        onChange={() => {
+                          setCreateResult((prev) =>
+                            prev ? { ...prev, realities: prev.realities.map((item, idx) => (idx === i ? { ...item, enabled: !item.enabled } : item)) } : null
+                          );
+                        }}
+                        className="rounded"
+                      />
+                      <span className={r.enabled ? "" : "line-through text-gray-400"}>{r.title}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {createResult.tensions.length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-indigo-600">Tension ({createResult.tensions.filter((t) => t.enabled).length})</span>
+                  {createResult.tensions.map((t, i) => (
+                    <label key={i} className="flex items-center gap-2 text-sm py-1 block">
+                      <input
+                        type="checkbox"
+                        checked={t.enabled}
+                        onChange={() => {
+                          setCreateResult((prev) =>
+                            prev ? { ...prev, tensions: prev.tensions.map((item, idx) => (idx === i ? { ...item, enabled: !item.enabled } : item)) } : null
+                          );
+                        }}
+                        className="rounded"
+                      />
+                      <span className={t.enabled ? "" : "line-through text-gray-400"}>{t.title}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {createResult.actions.length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-blue-600">Action ({createResult.actions.filter((a) => a.enabled).length})</span>
+                  {createResult.actions.map((a, i) => (
+                    <label key={i} className="flex items-center gap-2 text-sm py-1 block">
+                      <input
+                        type="checkbox"
+                        checked={a.enabled}
+                        onChange={() => {
+                          setCreateResult((prev) =>
+                            prev ? { ...prev, actions: prev.actions.map((item, idx) => (idx === i ? { ...item, enabled: !item.enabled } : item)) } : null
+                          );
+                        }}
+                        className="rounded"
+                      />
+                      <span className={a.enabled ? "" : "line-through text-gray-400"}>{a.title}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 mt-3 shrink-0">
+            {!createResult ? (
+              <button
+                onClick={handleCreateAnalyze}
+                disabled={createLoading || createText.trim().length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+              >
+                {createLoading ? t("analyzing") : t("analyze")}
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setCreateResult(null);
+                    setCreateError(null);
+                  }}
+                  className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  {t("retry")}
+                </button>
+                <button
+                  onClick={handleCreateApply}
+                  disabled={createApplying || !chartId}
+                  className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                >
+                  {createApplying ? t("applying") : t("applyToChart")}
+                </button>
+              </>
+            )}
           </div>
         </div>
       );
@@ -402,7 +599,13 @@ export function AICoachButton({ chartData, chartId, onAddItems }: AICoachButtonP
                   : "text-gray-700"
               )}
             >
-              <div className="whitespace-pre-wrap">{msg.content}</div>
+              {msg.role === "assistant" ? (
+                <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+              )}
             </div>
           ))}
           {isLoading && (

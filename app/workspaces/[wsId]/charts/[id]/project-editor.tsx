@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
@@ -293,6 +293,7 @@ export function ProjectEditor({
     avatar_url?: string | null;
   } | null>(initialCurrentUser ?? null);
   const [chartDueDate, setChartDueDate] = useState<string | null>(initialChart.due_date || null);
+  const [chartDueDateOpen, setChartDueDateOpen] = useState(false);
   const [selectedAreaId, setSelectedAreaId] = useState<string>("all"); // エリア選択状態
   const [sortByStatus, setSortByStatus] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
@@ -374,6 +375,9 @@ export function ProjectEditor({
     setUnifiedModal({ isOpen: true, itemType, itemId });
   };
   const closeUnifiedModal = () => setUnifiedModal(null);
+
+  // Description保存→モーダル再オープン時に最新値を表示するためのキャッシュ
+  const descriptionCacheRef = useRef<Record<string, string>>({});
 
   // ディープリンク: URLパラメータからモーダルを自動オープン
   useEffect(() => {
@@ -1531,7 +1535,7 @@ export function ProjectEditor({
         {/* 下段: メタデータ & フィルター */}
         <div className="flex items-center justify-between px-6 py-3 bg-gray-50/50 border-t border-zenshin-navy/5">
           <div className="flex items-center gap-1.5">
-            <Popover>
+            <Popover open={chartDueDateOpen} onOpenChange={setChartDueDateOpen}>
               <PopoverTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-zenshin-navy/70 hover:text-zenshin-navy hover:bg-white/60 rounded-lg transition-colors cursor-pointer">
                   <CalendarIcon className="w-3.5 h-3.5" />
@@ -1548,6 +1552,7 @@ export function ProjectEditor({
                   selected={chartDueDate ? new Date(chartDueDate) : undefined}
                   onSelect={(date) => {
                     handleUpdateChartDueDate(date ? date.toISOString() : null);
+                    setChartDueDateOpen(false);
                   }}
                   initialFocus
                 />
@@ -1557,7 +1562,7 @@ export function ProjectEditor({
                       variant="ghost"
                       size="sm"
                       className="w-full text-zenshin-navy/50 hover:text-red-500"
-                      onClick={() => handleUpdateChartDueDate(null)}
+                      onClick={() => { handleUpdateChartDueDate(null); setChartDueDateOpen(false); }}
                     >
                       {tAction("clearDueDate")}
                     </Button>
@@ -2582,9 +2587,18 @@ export function ProjectEditor({
               ? realities.find((r) => r.id === unifiedModal.itemId)
               : looseActions.find((a) => a.id === unifiedModal.itemId) ??
                 tensions.flatMap((t) => t.actionPlans).find((a) => a.id === unifiedModal.itemId);
+        // キャッシュから最新のdescriptionを上書き
+        const cachedDescription = descriptionCacheRef.current[unifiedModal.itemId];
+        const itemWithLatestDescription = item && cachedDescription !== undefined
+          ? { ...item, description: cachedDescription }
+          : item;
         const actionItem = unifiedModal.itemType === "action" ? item as ActionPlan | undefined : undefined;
         const childChartTitle = null;
         const handleItemUpdate = (field: string, value: string | boolean | null) => {
+          // descriptionの変更をキャッシュに保存（モーダル再オープン時の表示用）
+          if (field === "description" && typeof value === "string") {
+            descriptionCacheRef.current[unifiedModal.itemId] = value;
+          }
           if (unifiedModal.itemType === "vision") {
             void handleUpdateVision(unifiedModal.itemId, field as "content" | "assignee" | "dueDate" | "areaId" | "description", value);
           } else if (unifiedModal.itemType === "reality") {
@@ -2629,7 +2643,7 @@ export function ProjectEditor({
             itemId={unifiedModal.itemId}
             chartId={chartId}
             workspaceId={workspaceId}
-            item={item ?? null}
+            item={itemWithLatestDescription ?? null}
             areas={chart.areas ?? []}
             members={workspaceMembers}
             currentUser={currentUser}

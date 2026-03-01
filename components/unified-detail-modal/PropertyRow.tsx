@@ -14,7 +14,7 @@ export function PropertyRow({ icon, label, children, className }: PropertyRowPro
   return (
     <div
       className={cn(
-        "flex items-center gap-2 py-2 px-1 -mx-1 rounded hover:bg-muted/20 transition-colors cursor-pointer min-h-[36px]",
+        "flex items-center gap-2 py-1 px-1 -mx-1 rounded hover:bg-muted/20 transition-colors cursor-pointer min-h-[28px]",
         className
       )}
     >

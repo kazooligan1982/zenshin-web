@@ -15,6 +15,7 @@ export function WelcomeCard({ chartId, onStructurized }: WelcomeCardProps) {
   const locale = useLocale();
   const [dismissed, setDismissed] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [savedInputText, setSavedInputText] = useState("");
 
   if (dismissed) return null;
 
@@ -62,6 +63,8 @@ export function WelcomeCard({ chartId, onStructurized }: WelcomeCardProps) {
         <AiStructurizeModal
           chartId={chartId}
           language={locale}
+          initialText={savedInputText}
+          onTextChange={setSavedInputText}
           onClose={() => setShowModal(false)}
           onStructurized={() => {
             setShowModal(false);

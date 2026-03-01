@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "clean": "rm -rf .next node_modules/.cache",
-    "restart": "rm -rf .next && npx --no-install next dev"
+    "restart": "rm -rf .next && npx --no-install next dev",
+    "vercel-build": "next build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -47,12 +48,14 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.562.0",
+    "marked": "^17.0.3",
     "next": "^15.5.7",
     "next-intl": "^4.8.3",
     "next-themes": "^0.4.6",
     "react": "19.2.3",
     "react-day-picker": "^8.10.1",
     "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.2.2",
     "react-textarea-autosize": "^8.5.9",
     "resend": "^6.9.2",

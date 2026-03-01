@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { Target, Search, Zap, Play, GitBranch } from "lucide-react";
+import { Target, Search, Zap, Play, GitBranch, ChevronRight } from "lucide-react";
 import { getItemRelations, type ItemRelation } from "@/app/charts/[id]/actions";
 import type { ItemType } from "./ModalHeader";
 
@@ -83,12 +83,16 @@ export function ItemRelations({
   const t = useTranslations("modal");
   const [data, setData] = useState<{ references: ItemRelation[]; referencedBy: ItemRelation[] } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await getItemRelations(chartId, itemType, itemId);
       setData(result);
+      if (result.references.length > 0 || result.referencedBy.length > 0) {
+        setIsExpanded(true);
+      }
     } catch (error) {
       console.error("[ItemRelations] load error:", error);
       setData({ references: [], referencedBy: [] });
@@ -102,15 +106,24 @@ export function ItemRelations({
   }, [load]);
 
   const hasAny = data && (data.references.length > 0 || data.referencedBy.length > 0);
+  const relations = data ? [...data.references, ...data.referencedBy] : [];
 
   return (
-    <div className="w-full space-y-2">
-      <div className="flex items-center gap-2 mb-2">
-        <GitBranch className="w-4 h-4 text-gray-400" />
-        <h3 className="text-sm font-medium text-gray-500">{t("relations")}</h3>
-      </div>
-
-      <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+    <div className="w-full">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full text-left py-1"
+      >
+        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+        <GitBranch className="w-4 h-4" />
+        <span>{t("relations")}</span>
+        {relations.length > 0 && (
+          <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{relations.length}</span>
+        )}
+      </button>
+      {isExpanded && (
+      <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t("loading")}</p>
         ) : !hasAny ? (
@@ -146,6 +159,7 @@ export function ItemRelations({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

@@ -259,14 +259,12 @@ export async function updateTensionItem(
   field: "title" | "description" | "status",
   value: string | TensionStatus
 ) {
-  console.log("[updateTensionItem] called:", tensionId, field, value);
   const updates: Partial<Tension> = {};
   if (field === "title") updates.title = value as string;
   if (field === "description") updates.description = value as string;
   if (field === "status") updates.status = value as TensionStatus;
 
   const result = await updateTension(tensionId, chartId, updates);
-  console.log("[updateTensionItem] result:", result);
   if (result) {
     const eventType =
       field === "status" && value === "resolved"
@@ -932,25 +930,18 @@ async function recordItemRelationsFromMentions(
   content: string
 ) {
   const mentions = parseMentionsFromHtml(content);
-  console.log("[Relations] commentContent:", content);
-  console.log("[Relations] parsed mentions:", mentions);
-  console.log("[Relations] chartId:", chartId, "sourceType:", sourceType, "sourceId:", sourceId);
   const validTypes = ["action", "vision", "reality", "tension"];
   for (const m of mentions) {
     if (!validTypes.includes(m.type) || m.chartId !== chartId) {
-      console.log("[Relations] skip (type/chartId):", m);
       continue;
     }
     if (m.type === sourceType && m.id === sourceId) {
-      console.log("[Relations] skip (self-ref):", m);
       continue;
     }
     if (m.id === sourceId) {
-      console.log("[Relations] skip (same id):", m);
       continue;
     }
     try {
-      console.log("[Relations] inserting:", { sourceType, sourceId, targetType: m.type, targetId: m.id });
       const { error } = await supabase.from("item_relations").upsert(
         {
           chart_id: chartId,

@@ -633,7 +633,6 @@ export async function updateTension(
   updates: Partial<Pick<Tension, "title" | "description" | "status">>
 ): Promise<boolean> {
   try {
-    console.log("[updateTension] called:", tensionId, chartId, updates);
     const serverClient = await createClient();
     const updateData: any = {};
     if (updates.title !== undefined) updateData.title = updates.title;
@@ -652,7 +651,6 @@ export async function updateTension(
       return false;
     }
 
-    console.log("[updateTension] success");
     return true;
   } catch (error) {
     console.error("Error in updateTension:", error);
@@ -873,17 +871,13 @@ export async function updateAction(
       updateData.description = updates.description;
     if (updates.area_id !== undefined) updateData.area_id = updates.area_id;
 
-    let query = supabase.from("actions").update(updateData).eq("id", actionId);
-    if (tensionId) {
-      query = query.eq("tension_id", tensionId);
-    } else {
-      query = query.is("tension_id", null);
-      if (chartId) {
-        query = query.eq("chart_id", chartId);
-      }
-    }
-
-    const { error } = await query;
+    // idはprimary key（UUID）なので一意に特定できる。
+    // tension_id/chart_idの追加条件は、値のずれで0行更新を引き起こすため削除。
+    // アクセス制御はSupabaseのRLSで担保する。
+    const { error } = await supabase
+      .from("actions")
+      .update(updateData)
+      .eq("id", actionId);
 
     if (error) {
       console.error("Error updating action:", error);

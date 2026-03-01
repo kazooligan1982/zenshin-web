@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { TitleEditor } from "./TitleEditor";
 import { PropertiesPanel } from "./PropertiesPanel";
@@ -49,6 +50,18 @@ export function LeftPane({
 }: LeftPaneProps) {
   const t = useTranslations("modal");
 
+  const itemDescription = item
+    ? itemType === "action"
+      ? (item as ActionPlan).description ?? ""
+      : (item as VisionItem | RealityItem).description ?? ""
+    : "";
+  const [description, setDescription] = useState(itemDescription);
+
+  // item が変わったら（別のアイテムを開いた時）description を同期
+  useEffect(() => {
+    setDescription(itemDescription);
+  }, [itemDescription]);
+
   if (!item) {
     return (
       <div className="w-full">
@@ -61,10 +74,6 @@ export function LeftPane({
     itemType === "action"
       ? (item as ActionPlan).title ?? ""
       : ((item as VisionItem | RealityItem).content ?? "").slice(0, 200);
-  const description =
-    itemType === "action"
-      ? (item as ActionPlan).description ?? ""
-      : (item as VisionItem | RealityItem).description ?? "";
   const childChartId = itemType === "action" ? (item as ActionPlan).childChartId : null;
 
   const handleTitleSave = (newTitle: string) => {
@@ -76,11 +85,12 @@ export function LeftPane({
   };
 
   const handleDetailsSave = (newContent: string) => {
-    onUpdate("description", newContent);
+    setDescription(newContent);  // ローカル state を即座に更新
+    onUpdate("description", newContent);  // DB にも保存
   };
 
   return (
-    <div className="w-full space-y-5">
+    <div className="w-full space-y-3">
       <div className="w-full">
         <TitleEditor
         title={title}
@@ -128,6 +138,15 @@ export function LeftPane({
           value={description}
           onSave={handleDetailsSave}
           placeholder={t("detailsPlaceholder")}
+          chartId={chartId}
+          itemTitle={title}
+          itemContext={
+            itemType === "action"
+              ? `Type: Action\nTension: ${(item as any).tensionTitle || ""}\nStatus: ${(item as ActionPlan).status || "todo"}\nAssignee: ${(item as ActionPlan).assignee || "unassigned"}\nDue: ${(item as ActionPlan).dueDate || "none"}`
+              : itemType === "vision"
+              ? `Type: Vision`
+              : `Type: Reality`
+          }
         />
       </div>
 

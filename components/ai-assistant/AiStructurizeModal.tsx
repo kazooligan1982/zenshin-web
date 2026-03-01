@@ -25,6 +25,8 @@ interface StructurizeResult {
 interface AiStructurizeModalProps {
   chartId: string;
   language: string;
+  initialText?: string;
+  onTextChange?: (text: string) => void;
   onClose: () => void;
   onStructurized: () => void;
 }
@@ -32,16 +34,23 @@ interface AiStructurizeModalProps {
 export function AiStructurizeModal({
   chartId,
   language,
+  initialText = "",
+  onTextChange,
   onClose,
   onStructurized,
 }: AiStructurizeModalProps) {
   const t = useTranslations("ai");
   const [step, setStep] = useState<"input" | "review">("input");
-  const [inputText, setInputText] = useState("");
+  const [inputText, setInputText] = useState(initialText);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<StructurizeResult | null>(null);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (text: string) => {
+    setInputText(text);
+    onTextChange?.(text);
+  };
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -144,7 +153,7 @@ export function AiStructurizeModal({
               </p>
               <textarea
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
+                onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={t("inputPlaceholder")}
                 className="w-full h-48 p-4 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                 autoFocus

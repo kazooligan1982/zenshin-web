@@ -293,6 +293,7 @@ export function ProjectEditor({
     avatar_url?: string | null;
   } | null>(initialCurrentUser ?? null);
   const [chartDueDate, setChartDueDate] = useState<string | null>(initialChart.due_date || null);
+  const [chartDueDateOpen, setChartDueDateOpen] = useState(false);
   const [selectedAreaId, setSelectedAreaId] = useState<string>("all"); // エリア選択状態
   const [sortByStatus, setSortByStatus] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
@@ -1496,7 +1497,7 @@ export function ProjectEditor({
         {/* 下段: メタデータ & フィルター */}
         <div className="flex items-center justify-between px-6 py-3 bg-gray-50/50 border-t border-zenshin-navy/5">
           <div className="flex items-center gap-1.5">
-            <Popover>
+            <Popover open={chartDueDateOpen} onOpenChange={setChartDueDateOpen}>
               <PopoverTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-zenshin-navy/70 hover:text-zenshin-navy hover:bg-white/60 rounded-lg transition-colors cursor-pointer">
                   <CalendarIcon className="w-3.5 h-3.5" />
@@ -1513,6 +1514,7 @@ export function ProjectEditor({
                   selected={chartDueDate ? new Date(chartDueDate) : undefined}
                   onSelect={(date) => {
                     handleUpdateChartDueDate(date ? date.toISOString() : null);
+                    setChartDueDateOpen(false);
                   }}
                   initialFocus
                 />
@@ -1522,7 +1524,7 @@ export function ProjectEditor({
                       variant="ghost"
                       size="sm"
                       className="w-full text-zenshin-navy/50 hover:text-red-500"
-                      onClick={() => handleUpdateChartDueDate(null)}
+                      onClick={() => { handleUpdateChartDueDate(null); setChartDueDateOpen(false); }}
                     >
                       {tAction("clearDueDate")}
                     </Button>
