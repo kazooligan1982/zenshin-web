@@ -1,0 +1,46 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "ZENSHIN - 構造的緊張チャート管理",
+  description: "理想(DO)と現実(CR)のギャップを埋め、前に進むためのツール",
+};
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
+  return (
+    <html lang={locale}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <NextIntlClientProvider messages={messages}>
+          <TooltipProvider delayDuration={300}>
+            <main className="min-h-screen bg-background">{children}</main>
+          </TooltipProvider>
+        </NextIntlClientProvider>
+        <Toaster />
+      </body>
+    </html>
+  );
+}
