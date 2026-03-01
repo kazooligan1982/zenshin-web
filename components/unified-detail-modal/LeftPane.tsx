@@ -142,7 +142,7 @@ export function LeftPane({
           itemTitle={title}
           itemContext={
             itemType === "action"
-              ? `Type: Action\nTension: ${(item as ActionPlan).tensionTitle || ""}\nStatus: ${(item as ActionPlan).status || "todo"}\nAssignee: ${(item as ActionPlan).assignee || "unassigned"}\nDue: ${(item as ActionPlan).dueDate || "none"}`
+              ? `Type: Action\nTension: ${(item as any).tensionTitle || ""}\nStatus: ${(item as ActionPlan).status || "todo"}\nAssignee: ${(item as ActionPlan).assignee || "unassigned"}\nDue: ${(item as ActionPlan).dueDate || "none"}`
               : itemType === "vision"
               ? `Type: Vision`
               : `Type: Reality`
