@@ -218,11 +218,19 @@ export function useActionHandlers({
       }));
     }
 
+    // descriptionも楽観的にローカル状態を更新
+    if (field === "description") {
+      updateActionInState((action) => ({
+        ...action,
+        description: value as string,
+      }));
+    }
+
     const success = await updateActionPlanItem(actionId, tensionId, field, value, chartId);
     if (!success) {
       console.error("[handleUpdateActionPlan] 更新失敗");
       // 失敗時はロールバック
-      if (field === "dueDate" || field === "status" || field === "isCompleted") {
+      if (field === "dueDate" || field === "status" || field === "isCompleted" || field === "description") {
         router.refresh();
       }
     }

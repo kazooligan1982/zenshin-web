@@ -67,11 +67,23 @@ export function UnifiedDetailModal({
     () => false
   );
 
+  // モーダルを閉じる前に、エディタのblur保存を待つ
+  const handleClose = useCallback(() => {
+    // アクティブな要素（DetailsEditorなど）からフォーカスを外して即保存を発火
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    // blur → onSave の伝播を待ってからモーダルを閉じる
+    setTimeout(() => {
+      onClose();
+    }, 100);
+  }, [onClose]);
+
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     },
-    [onClose]
+    [handleClose]
   );
 
   useEffect(() => {
@@ -88,7 +100,7 @@ export function UnifiedDetailModal({
   if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget) handleClose();
   };
 
   const handleResizeMouseDown = (e: React.MouseEvent) => {
@@ -137,7 +149,7 @@ export function UnifiedDetailModal({
         <ModalHeader
           itemType={itemType}
           itemId={itemId}
-          onClose={onClose}
+          onClose={handleClose}
           onPrevious={
             items.length > 0 && onNavigate
               ? () => {

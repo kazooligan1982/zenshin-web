@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
@@ -375,6 +375,9 @@ export function ProjectEditor({
     setUnifiedModal({ isOpen: true, itemType, itemId });
   };
   const closeUnifiedModal = () => setUnifiedModal(null);
+
+  // Description保存→モーダル再オープン時に最新値を表示するためのキャッシュ
+  const descriptionCacheRef = useRef<Record<string, string>>({});
 
   // ディープリンク: URLパラメータからモーダルを自動オープン
   useEffect(() => {
@@ -2584,9 +2587,18 @@ export function ProjectEditor({
               ? realities.find((r) => r.id === unifiedModal.itemId)
               : looseActions.find((a) => a.id === unifiedModal.itemId) ??
                 tensions.flatMap((t) => t.actionPlans).find((a) => a.id === unifiedModal.itemId);
+        // キャッシュから最新のdescriptionを上書き
+        const cachedDescription = descriptionCacheRef.current[unifiedModal.itemId];
+        const itemWithLatestDescription = item && cachedDescription !== undefined
+          ? { ...item, description: cachedDescription }
+          : item;
         const actionItem = unifiedModal.itemType === "action" ? item as ActionPlan | undefined : undefined;
         const childChartTitle = null;
         const handleItemUpdate = (field: string, value: string | boolean | null) => {
+          // descriptionの変更をキャッシュに保存（モーダル再オープン時の表示用）
+          if (field === "description" && typeof value === "string") {
+            descriptionCacheRef.current[unifiedModal.itemId] = value;
+          }
           if (unifiedModal.itemType === "vision") {
             void handleUpdateVision(unifiedModal.itemId, field as "content" | "assignee" | "dueDate" | "areaId" | "description", value);
           } else if (unifiedModal.itemType === "reality") {
@@ -2631,7 +2643,7 @@ export function ProjectEditor({
             itemId={unifiedModal.itemId}
             chartId={chartId}
             workspaceId={workspaceId}
-            item={item ?? null}
+            item={itemWithLatestDescription ?? null}
             areas={chart.areas ?? []}
             members={workspaceMembers}
             currentUser={currentUser}

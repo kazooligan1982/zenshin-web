@@ -611,6 +611,8 @@
     "noTension": "Unassigned",
     "content": "Content",
     "details": "Details",
+    "aiAssistDetails": "Draft with AI",
+    "aiGenerating": "Generating...",
     "detailsPlaceholder": "Add details...",
     "contentPlaceholder": "Enter content...",
     "descriptionPlaceholder": "Enter description...",

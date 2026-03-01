@@ -265,14 +265,12 @@ export async function updateTensionItem(
   field: "title" | "description" | "status",
   value: string | TensionStatus
 ) {
-  console.log("[updateTensionItem] called:", tensionId, field, value);
   const updates: Partial<Tension> = {};
   if (field === "title") updates.title = value as string;
   if (field === "description") updates.description = value as string;
   if (field === "status") updates.status = value as TensionStatus;
 
   const result = await updateTension(tensionId, chartId, updates);
-  console.log("[updateTensionItem] result:", result);
   if (result) {
     const eventType =
       field === "status" && value === "resolved"
@@ -365,6 +363,7 @@ export async function updateActionPlanItem(
   value: string | boolean | null,
   chartId?: string
 ) {
+
   const updates: Partial<ActionPlan> = {};
   if (field === "title") updates.title = value as string;
   if (field === "dueDate") updates.dueDate = value as string;
@@ -424,6 +423,7 @@ export async function updateActionPlanItem(
       await revalidateChartPath(chartId);
     }
   } else {
+    console.error("[updateActionPlanItem] DB save failed for field:", field);
     console.error("[updateActionPlanItem] 失敗");
   }
   return result;
@@ -939,8 +939,6 @@ async function recordItemRelationsFromMentions(
   content: string
 ) {
   const mentions = parseMentionsFromHtml(content);
-  console.log("[Relations] commentContent:", content);
-  console.log("[Relations] parsed mentions:", mentions);
   const validTypes = ["action", "vision", "reality", "tension"];
   for (const m of mentions) {
     if (!validTypes.includes(m.type) || m.chartId !== chartId) continue;

@@ -611,6 +611,8 @@
     "noTension": "未割り当て",
     "content": "内容",
     "details": "詳細",
+    "aiAssistDetails": "AIで下書き",
+    "aiGenerating": "生成中...",
     "detailsPlaceholder": "補足説明を追加...",
     "contentPlaceholder": "内容を入力...",
     "descriptionPlaceholder": "説明を入力...",
